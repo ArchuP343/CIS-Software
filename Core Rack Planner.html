@@ -96,7 +96,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);padding:0
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
 .panel > header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px;align-items:start}
-.formgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
 .notice{padding:10px 14px;border-radius:var(--r);background:var(--warn-soft);color:var(--ink);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
 .notice.info{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
 .notice strong{color:var(--warn)}
@@ -172,6 +172,47 @@ table.edit td.w-m input{min-width:90px}
 .mapgrid .hdr{font-size:.75rem}
 
 input::placeholder{text-transform:none}
+/* wizard */
+.wizard{max-width:880px;margin:0 auto;padding-block:28px 48px;display:flex;flex-direction:column;gap:18px}
+.wizard .intro{display:flex;flex-direction:column;gap:6px}
+.wizard .intro p{color:var(--muted);max-width:62ch}
+.stepper{display:flex;gap:8px;align-items:center;font-family:var(--f-display);font-weight:600;font-size:.92rem;color:var(--muted);flex-wrap:wrap}
+.stepper .st{display:flex;align-items:center;gap:6px}
+.stepper .st b{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line);font-family:var(--f-mono);font-size:.72rem;font-weight:500}
+.stepper .st.on{color:var(--ink)}
+.stepper .st.on b{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.stepper .st.done b{border-color:var(--accent);color:var(--accent)}
+.stepper .sep{width:18px;height:1px;background:var(--line)}
+.dropzone{border:2px dashed var(--line);border-radius:var(--r);padding:40px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;background:var(--surface-2)}
+.dropzone strong{font-family:var(--f-display);font-size:1.25rem;font-weight:600}
+.dropzone.over{border-color:var(--accent);background:var(--accent-soft)}
+details.manual{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+details.manual>summary{padding:14px 18px;cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:1.1rem;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+details.manual>summary::-webkit-details-marker{display:none}
+details.manual>summary::after{content:"+";font-family:var(--f-mono);font-size:1.2rem;color:var(--muted)}
+details.manual[open]>summary::after{content:"−"}
+details.manual>.body{padding:0 18px 18px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--surface);align-self:flex-start}
+.seg label{padding:7px 14px;cursor:pointer;font-weight:500;position:relative}
+.seg label+label{border-left:1px solid var(--line)}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){background:var(--accent);color:var(--accent-ink)}
+.seg label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:-2px}
+.status{font-size:.8rem;font-weight:600;white-space:nowrap}
+.status.ok{color:var(--ok)}.status.manual{color:var(--accent)}.status.miss{color:var(--muted);font-weight:500}.status.err{color:var(--bad)}
+.matchtable td{vertical-align:middle}
+.matchtable select{min-width:190px}
+.matchtable input.letter{width:56px;text-transform:uppercase;text-align:center}
+.matchtable tr.err td{background:var(--bad-soft)}
+.wizfoot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center}
+.msgs{display:flex;flex-direction:column;gap:6px}
+.msg{padding:8px 12px;border-radius:var(--r);font-size:.88rem;border:1px solid transparent}
+.msg.err{background:var(--bad-soft);color:var(--ink);border-color:color-mix(in srgb,var(--bad) 35%,transparent)}
+.msg.warn{background:var(--warn-soft);border-color:color-mix(in srgb,var(--warn) 35%,transparent)}
+.msg.info{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.calcline{font-size:1rem}
+.calcline .mono{font-size:1.05rem}
+hr.sep{border:0;border-top:1px solid var(--line);margin:16px 0}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--r);z-index:50;max-width:calc(100% - 32px);font-size:.9rem;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 footer.foot{padding-block:28px;color:var(--muted);font-size:.8rem}
 @media (prefers-reduced-motion:no-preference){button,.cell,.tab{transition:border-color .15s,background-color .15s,color .15s}}
@@ -197,7 +238,7 @@ const colLetter=i=>{let s='';i=i+1;while(i>0){const r=(i-1)%26;s=String.fromChar
 const letterToIdx=s=>{s=String(s||'').trim().toUpperCase();if(!s)return -1;if(/^\d+$/.test(s))return (+s)-1;if(!/^[A-Z]+$/.test(s))return -2;let n=0;for(const ch of s)n=n*26+(ch.charCodeAt(0)-64);return n-1;};
 
 /* ---------- state ---------- */
-const S={projects:[],seeded:false,view:'home',currentId:null,tab:'plan',q:'',confirm:null,imp:null,dirty:false,drag:null,storageOk:true};
+const S={addMode:'range',manualOpen:false,projects:[],seeded:false,view:'home',currentId:null,tab:'plan',q:'',confirm:null,imp:null,dirty:false,drag:null,storageOk:true};
 
 function defaults(){return{
   setup:{rackCount:4,defaultRows:12,defaultBlocked:'',letter:'A',startNum:1,pattern:'number'},
@@ -205,14 +246,14 @@ function defaults(){return{
   options:{useCustomOrder:false,featureOrder:[],gapAfterHole:0,gapAfterFeature:0,newRackPerFeature:false},
   items:[],baseline:null};}
 
-function makeRack(p,i){return{id:uid(),name:rackName(p.setup,i),rows:+p.setup.defaultRows||1,blocked:parseRows(p.setup.defaultBlocked)};}
+function makeRack(p,i){return{id:uid(),name:rackName(p.setup,i),rows:+p.setup.defaultRows||12,blocked:parseRows(p.setup.defaultBlocked)};}
 function newProject(name,site){
-  const p=Object.assign({id:uid(),name:name||'Untitled plan',site:site||'',notes:'',created:Date.now(),updated:Date.now()},defaults());
-  for(let i=0;i<p.setup.rackCount;i++)p.racks.push(makeRack(p,i));
+  const p=Object.assign({id:uid(),name:name||'Untitled plan',site:site||'',notes:'',stage:'holes',created:Date.now(),updated:Date.now()},defaults());
+  p.setup.defaultRows='';p.setup.rackCount=0;p.setup.autoCount=true;
   return p;}
 
 function exampleProject(){
-  const p=newProject('Example: Shed 2 core move','Example data, safe to delete');
+  const p=newProject('Example: Shed 2 core move','Example data, safe to delete');p.stage='done';
   p.setup.defaultRows=12;p.setup.defaultBlocked='1-2';p.setup.rackCount=4;
   p.racks=[];for(let i=0;i<4;i++)p.racks.push(makeRack(p,i));
   const col={id:uid(),name:'Core size'};p.customCols=[col];
@@ -235,7 +276,7 @@ function saveText(){return S.storageOk?'Saved in this browser':'Not saved in thi
 function normalise(p){const d=defaults();p.setup=Object.assign(d.setup,p.setup||{});p.options=Object.assign(d.options,p.options||{});
   p.racks=(p.racks||[]).map(r=>({id:r.id||uid(),name:r.name||'',rows:+r.rows||0,blocked:Array.isArray(r.blocked)?r.blocked:parseRows(r.blocked)}));
   p.customCols=p.customCols||[];p.items=(p.items||[]).map(it=>Object.assign({id:uid(),feature:'',hole:'',box:'',of:'',from:'',to:'',custom:{}},it));
-  p.baseline=p.baseline||null;p.id=p.id||uid();return p;}
+  p.baseline=p.baseline||null;p.id=p.id||uid();p.stage=p.stage||'done';return p;}
 const cur=()=>S.projects.find(p=>p.id===S.currentId);
 function touch(p){p.updated=Date.now();persist();}
 
@@ -310,7 +351,9 @@ const loc=x=>!x?'Incoming':x.label?x.label:`${x.rackName}-${x.slot}`;
 function render(){
   const app=$('#app');
   if(S.view==='project'&&!cur())S.view='home';
-  app.innerHTML=S.view==='home'?homeView():projectView();
+  const p=cur();
+  app.innerHTML=S.view==='home'?homeView():p.stage==='holes'?holesStep(p):p.stage==='racks'?racksStep(p):projectView();
+  if(S.focusAfter){const el=document.getElementById(S.focusAfter);S.focusAfter=null;if(el){el.focus();if(el.select)el.select();}}
   S.dirty=false;
 }
 
@@ -359,7 +402,7 @@ function homeView(){
 
 function projectView(){
   const p=cur(),P=computePlan(p),M=computeMoves(p,P);
-  const tabs=[['setup','Setup',p.racks.length],['core','Core boxes',p.items.length],['plan','Rack plan',''],['moves','Moves',M?M.steps.length:''],['advanced','Advanced','']];
+  const tabs=[['plan','Rack plan',''],['core','Holes & boxes',p.items.length],['setup','Racks',p.racks.length],['moves','Moves',M?M.steps.length:''],['advanced','Advanced','']];
   let body='';
   if(S.tab==='setup')body=setupTab(p,P);
   else if(S.tab==='core')body=coreTab(p,P);
@@ -422,8 +465,8 @@ function setupTab(p,P){
       <div class="field"><label class="label" for="st_letter">Rack letter</label><input id="st_letter" maxlength="3" data-k="setup" data-f="letter" value="${esc(s.letter)}"></div>
       <div class="field"><label class="label" for="st_start">Start number</label><input id="st_start" type="number" min="0" data-k="setup" data-f="startNum" value="${esc(s.startNum)}"></div>
       <div class="field"><label class="label" for="st_pat">Naming</label><select id="st_pat" data-k="setup" data-f="pattern">
-        <option value="number" ${s.pattern!=='letter'?'selected':''}>Number counts up</option>
-        <option value="letter" ${s.pattern==='letter'?'selected':''}>Letter counts up</option></select>
+        <option value="number" ${s.pattern!=='letter'?'selected':''}>Number goes up</option>
+        <option value="letter" ${s.pattern==='letter'?'selected':''}>Letter goes up</option></select>
         <span class="hint mono">${esc(example1)}, ${esc(example2)}, ${esc(example3)}…</span></div>
     </div>
     <div class="row" style="margin-top:14px">
@@ -431,9 +474,11 @@ function setupTab(p,P){
       <button data-act="apply-blocked">Apply blocked rows to all racks</button>
       <button data-act="rename-all">Rename all racks</button>
       <span class="spacer"></span>
+      <button data-act="fit-racks">Fit number of racks to boxes</button>
       <button class="primary" data-act="rack-add">+ Add rack</button>
     </div>
   </section>
+  ${!p.racks.length?`<div class="notice info"><strong>No racks yet.</strong> Enter rows per rack and the number of racks above, or press “Fit number of racks to boxes”.</div>`:''}
 
   <section class="stack">
     <h2>Rack list</h2>
@@ -475,27 +520,12 @@ function coreTab(p,P){
   return `
   <div class="grid2">
     <section class="panel">
-      <header><h2>Add boxes</h2><span class="muted small">Add a whole hole, a range, or one missed box</span></header>
-      <form id="addForm" class="stack" autocomplete="off">
-        <div class="formgrid">
-          <div class="field"><label class="label" for="ab_feat">Feature ID</label><input id="ab_feat" placeholder="BMA1" list="dl_feat"></div>
-          <div class="field"><label class="label" for="ab_hole">Hole ID</label><input id="ab_hole" placeholder="DD100" list="dl_hole"></div>
-          <div class="field"><label class="label" for="ab_b1">Box from</label><input id="ab_b1" inputmode="numeric" value="1"></div>
-          <div class="field"><label class="label" for="ab_b2">Box to</label><input id="ab_b2" inputmode="numeric" placeholder="same"></div>
-          <div class="field"><label class="label" for="ab_of">Of (total)</label><input id="ab_of" inputmode="numeric" placeholder="e.g. 6"></div>
-          <div class="field"><label class="label" for="ab_from">From (m)</label><input id="ab_from" inputmode="decimal" placeholder="optional"></div>
-          <div class="field"><label class="label" for="ab_to">To (m)</label><input id="ab_to" inputmode="decimal" placeholder="optional"></div>
-          ${cols.map(c=>`<div class="field"><label class="label" for="ab_c_${c.id}">${esc(c.name)}</label><input id="ab_c_${c.id}" data-col="${c.id}"></div>`).join('')}
-        </div>
-        <p class="hint muted small">Depths are applied to a single box. For a range, fill in depths in the table below. ${cols.length?'Custom values apply to every box added.':''}</p>
-        <div class="row"><button class="primary" type="submit">Add to plan</button></div>
-      </form>
-      <datalist id="dl_feat">${P.feats.filter(Boolean).map(f=>`<option value="${esc(f)}">`).join('')}</datalist>
-      <datalist id="dl_hole">${[...new Set(p.items.map(i=>i.hole).filter(Boolean))].sort(nat).map(h=>`<option value="${esc(h)}">`).join('')}</datalist>
-    </section>
-    <section class="panel">
       <header><h2>Import from Excel or CSV</h2></header>
       ${importPanel(p)}
+    </section>
+    <section class="panel">
+      <header><h2>Add holes manually</h2><span class="muted small">Add a whole hole, or one box you missed</span></header>
+      ${addBoxForm(p,P)}
     </section>
   </div>
 
@@ -525,6 +555,117 @@ function coreRows(p,P){
     <td><button class="icon ghost danger" data-act="item-del" data-id="${it.id}" aria-label="Remove box">✕</button></td></tr>`;}).join('');
 }
 
+
+/* shared add-box form */
+function addBoxForm(p,P){
+  const m=S.addMode==='single'?'single':'range';const cols=p.customCols;
+  return `<form id="addForm" class="stack" autocomplete="off">
+    <div class="seg" role="radiogroup" aria-label="Entry type">
+      <label><input type="radio" name="abmode" id="ab_mode_range" value="range" ${m==='range'?'checked':''}>Range of boxes</label>
+      <label><input type="radio" name="abmode" id="ab_mode_single" value="single" ${m==='single'?'checked':''}>Single box</label>
+    </div>
+    <div class="formgrid">
+      <div class="field"><label class="label" for="ab_feat">Feature ID</label><input id="ab_feat" placeholder="BMA1" list="dl_feat"></div>
+      <div class="field"><label class="label" for="ab_hole">Hole ID</label><input id="ab_hole" placeholder="DD100" list="dl_hole"></div>
+      <div class="field" data-mode="range" ${m!=='range'?'hidden':''}><label class="label" for="ab_range">Box numbers</label><input id="ab_range" placeholder="1-4"></div>
+      <div class="field" data-mode="single" ${m!=='single'?'hidden':''}><label class="label" for="ab_box">Box number</label><input id="ab_box" inputmode="numeric" placeholder="5"></div>
+      <div class="field"><label class="label" for="ab_of">Of (total)</label><input id="ab_of" inputmode="numeric" placeholder="e.g. 6"></div>
+      <div class="field" data-mode="single" ${m!=='single'?'hidden':''}><label class="label" for="ab_from">From (m)</label><input id="ab_from" inputmode="decimal" placeholder="optional"></div>
+      <div class="field" data-mode="single" ${m!=='single'?'hidden':''}><label class="label" for="ab_to">To (m)</label><input id="ab_to" inputmode="decimal" placeholder="optional"></div>
+      ${cols.map(c=>`<div class="field"><label class="label" for="ab_c_${c.id}">${esc(c.name)}</label><input id="ab_c_${c.id}" data-col="${c.id}"></div>`).join('')}
+    </div>
+    <p id="ab_hint" class="small muted">${m==='range'?'Type a range like 1-4. Use commas for gaps, like 1-4, 7. Every box gets the same details except the box number.':'Adds one box. Use this for a box that was missed.'}</p>
+    <div class="row"><button class="primary" type="submit" id="ab_submit">${m==='range'?'Add boxes':'Add box'}</button></div>
+  </form>
+  <datalist id="dl_feat">${P.feats.filter(Boolean).map(f=>`<option value="${esc(f)}">`).join('')}</datalist>
+  <datalist id="dl_hole">${[...new Set(p.items.map(i=>i.hole).filter(Boolean))].sort(nat).map(h=>`<option value="${esc(h)}">`).join('')}</datalist>`;
+}
+function updateAbHint(){
+  const h=$('#ab_hint');if(!h)return;const feat=($('#ab_feat')||{}).value||'',hole=($('#ab_hole')||{}).value||'';
+  const id=[feat.trim(),hole.trim()].filter(Boolean).join('-')||'this hole';
+  if(S.addMode==='single'){const b=(($('#ab_box')||{}).value||'').trim();h.textContent=b?`Adds box ${b} to ${id}.`:'Adds one box. Use this for a box that was missed.';return;}
+  const raw=(($('#ab_range')||{}).value||'').trim();const boxes=parseRows(raw);
+  if(!raw){h.textContent='Type a range like 1-4. Use commas for gaps, like 1-4, 7. Every box gets the same details except the box number.';return;}
+  if(!boxes.length){h.textContent='Box numbers should look like 1-4 or 1-4, 7.';return;}
+  h.textContent=`Adds ${boxes.length} box${boxes.length>1?'es':''} to ${id}: box${boxes.length>1?'es':''} ${fmtRows(boxes)}.`;
+}
+
+/* wizard */
+function wizBar(p,step){
+  const st=(n,l)=>`<span class="st ${step===n?'on':step>n?'done':''}"><b>${step>n?'✓':n}</b>${l}</span>`;
+  return `<div class="appbar"><div class="wrap">
+    <button class="ghost" data-act="home" aria-label="Back to projects">← Projects</button>
+    <div class="crumb grow"><strong title="${esc(p.name)}">${esc(p.name)}</strong></div>
+    <div class="stepper">${st(1,'Hole info')}<span class="sep"></span>${st(2,'Racks')}<span class="sep"></span>${st(3,'Rack plan')}</div>
+  </div></div>`;
+}
+function groupHoles(P){const out=[],idx=new Map();P.sorted.forEach(it=>{const k=(it.feature||'')+'\u0000'+(it.hole||'');if(!idx.has(k)){idx.set(k,out.length);out.push({feature:it.feature||'',hole:it.hole||'',items:[]});}out[idx.get(k)].items.push(it);});return out;}
+function boxSummary(items){const nums=[],other=[];items.forEach(it=>{const b=String(it.box||'').trim();if(/^\d+$/.test(b))nums.push(+b);else if(b)other.push(b);});
+  const ofs=[...new Set(items.map(i=>String(i.of||'').trim()).filter(Boolean))];
+  return [fmtRows([...new Set(nums)]),...other].filter(Boolean).join(', ')+(ofs.length===1?` of ${ofs[0]}`:'');}
+function holesStep(p){
+  const P=computePlan(p);const holes=groupHoles(P);
+  return `${wizBar(p,1)}
+  <main class="wrap"><div class="wizard">
+    <div class="intro"><span class="label">Step 1 of 2</span><h1>Add hole information</h1>
+      <p>Import a spreadsheet of holes and boxes. Before anything is added you’ll see which spreadsheet column matched each field, so you can fix any that are wrong.</p></div>
+    <section class="panel">${importPanel(p)}</section>
+    <details class="manual" id="manualDetails" ${S.manualOpen?'open':''}><summary>Enter holes manually</summary><div class="body">${addBoxForm(p,P)}</div></details>
+    ${holes.length?`<section class="panel"><header><h2>Holes added</h2><span class="muted small mono">${holes.length} hole${holes.length>1?'s':''} · ${p.items.length} box${p.items.length>1?'es':''}</span></header>
+      <div class="tablewrap"><table><thead><tr><th>Feature</th><th>Hole ID</th><th class="num">Boxes</th><th>Box numbers</th><th></th></tr></thead><tbody>
+      ${holes.map(h=>`<tr><td><span class="chip" style="--h:${P.hue.get(h.feature)}">${esc(fname(h.feature))}</span></td><td class="mono">${esc(h.hole)}</td><td class="num mono">${h.items.length}</td><td class="mono small">${esc(boxSummary(h.items))}</td><td style="text-align:right"><button class="icon ghost danger" data-act="hole-del" data-feat="${esc(h.feature)}" data-hole="${esc(h.hole)}" aria-label="Remove hole">✕</button></td></tr>`).join('')}
+      </tbody></table></div></section>`:''}
+    <div class="wizfoot">
+      <button class="ghost" data-act="skip-holes">Import hole information later</button>
+      ${p.items.length?`<button class="primary" data-act="to-racks">Continue to rack setup →</button>`:''}
+    </div>
+  </div></main>`;
+}
+function genRacks(p,n){return Array.from({length:n},(_,i)=>makeRack(p,i));}
+function rackDims(p){const rows=parseInt(p.setup.defaultRows,10);if(!(rows>0))return{valid:false,rows:0,usable:0};const usable=rows-parseRows(p.setup.defaultBlocked).filter(b=>b<=rows).length;return{valid:usable>0,rows,usable};}
+function racksNeeded(p){const d=rackDims(p);if(!d.valid)return 0;if(!p.items.length)return 1;
+  for(let n=Math.max(1,Math.ceil(p.items.length/d.usable));n<=500;n++){if(!computePlan(Object.assign({},p,{racks:genRacks(p,n)})).unplaced.length)return n;}return 500;}
+function syncWizardRacks(p){const d=rackDims(p);if(!d.valid){p.racks=[];return;}
+  const n=p.setup.autoCount!==false?racksNeeded(p):Math.max(1,Math.min(500,parseInt(p.setup.rackCount,10)||1));p.setup.rackCount=n;p.racks=genRacks(p,n);}
+function fitRacks(p){const P0=computePlan(p);let guard=0;
+  while(computePlan(p).unplaced.length&&p.racks.length<500&&guard++<500)p.racks.push(makeRack(p,p.racks.length));
+  while(p.racks.length>1){const P=computePlan(p);const last=P.racks[P.racks.length-1];if(last.used>0)break;const t=p.racks.pop();if(computePlan(p).unplaced.length){p.racks.push(t);break;}}
+  p.setup.rackCount=p.racks.length;return P0;}
+function racksStep(p){
+  const s=p.setup,d=rackDims(p),auto=s.autoCount!==false,need=racksNeeded(p);
+  const P=computePlan(p);const cap=d.usable*p.racks.length;
+  return `${wizBar(p,2)}
+  <main class="wrap"><div class="wizard">
+    <div class="intro"><span class="label">Step 2 of 2</span><h1>Set up the racks</h1>
+      <p>Enter how many slots each rack has. The number of racks is worked out from your ${p.items.length} box${p.items.length===1?'':'es'}.</p></div>
+    <section class="panel">
+      <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr))">
+        <div class="field"><label class="label" for="wz_rows">Slots per rack</label><input id="wz_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="${esc(s.defaultRows)}" placeholder="e.g. 12"><span class="hint">All rows on a rack, including blocked ones</span></div>
+        <div class="field"><label class="label" for="wz_block">Blocked rows</label><input id="wz_block" data-k="setup" data-f="defaultBlocked" value="${esc(s.defaultBlocked)}" placeholder="e.g. 1-2"><span class="hint">Shown on the plan, never filled</span></div>
+        <div class="field"><label class="label" for="wz_count">Number of racks</label><input id="wz_count" type="number" min="1" max="500" data-k="setup" data-f="rackCount" value="${d.valid?p.racks.length:''}" ${d.valid?'':'disabled'} placeholder="Enter slots first">
+          <span class="hint">${!d.valid?'Calculated once slots per rack is entered':auto?`Calculated from ${p.items.length} boxes`:`You set this. ${need} needed for all boxes. <button type="button" class="ghost icon" data-act="auto-count" style="padding:0 4px;color:var(--accent)">Use ${need}</button>`}</span></div>
+      </div>
+      <hr class="sep">
+      <div class="formgrid">
+        <div class="field"><label class="label" for="wz_letter">Rack letter</label><input id="wz_letter" maxlength="3" data-k="setup" data-f="letter" value="${esc(s.letter)}"></div>
+        <div class="field"><label class="label" for="wz_start">Start number</label><input id="wz_start" type="number" min="0" data-k="setup" data-f="startNum" value="${esc(s.startNum)}"></div>
+        <div class="field"><label class="label" for="wz_pat">Naming</label><select id="wz_pat" data-k="setup" data-f="pattern">
+          <option value="number" ${s.pattern!=='letter'?'selected':''}>Number goes up</option><option value="letter" ${s.pattern==='letter'?'selected':''}>Letter goes up</option></select>
+          <span class="hint mono">${esc(rackName(s,0))}, ${esc(rackName(s,1))}, ${esc(rackName(s,2))}…</span></div>
+      </div>
+    </section>
+    ${!s.defaultRows?`<div class="msg info">Enter slots per rack to work out how many racks you need.</div>`:
+      !d.valid?`<div class="msg err">Every row is blocked, so nothing can be placed. Reduce the blocked rows.</div>`:
+      `<section class="panel"><header><h2>Preview</h2><span class="calcline"><span class="mono">${p.racks.length}</span> rack${p.racks.length>1?'s':''} × <span class="mono">${d.usable}</span> usable slots = <span class="mono">${cap}</span> slots for <span class="mono">${p.items.length}</span> boxes</span></header>
+        ${P.unplaced.length?`<div class="msg warn" style="margin-bottom:12px">${P.unplaced.length} box${P.unplaced.length>1?'es':''} won’t fit with ${p.racks.length} rack${p.racks.length>1?'s':''}. Add racks or slots.</div>`:`<p class="muted small" style="margin-bottom:10px">${Math.max(0,P.free)} slot${P.free===1?'':'s'} spare after all boxes are placed.</p>`}
+        <div class="shed">${P.racks.map(R=>rackElev(R,P,null,false)).join('')}</div></section>`}
+    <div class="wizfoot">
+      <button class="ghost" data-act="back-holes">← Back to hole info</button>
+      <button class="primary" data-act="build-racks" ${d.valid?'':'disabled'}>Build rack plan →</button>
+    </div>
+  </div></main>`;
+}
+
 /* import */
 const FIELDS=[['feature','Feature ID',['feature','featureid','feat','feature code','structure','area']],
   ['hole','Hole ID',['hole','holeid','hole id','hole_id','holename','holeno','holenumber','borehole','bore','drillhole','boreholeid']],
@@ -538,64 +679,87 @@ function detectHeader(rows){
   for(let r=0;r<Math.min(rows.length,15);r++){let score=0;(rows[r]||[]).forEach(c=>{const n=normH(c);if(n&&FIELDS.some(f=>f[2].map(normH).includes(n)))score++;});if(score>bestScore){bestScore=score;best=r;}}
   return bestScore?best+1:1;}
 function autoMap(p,imp){
-  const hdr=imp.headerRow>0?(imp.rows[imp.headerRow-1]||[]):[];const map={};const used=new Set();
+  const hdr=imp.headerRow>0?(imp.rows[imp.headerRow-1]||[]):[];const map={},auto={};const used=new Set();
   const find=(names)=>{const ns=names.map(normH);for(let i=0;i<hdr.length;i++){if(used.has(i))continue;if(ns.includes(normH(hdr[i]))){used.add(i);return i;}}return -1;};
-  FIELDS.forEach(([k,,syn])=>{map[k]=find(syn);});
-  p.customCols.forEach(c=>{map['c:'+c.id]=find([c.name]);});
-  imp.map=map;imp.split=map.feature<0;}
+  FIELDS.forEach(([k,,syn])=>{map[k]=find(syn);auto[k]=map[k]>=0;});
+  p.customCols.forEach(c=>{const k='c:'+c.id;map[k]=find([c.name]);auto[k]=map[k]>=0;});
+  imp.map=map;imp.auto=auto;
+  const data=dataRows(imp);const hi=map.hole;
+  imp.split=hi>=0&&data.slice(0,30).some(r=>String(r[hi]??'').includes('-'));}
+function dataRows(imp){return imp.rows.slice(imp.headerRow>0?imp.headerRow:0).filter(r=>r.some(v=>String(v??'').trim()!==''));}
 function importPanel(p){
   const imp=S.imp;
-  if(!imp)return `<div class="stack">
-    <p class="muted">Choose an .xlsx, .xls or .csv file. The planner looks for headings such as Feature ID, Hole ID, Box, Of, From and To. If your headings are different, you can point each field at a column letter instead.</p>
-    ${window.XLSX?'':'<p class="notice small">The Excel reader didn’t load (it needs an internet connection the first time). CSV files still work.</p>'}
-    <div class="row"><button class="primary" data-act="pick-sheet">Choose spreadsheet…</button></div></div>`;
+  if(!imp)return `<div class="dropzone" id="dropzone">
+    <strong>Drop a spreadsheet here</strong>
+    <span class="muted small" style="max-width:52ch">Excel (.xlsx, .xls) or CSV. Headings like Feature ID, Hole ID, Box, Of, From and To are matched automatically. You can change any match before importing.</span>
+    <button class="primary" data-act="pick-sheet">Choose file…</button>
+    ${window.XLSX?'':'<span class="small" style="color:var(--warn)">The Excel reader needs an internet connection the first time. CSV files work offline.</span>'}
+  </div>`;
   const ncols=Math.max(0,...imp.rows.slice(0,50).map(r=>r.length));
   const hdr=imp.headerRow>0?(imp.rows[imp.headerRow-1]||[]):[];
-  const opts=sel=>`<option value="-1"${sel<0?' selected':''}>Not imported</option>`+Array.from({length:ncols},(_,i)=>`<option value="${i}"${sel===i?' selected':''}>Column ${colLetter(i)}${hdr[i]!==undefined&&hdr[i]!==''?' · '+esc(String(hdr[i]).slice(0,30)):''}</option>`).join('');
+  const data=dataRows(imp);const res=buildImport(p,imp,data);
+  const opts=sel=>`<option value="-1"${sel<0?' selected':''}>Not imported</option>`+Array.from({length:ncols},(_,i)=>`<option value="${i}"${sel===i?' selected':''}>Column ${colLetter(i)}${hdr[i]!==undefined&&String(hdr[i]).trim()!==''?' · '+esc(String(hdr[i]).slice(0,28)):''}</option>`).join('');
+  const sample=i=>i<0?'':data.slice(0,3).map(r=>r[i]).filter(v=>String(v??'').trim()!=='').map(v=>esc(String(v).slice(0,16))).join(', ');
   const fields=FIELDS.map(f=>[f[0],f[1]]).concat(p.customCols.map(c=>['c:'+c.id,c.name]));
-  const data=imp.rows.slice(imp.headerRow>0?imp.headerRow:0).filter(r=>r.some(v=>String(v).trim()!==''));
-  const preview=buildImport(p,imp,data.slice(0,5));
+  const m=imp.map;const msgs=[];
+  if(!(m.hole>=0))msgs.push(['err','Hole ID isn’t matched to a column. Pick the column that holds hole IDs.']);
+  if(!(m.box>=0))msgs.push(['warn','Box isn’t matched, so boxes will be added without box numbers.']);
+  if(!(m.feature>=0)&&!imp.split)msgs.push(['warn','Feature ID isn’t matched. If hole IDs look like BMA1-DD100, tick “Split combined IDs” below.']);
+  if(res.skipped)msgs.push(['info',`${res.skipped} row${res.skipped>1?'s have':' has'} no hole or feature ID and will be skipped.`]);
+  if(res.expanded)msgs.push(['info',`Box ranges like 1-4 were found and will be split into separate boxes.`]);
+  const ok=m.hole>=0&&res.items.length>0;
+  const cols=p.customCols;const PREV=8;
   return `<div class="stack">
-    <div class="row" style="align-items:center"><span class="mono small">${esc(imp.fileName)}</span><span class="muted small">${data.length} data rows</span><span class="spacer"></span><button class="ghost" data-act="imp-cancel">Cancel</button></div>
+    <div class="row" style="align-items:center"><span class="label">File</span><span class="mono small">${esc(imp.fileName)}</span><span class="muted small">${data.length} data rows</span><span class="spacer"></span><button class="ghost" data-act="pick-sheet">Choose a different file</button><button class="ghost" data-act="imp-cancel">Cancel</button></div>
     <div class="formgrid">
       ${imp.sheets&&imp.sheets.length>1?`<div class="field"><label class="label" for="imp_sheet">Sheet</label><select id="imp_sheet" data-k="imp" data-f="sheet">${imp.sheets.map(s=>`<option ${s===imp.sheet?'selected':''}>${esc(s)}</option>`).join('')}</select></div>`:''}
-      <div class="field"><label class="label" for="imp_hr">Headings in row</label><input id="imp_hr" type="number" min="0" data-k="imp" data-f="headerRow" value="${imp.headerRow}"><span class="hint">0 = no heading row</span></div>
+      <div class="field"><label class="label" for="imp_hr">Headings are in row</label><input id="imp_hr" type="number" min="0" data-k="imp" data-f="headerRow" value="${imp.headerRow}"><span class="hint">0 means there is no heading row</span></div>
     </div>
-    <div class="mapgrid">
-      <span class="label hdr">Planner field</span><span class="label hdr">Spreadsheet column</span><span class="label hdr">Letter</span>
-      ${fields.map(([k,l])=>{const v=imp.map[k]??-1;return `<label for="imp_m_${k}">${esc(l)}</label><select id="imp_m_${k}" data-k="imp" data-f="map" data-field="${k}">${opts(v)}</select><input id="imp_l_${k}" data-k="imp" data-f="letter" data-field="${k}" value="${v>=0?colLetter(v):''}" placeholder="e.g. C" aria-label="${esc(l)} column letter or number" style="text-transform:uppercase">`;}).join('')}
-    </div>
+    <div><h3 style="margin-bottom:8px">Check the column matches</h3>
+    <div class="tablewrap"><table class="matchtable">
+      <thead><tr><th>Planner field</th><th>Spreadsheet column</th><th>Letter</th><th>First values</th><th>Status</th></tr></thead>
+      <tbody>${fields.map(([k,l])=>{const v=m[k]??-1;const req=k==='hole';
+        const fromSplit=k==='feature'&&v<0&&imp.split;
+        const st=fromSplit?'<span class="status ok">✓ Split from Hole ID</span>':v<0?(req?'<span class="status err">Required</span>':'<span class="status miss">Not matched</span>'):imp.auto&&imp.auto[k]?'<span class="status ok">✓ Matched</span>':'<span class="status manual">✓ Set by you</span>';
+        return `<tr class="${v<0&&req?'err':''}"><td><b>${esc(l)}</b></td><td><select id="imp_m_${k}" data-k="imp" data-f="map" data-field="${k}" aria-label="${esc(l)} column">${opts(v)}</select></td>
+          <td><input class="letter" id="imp_l_${k}" data-k="imp" data-f="letter" data-field="${k}" value="${v>=0?colLetter(v):''}" placeholder="–" aria-label="${esc(l)} column letter or number"></td>
+          <td class="mono small muted">${fromSplit?esc([...new Set(res.items.slice(0,12).map(i=>i.feature).filter(Boolean))].slice(0,3).join(', ')):sample(v)}</td><td>${st}</td></tr>`;}).join('')}</tbody>
+    </table></div>
+    <p class="muted small" style="margin-top:6px">Wrong match? Pick the right column from the list, or type its letter (C) or number (3).</p></div>
+    ${msgs.length?`<div class="msgs">${msgs.map(([t,x])=>`<div class="msg ${t}">${esc(x)}</div>`).join('')}</div>`:''}
     <div class="stack" style="gap:8px">
       <label class="check"><input type="checkbox" id="imp_split" data-k="imp" data-f="split" ${imp.split?'checked':''}> Split combined IDs like <span class="mono">BMA1-DD100</span> into Feature and Hole</label>
-      <label class="check"><input type="checkbox" id="imp_extras" data-k="imp" data-f="extras" ${imp.extras?'checked':''}> Bring in other columns as custom columns</label>
-      <label class="check"><input type="checkbox" id="imp_dup" data-k="imp" data-f="skipDup" ${imp.skipDup?'checked':''}> Skip boxes already in the plan (same feature, hole and box)</label>
-      <div class="row" style="align-items:center"><label class="check"><input type="radio" name="impmode" id="imp_mode_a" data-k="imp" data-f="mode" value="append" ${imp.mode!=='replace'?'checked':''}> Add to existing boxes</label>
-      <label class="check"><input type="radio" name="impmode" id="imp_mode_r" data-k="imp" data-f="mode" value="replace" ${imp.mode==='replace'?'checked':''}> Replace all boxes</label></div>
+      <label class="check"><input type="checkbox" id="imp_extras" data-k="imp" data-f="extras" ${imp.extras?'checked':''}> Bring in unmatched columns as custom columns</label>
+      ${p.items.length?`<label class="check"><input type="checkbox" id="imp_dup" data-k="imp" data-f="skipDup" ${imp.skipDup?'checked':''}> Skip boxes already in the plan (same feature, hole and box)</label>
+      <div class="row" style="align-items:center"><label class="check"><input type="radio" name="impmode" id="imp_mode_a" data-k="imp" data-f="mode" value="append" ${imp.mode!=='replace'?'checked':''}> Add to the ${p.items.length} existing boxes</label>
+      <label class="check"><input type="radio" name="impmode" id="imp_mode_r" data-k="imp" data-f="mode" value="replace" ${imp.mode==='replace'?'checked':''}> Replace all boxes</label></div>`:''}
     </div>
-    <div><span class="label">Preview</span>
-      <div class="tablewrap" style="margin-top:6px"><table><thead><tr><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From</th><th class="num">To</th></tr></thead>
-      <tbody>${preview.items.length?preview.items.map(it=>`<tr><td class="mono">${esc(it.feature)}</td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td></tr>`).join(''):`<tr><td colspan="6" class="muted">Nothing to import yet. Map at least Hole ID or Feature ID.</td></tr>`}</tbody></table></div>
+    <div><h3 style="margin-bottom:8px">Preview of boxes to add</h3>
+      <div class="tablewrap"><table><thead><tr><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}</tr></thead>
+      <tbody>${res.items.length?res.items.slice(0,PREV).map(it=>`<tr><td class="mono">${esc(it.feature)||'<span class="muted">–</span>'}</td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(c=>`<td>${esc(it.custom[c.id])}</td>`).join('')}</tr>`).join('')+(res.items.length>PREV?`<tr><td colspan="${6+cols.length}" class="muted">and ${res.items.length-PREV} more</td></tr>`:''):`<tr><td colspan="${6+cols.length}" class="muted">Nothing to import yet. Match Hole ID to a column.</td></tr>`}</tbody></table></div>
     </div>
-    <div class="row"><button class="primary" data-act="imp-run">Import ${data.length} rows</button></div>
+    <div class="row"><button class="primary" data-act="imp-run" ${ok?'':'disabled'}>Import ${res.items.length} box${res.items.length===1?'':'es'}</button></div>
   </div>`;
 }
-function buildImport(p,imp,dataRows){
+function buildImport(p,imp,rows){
   const m=imp.map;const get=(row,k)=>{const i=m[k];return i>=0&&row[i]!=null?String(row[i]).trim():'';};
   const hdr=imp.headerRow>0?(imp.rows[imp.headerRow-1]||[]):[];
   const mappedIdx=new Set(Object.values(m).filter(v=>v>=0));
   const extraCols=[];
   if(imp.extras){const ncols=Math.max(0,...imp.rows.slice(0,50).map(r=>r.length));for(let i=0;i<ncols;i++){if(mappedIdx.has(i))continue;const name=String(hdr[i]??'').trim()||('Column '+colLetter(i));extraCols.push({i,name});}}
-  const items=[];
-  for(const row of dataRows){
+  const items=[];let skipped=0,expanded=0;
+  for(const row of rows){
     let feature=get(row,'feature'),hole=get(row,'hole'),box=get(row,'box'),of=get(row,'of');
     if(imp.split&&hole.includes('-')){const k=hole.indexOf('-');const f=hole.slice(0,k).trim(),h=hole.slice(k+1).trim();if(!feature||feature===f){feature=f;hole=h;}}
     const bm=box.match(/^(\d+)\s*(?:\/|of)\s*(\d+)$/i);if(bm){box=bm[1];if(!of)of=bm[2];}
-    if(!feature&&!hole)continue;
+    if(!feature&&!hole){skipped++;continue;}
     const custom={};p.customCols.forEach(c=>{const v=get(row,'c:'+c.id);if(v)custom[c.id]=v;});
     const extras={};extraCols.forEach(e=>{const v=row[e.i]!=null?String(row[e.i]).trim():'';if(v)extras[e.name]=v;});
-    items.push({id:uid(),feature,hole,box,of,from:get(row,'from'),to:get(row,'to'),custom,_extras:extras});
+    let boxes=[box];
+    if(/^\d+\s*-\s*\d+(\s*,\s*\d+(\s*-\s*\d+)?)*$/.test(box)){const list=parseRows(box);if(list.length>1&&list.length<=1000){boxes=list.map(String);expanded++;}}
+    boxes.forEach(b=>items.push({id:uid(),feature,hole,box:b,of,from:boxes.length>1?'':get(row,'from'),to:boxes.length>1?'':get(row,'to'),custom:Object.assign({},custom),_extras:extras}));
   }
-  return{items,extraCols};
+  return{items,extraCols,skipped,expanded};
 }
 async function readSheetFile(file){
   const name=file.name;const buf=await file.arrayBuffer();
@@ -619,11 +783,11 @@ function parseCSV(text){
 
 /* plan */
 function planTab(p,P,M){
-  if(!p.racks.length)return `<div class="empty">No racks yet. Add racks in Setup.</div>`;
+  if(!p.racks.length)return `<div class="empty">No racks yet. Add racks on the Racks tab.</div>`;
   const counts=new Map();P.sorted.forEach(it=>counts.set(it.feature||'',(counts.get(it.feature||'')||0)+1));
   const cols=p.customCols;
   return `
-  ${P.unplaced.length?`<div class="notice"><strong>${P.unplaced.length} box${P.unplaced.length>1?'es':''} don't fit.</strong> Add racks or rows in Setup, or reduce spare slots in Advanced. First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
+  ${P.unplaced.length?`<div class="notice"><strong>${P.unplaced.length} box${P.unplaced.length>1?'es':''} don't fit.</strong> Add racks or rows on the Racks tab, or reduce spare slots in Advanced. First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
   <section class="panel">
     <header><h2>Shed overview</h2>
       <div class="legend small">${P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span> <span class="muted">${counts.get(f)||0}</span></span>`).join('')}
@@ -631,7 +795,7 @@ function planTab(p,P,M){
       ${P.gaps?`<span><span class="sw" style="border-style:dashed;border-color:var(--muted)"></span>Spare</span>`:''}
       ${M&&M.moved.size?`<span><span class="sw" style="box-shadow:inset 3px 0 0 var(--warn)"></span>Moves</span>`:''}</div>
     </header>
-    ${P.sorted.length?'':`<p class="muted" style="margin-bottom:10px">No boxes yet. Add or import them in <b>Core boxes</b>.</p>`}
+    ${P.sorted.length?'':`<p class="muted" style="margin-bottom:10px">No boxes yet. Add or import them in <b>Holes &amp; boxes</b>.</p>`}
     <div class="shed">${P.racks.map(R=>rackElev(R,P,M,false)).join('')}</div>
     <p class="muted small">Row 1 is the top of the rack. Click a rack to jump to its table.</p>
   </section>
@@ -648,7 +812,7 @@ function planTab(p,P,M){
           const it=c.item;let ch='';
           if(M){if(M.newIds.has(it.id))ch='<span class="pill new">New</span>';else if(M.moved.has(it.id)){const b=p.baseline.positions[it.id];ch=`<span class="pill moved">from ${esc(b.rackName)}-${b.slot}</span>`;}}
           return `<tr><td class="num mono">${c.slot}</td><td><span class="chip" style="--h:${P.hue.get(it.feature||'')}">${esc(fname(it.feature))}</span></td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(col=>`<td>${esc((it.custom||{})[col.id])}</td>`).join('')}${M?`<td>${ch}</td>`:''}</tr>`;
-        }).join('')||`<tr><td class="muted">This rack has no rows. Set rows in Setup.</td></tr>`}</tbody>
+        }).join('')||`<tr><td class="muted">This rack has no rows. Set rows on the Racks tab.</td></tr>`}</tbody>
       </table></div>
     </section>`;}).join('')}
   </div>`;
@@ -673,7 +837,7 @@ function movesTab(p,P,M){
   <section class="stack">
     <div class="row" style="justify-content:space-between;align-items:baseline"><h2>Move list</h2><span class="muted small">${M.count} box${M.count===1?'':'es'} to place${M.removed?`, ${M.removed} removed`:''}</span></div>
     ${M.steps.some(s=>s.kind==='stage')?`<p class="notice small">Some boxes need to swap places, so a few go to a staging area first and come back later in the list.</p>`:''}
-    ${M.noSpace.length?`<p class="notice small"><strong>${M.noSpace.length} box${M.noSpace.length>1?'es have':' has'} no slot</strong> in the new plan. Add racks or rows in Setup.</p>`:''}
+    ${M.noSpace.length?`<p class="notice small"><strong>${M.noSpace.length} box${M.noSpace.length>1?'es have':' has'} no slot</strong> in the new plan. Add racks or rows on the Racks tab.</p>`:''}
     <div class="tablewrap"><table>
       <thead><tr><th class="num">Step</th><th>Action</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th>From</th><th>To</th></tr></thead>
       <tbody>${M.steps.map((s,i)=>{const it=s.item||{};const lab={move:['moved','Move'],new:['new','Place new'],stage:['stage','To staging'],unstage:['moved','From staging'],remove:['stage','Remove']}[s.kind];
@@ -798,25 +962,34 @@ document.addEventListener('click',e=>{
     case 'feat-up':case 'feat-down':{const order=featureOrder(p);const i=order.indexOf(b.dataset.feat);moveIn(order,i,act==='feat-up'?-1:1);p.options.featureOrder=order;touch(p);render();break;}
     case 'feat-reset':p.options.featureOrder=[];p.options.useCustomOrder=false;touch(p);render();break;
     case 'col-del':S.confirm='col:'+id;render();break;
+    case 'skip-holes':p.stage='done';S.imp=null;S.tab=p.racks.length?'plan':'setup';touch(p);render();window.scrollTo(0,0);break;
+    case 'to-racks':p.stage='racks';S.imp=null;if(p.setup.autoCount===undefined)p.setup.autoCount=true;syncWizardRacks(p);touch(p);S.focusAfter='wz_rows';render();window.scrollTo(0,0);break;
+    case 'back-holes':p.stage='holes';touch(p);render();window.scrollTo(0,0);break;
+    case 'auto-count':p.setup.autoCount=true;syncWizardRacks(p);touch(p);render();break;
+    case 'build-racks':syncWizardRacks(p);if(!p.racks.length)return;p.stage='done';S.tab='plan';touch(p);render();window.scrollTo(0,0);toast('Rack plan built');break;
+    case 'fit-racks':{const before=p.racks.length;fitRacks(p);touch(p);render();toast(p.racks.length===before?`${before} rack${before>1?'s':''} already fits every box`:`Now ${p.racks.length} racks (was ${before})`);break;}
+    case 'hole-del':{const f=b.dataset.feat,h=b.dataset.hole;p.items=p.items.filter(it=>!((it.feature||'')===f&&(it.hole||'')===h));touch(p);render();break;}
     case 'col-del-yes':p.customCols=p.customCols.filter(c=>c.id!==id);p.items.forEach(it=>{if(it.custom)delete it.custom[id];});S.confirm=null;touch(p);render();break;
   }
 });
 
 document.addEventListener('submit',e=>{
   e.preventDefault();const f=e.target;
-  if(f.id==='newForm'){const name=$('#np_name').value.trim();if(!name){$('#np_name').focus();return;}const p=newProject(name,$('#np_site').value.trim());S.projects.push(p);persist();S.currentId=p.id;S.view='project';S.tab='setup';render();toast('Project created. Set up your racks.');}
-  else if(f.id==='addForm'){const p=cur();const feat=$('#ab_feat').value.trim(),hole=$('#ab_hole').value.trim();
-    if(!feat&&!hole){toast('Enter a Feature ID or Hole ID.');$('#ab_feat').focus();return;}
-    let b1=parseInt($('#ab_b1').value,10),b2=parseInt($('#ab_b2').value,10);const of=$('#ab_of').value.trim();
+  if(f.id==='newForm'){const name=$('#np_name').value.trim();if(!name){$('#np_name').focus();return;}const p=newProject(name,$('#np_site').value.trim());S.projects.push(p);persist();S.currentId=p.id;S.view='project';S.tab='plan';S.imp=null;render();window.scrollTo(0,0);}
+  else if(f.id==='addForm'){const p=cur();const feat=$('#ab_feat').value.trim(),hole=$('#ab_hole').value.trim(),of=$('#ab_of').value.trim();
+    if(!hole&&!feat){toast('Enter a Hole ID.');$('#ab_hole').focus();return;}
     const custom={};p.customCols.forEach(c=>{const el=document.getElementById('ab_c_'+c.id);if(el&&el.value.trim())custom[c.id]=el.value.trim();});
-    let added=0;
-    if(isNaN(b1)){p.items.push({id:uid(),feature:feat,hole,box:$('#ab_b1').value.trim(),of,from:$('#ab_from').value.trim(),to:$('#ab_to').value.trim(),custom});added=1;}
-    else{if(isNaN(b2))b2=b1;if(b2<b1)[b1,b2]=[b2,b1];if(b2-b1>999){toast('That range is too large. Add up to 1000 boxes at a time.');return;}
-      for(let b=b1;b<=b2;b++){const single=b1===b2;p.items.push({id:uid(),feature:feat,hole,box:String(b),of,from:single?$('#ab_from').value.trim():'',to:single?$('#ab_to').value.trim():'',custom:Object.assign({},custom)});added++;}}
-    touch(p);render();
-    const P=computePlan(p);const ps=P.pos[p.items[p.items.length-added].id];
-    toast(`Added ${added} box${added>1?'es':''}`+(ps?`, first one goes in ${ps.rackName}-${ps.slot}`:'. Not enough space, add racks in Setup'));
-    const nf=$('#ab_b1');if(nf){$('#ab_feat').value=feat;$('#ab_hole').value=hole;$('#ab_hole').focus();$('#ab_hole').select();}}
+    const before=p.items.length;
+    if(S.addMode==='single'){const box=$('#ab_box').value.trim();if(!box){toast('Enter the box number.');$('#ab_box').focus();return;}
+      p.items.push({id:uid(),feature:feat,hole,box,of,from:$('#ab_from').value.trim(),to:$('#ab_to').value.trim(),custom});}
+    else{const raw=$('#ab_range').value.trim();const boxes=parseRows(raw);
+      if(!boxes.length){toast('Enter box numbers like 1-4.');$('#ab_range').focus();return;}
+      if(boxes.length>1000){toast('That range is too large. Add up to 1000 boxes at a time.');return;}
+      boxes.forEach(b=>p.items.push({id:uid(),feature:feat,hole,box:String(b),of,from:'',to:'',custom:Object.assign({},custom)}));}
+    const added=p.items.length-before;touch(p);render();
+    const P=computePlan(p);const ps=P.pos[p.items[before].id];
+    toast(`Added ${added} box${added>1?'es':''} to ${[feat,hole].filter(Boolean).join('-')}`+(p.stage==='done'?(ps?`. First one goes in ${ps.rackName}-${ps.slot}`:'. Not enough space, add racks on the Racks tab'):''));
+    if($('#ab_feat')){$('#ab_feat').value=feat;$('#ab_hole').value=hole;$('#ab_of').value=of;const nx=S.addMode==='single'?$('#ab_box'):$('#ab_hole');nx.focus();nx.select();updateAbHint();}}
   else if(f.id==='colForm'){const p=cur();const n=$('#cc_new').value.trim();if(!n)return;p.customCols.push({id:uid(),name:n});touch(p);render();toast('Column added');}
 });
 
@@ -825,7 +998,11 @@ document.addEventListener('change',e=>{
   if(t.id==='fileProject'){const file=t.files[0];if(file)file.text().then(txt=>{try{const d=JSON.parse(txt);const pr=normalise(d.project||d);if(!Array.isArray(pr.racks))throw 0;
     if(S.projects.some(x=>x.id===pr.id))pr.id=uid();pr.updated=Date.now();S.projects.push(pr);persist();openProject(pr.id);toast('Project opened');}catch(err){toast('That file isn’t a Core Rack Planner project.');}});return;}
   if(t.id==='fileSheet'){const file=t.files[0];if(file)readSheetFile(file).catch(()=>toast('Couldn’t read that file. Try saving it as .xlsx or .csv.'));return;}
+  if(t.name==='abmode'){S.addMode=t.value;const form=$('#addForm');form.querySelectorAll('[data-mode]').forEach(el=>el.hidden=el.dataset.mode!==S.addMode);$('#ab_submit').textContent=S.addMode==='range'?'Add boxes':'Add box';updateAbHint();return;}
   const k=t.dataset.k;if(!k)return;const p=cur();if(!p)return;const f=t.dataset.f;
+  if(k==='setup'&&p.stage==='racks'){if(f==='rackCount'){p.setup.rackCount=Math.max(1,Math.min(500,parseInt(t.value,10)||1));p.setup.autoCount=false;}else p.setup[f]=t.value;
+    if(f==='defaultRows'&&!(parseInt(t.value,10)>0))p.setup.defaultRows=t.value===''?'':p.setup.defaultRows;
+    syncWizardRacks(p);touch(p);S.focusAfter=null;render();const el=document.getElementById(t.id);if(el)el.focus();return;}
   const live=!!t.closest('[data-live]');
   if(k==='proj'){p[f]=t.value;touch(p);if(f==='name'){const c=$('.crumb strong');if(c)c.textContent=t.value;}return;}
   if(k==='setup'){if(f==='rackCount'){setRackCount(p,parseInt(t.value,10)||1);}else p.setup[f]=t.value;touch(p);render();const el=document.getElementById(t.id);if(el)el.focus();return;}
@@ -839,20 +1016,25 @@ document.addEventListener('change',e=>{
   if(k==='imp'&&S.imp){const imp=S.imp;
     if(f==='sheet'){imp.sheet=t.value;imp.rows=sheetRows(imp.wb,imp.sheet);imp.headerRow=detectHeader(imp.rows);autoMap(p,imp);}
     else if(f==='headerRow'){imp.headerRow=Math.max(0,parseInt(t.value,10)||0);autoMap(p,imp);}
-    else if(f==='map')imp.map[t.dataset.field]=parseInt(t.value,10);
-    else if(f==='letter'){const i=letterToIdx(t.value);if(i===-2){toast('Use a column letter like C, or a number like 3.');return;}imp.map[t.dataset.field]=i;}
+    else if(f==='map'){imp.map[t.dataset.field]=parseInt(t.value,10);imp.auto[t.dataset.field]=false;}
+    else if(f==='letter'){const i=letterToIdx(t.value);if(i===-2){toast('Use a column letter like C, or a number like 3.');return;}imp.map[t.dataset.field]=i;imp.auto[t.dataset.field]=false;}
     else if(f==='mode')imp.mode=t.value;
     else imp[f]=t.checked;
     render();return;}
 });
 
-document.addEventListener('input',e=>{if(e.target.id==='coreFilter'){S.q=e.target.value;const p=cur();const tb=$('#coreBody');if(tb)tb.innerHTML=coreRows(p,computePlan(p));}});
+document.addEventListener('input',e=>{if(/^ab_(feat|hole|range|box)$/.test(e.target.id))updateAbHint();if(e.target.id==='coreFilter'){S.q=e.target.value;const p=cur();const tb=$('#coreBody');if(tb)tb.innerHTML=coreRows(p,computePlan(p));}});
 document.addEventListener('focusout',e=>{
   if(!S.dirty)return;const box=e.target.closest&&e.target.closest('[data-live]');if(!box)return;
   if(e.relatedTarget&&box.contains(e.relatedTarget))return;
   setTimeout(()=>{if(!S.dirty)return;const a=document.activeElement;if(a&&a.closest&&a.closest('[data-live]'))return;const y=window.scrollY;render();window.scrollTo(0,y);},0);
 });
 
+document.addEventListener('toggle',e=>{if(e.target.id==='manualDetails')S.manualOpen=e.target.open;},true);
+/* drop a spreadsheet */
+['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{const z=e.target.closest&&e.target.closest('#dropzone');if(!z||!e.dataTransfer||![...(e.dataTransfer.types||[])].includes('Files'))return;e.preventDefault();z.classList.add('over');}));
+document.addEventListener('dragleave',e=>{const z=e.target.closest&&e.target.closest('#dropzone');if(z&&!z.contains(e.relatedTarget))z.classList.remove('over');});
+document.addEventListener('drop',e=>{const z=e.target.closest&&e.target.closest('#dropzone');if(!z)return;e.preventDefault();z.classList.remove('over');const file=e.dataTransfer.files&&e.dataTransfer.files[0];if(file)readSheetFile(file).catch(()=>toast('Couldn’t read that file. Try saving it as .xlsx or .csv.'));});
 /* drag to reorder features */
 document.addEventListener('dragstart',e=>{const li=e.target.closest&&e.target.closest('#featlist li');if(!li)return;S.drag=li.dataset.feat;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',S.drag);}catch(_){}});
 document.addEventListener('dragover',e=>{const li=e.target.closest&&e.target.closest('#featlist li');if(!li||S.drag==null)return;e.preventDefault();document.querySelectorAll('#featlist li.dragover').forEach(x=>x.classList.remove('dragover'));li.classList.add('dragover');});
@@ -861,8 +1043,8 @@ document.addEventListener('drop',e=>{const li=e.target.closest&&e.target.closest
 document.addEventListener('dragend',()=>{S.drag=null;document.querySelectorAll('#featlist li.dragover').forEach(x=>x.classList.remove('dragover'));});
 
 function runImport(p){
-  const imp=S.imp;const data=imp.rows.slice(imp.headerRow>0?imp.headerRow:0).filter(r=>r.some(v=>String(v).trim()!==''));
-  if((imp.map.hole??-1)<0&&(imp.map.feature??-1)<0){toast('Map Hole ID or Feature ID to a column first.');return;}
+  const imp=S.imp;const data=dataRows(imp);
+  if(!(imp.map.hole>=0)){toast('Match Hole ID to a column first.');return;}
   const{items,extraCols}=buildImport(p,imp,data);
   if(imp.mode==='replace')p.items=[];
   const colIds={};extraCols.forEach(e=>{let c=p.customCols.find(x=>x.name.toLowerCase()===e.name.toLowerCase());if(!c){c={id:uid(),name:e.name};p.customCols.push(c);}colIds[e.name]=c.id;});
@@ -870,7 +1052,9 @@ function runImport(p){
   const have=new Set(p.items.map(key));let added=0,skipped=0;
   items.forEach(it=>{Object.entries(it._extras).forEach(([n,v])=>{it.custom[colIds[n]]=v;});delete it._extras;
     if(imp.skipDup&&it.box!==''&&have.has(key(it))){skipped++;return;}have.add(key(it));p.items.push(it);added++;});
-  S.imp=null;touch(p);render();toast(`Imported ${added} box${added===1?'':'es'}${skipped?`, skipped ${skipped} already in the plan`:''}`);
+  S.imp=null;
+  if(p.stage==='holes'&&added){p.stage='racks';if(p.setup.autoCount===undefined)p.setup.autoCount=true;syncWizardRacks(p);window.scrollTo(0,0);S.focusAfter='wz_rows';}
+  touch(p);render();toast(`Imported ${added} box${added===1?'':'es'}${skipped?`, skipped ${skipped} already in the plan`:''}`);
 }
 
 load();render();
