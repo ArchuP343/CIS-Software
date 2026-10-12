@@ -2,36 +2,39 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"></head><body>
 <title>Core Rack Planner</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: slim app bar + tabbed workspace. Plan view = shed elevation strip (racks drawn row 1 at top) above per-rack slot tables. */
+/* Layout: slim app bar + tabbed workspace. Brand: Sunwater cyan (from the logo) on deep navy, Manrope throughout. */
 :root{
-  --bg:#eceeeb; --surface:#ffffff; --surface-2:#f5f6f4; --ink:#1a2126; --muted:#5a656c; --line:#d2d7d3;
-  --accent:#0e6a78; --accent-ink:#ffffff; --accent-soft:#dcecee;
+  --bg:#f3f6f7; --surface:#ffffff; --surface-2:#f6f9fa; --ink:#0f2433; --muted:#5a6b76; --line:#dbe3e7;
+  --brand:#00b0c9; --brand-ink:#062130; --navy:#0b2433; --navy-ink:#ffffff;
+  --accent:#007f93; --accent-ink:#ffffff; --accent-soft:#dcf2f6;
   --warn:#9a4f08; --warn-soft:#fbecd8; --bad:#b3261e; --bad-soft:#f9dedc; --ok:#2b7549; --ok-soft:#dcefe2;
-  --hatch:#c3c9c4; --rackframe:#7b868c; --chipS:58%; --chipL:80%; --chipInk:#172024;
-  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
-  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --hatch:#c6d0d4; --rackframe:#6f8290; --chipS:58%; --chipL:80%; --chipInk:#0f2433;
+  --f-display:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-body:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  --r:6px;
+  --r:8px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#12181b; --surface:#1a2226; --surface-2:#212a2f; --ink:#e3e9e8; --muted:#98a4a9; --line:#323d43;
-  --accent:#55b6c4; --accent-ink:#0b1417; --accent-soft:#1b383e;
+  --bg:#0a1720; --surface:#10212c; --surface-2:#142a37; --ink:#e4eef2; --muted:#93a8b3; --line:#22394a;
+  --brand:#18c3db; --brand-ink:#04161f; --navy:#061520; --navy-ink:#ffffff;
+  --accent:#3fc9de; --accent-ink:#04161f; --accent-soft:#123845;
   --warn:#f0a95e; --warn-soft:#3b2b17; --bad:#f28b82; --bad-soft:#43201c; --ok:#80d09e; --ok-soft:#1a3424;
-  --hatch:#3a464c; --rackframe:#5d6a70; --chipS:42%; --chipL:36%; --chipInk:#eef3f2; color-scheme:dark;
+  --hatch:#2c4250; --rackframe:#57707f; --chipS:42%; --chipL:36%; --chipInk:#eef3f2; color-scheme:dark;
 }}
 :root[data-theme="dark"]{
-  --bg:#12181b; --surface:#1a2226; --surface-2:#212a2f; --ink:#e3e9e8; --muted:#98a4a9; --line:#323d43;
-  --accent:#55b6c4; --accent-ink:#0b1417; --accent-soft:#1b383e;
+  --bg:#0a1720; --surface:#10212c; --surface-2:#142a37; --ink:#e4eef2; --muted:#93a8b3; --line:#22394a;
+  --brand:#18c3db; --brand-ink:#04161f; --navy:#061520; --navy-ink:#ffffff;
+  --accent:#3fc9de; --accent-ink:#04161f; --accent-soft:#123845;
   --warn:#f0a95e; --warn-soft:#3b2b17; --bad:#f28b82; --bad-soft:#43201c; --ok:#80d09e; --ok-soft:#1a3424;
-  --hatch:#3a464c; --rackframe:#5d6a70; --chipS:42%; --chipL:36%; --chipInk:#eef3f2; color-scheme:dark;
+  --hatch:#2c4250; --rackframe:#57707f; --chipS:42%; --chipL:36%; --chipInk:#eef3f2; color-scheme:dark;
 }
 [hidden]{display:none!important}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
-h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;margin:0;text-wrap:balance;letter-spacing:-.01em}
 h1{font-size:1.9rem;line-height:1.1}
 h2{font-size:1.35rem}
 h3{font-size:1.1rem}
@@ -39,7 +42,7 @@ p{margin:0}
 .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
 .small{font-size:.85rem}
-.label{font-family:var(--f-display);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.label{font-family:var(--f-display);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
 a{color:var(--accent)}
 
 .wrap{padding-inline:16px;max-width:1400px;margin:0 auto}
@@ -50,7 +53,7 @@ a{color:var(--accent)}
 /* buttons & inputs */
 button,.btn{font:inherit;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r);padding:7px 12px;cursor:pointer;line-height:1.2;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 button:hover{border-color:var(--muted)}
-button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);font-weight:700}
 button.primary:hover{filter:brightness(1.08)}
 button.ghost{background:transparent;border-color:transparent;color:var(--muted)}
 button.ghost:hover{color:var(--ink);border-color:var(--line)}
@@ -81,9 +84,9 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);padding:0
 
 /* tabs */
 .tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
-.tab{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:12px 14px 9px;font-family:var(--f-display);font-size:1rem;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.tab{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:12px 14px 9px;font-family:var(--f-display);font-size:.95rem;font-weight:700;color:var(--muted);letter-spacing:0}
 .tab:hover{color:var(--ink);border-color:transparent;border-bottom-color:var(--line)}
-.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--brand)}
 .tab .count{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);margin-left:4px;font-weight:400}
 
 /* summary strip */
@@ -267,6 +270,30 @@ tr.locked-empty td{color:var(--muted);font-style:italic}
 .crumb .sub{font-family:var(--f-body);font-size:.85rem;color:var(--muted);font-weight:500}
 .readonly-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
 .cell.dim{opacity:.22}
+.tabrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.tabrow .tabs{border-bottom:0;flex:1 1 auto;min-width:0}
+.tabrow .searchbox{padding-block:6px}
+.menu{position:relative}
+.menu>summary{list-style:none;cursor:pointer}
+.menu>summary::-webkit-details-marker{display:none}
+.menu>summary::after{content:"▾";font-size:.75em;margin-left:2px;color:var(--muted)}
+.menu-pop{position:absolute;right:0;top:calc(100% + 6px);z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 10px 30px rgba(6,33,48,.16);padding:6px;display:flex;flex-direction:column;min-width:210px}
+.menu-pop button{border:0;justify-content:flex-start;width:100%;padding:9px 10px;border-radius:6px;background:transparent}
+.menu-pop button:hover{background:var(--surface-2)}
+.menu-pop .hint{font-size:.75rem;color:var(--muted);font-weight:400;margin-left:auto}
+.lockicon{border:0;background:none;padding:2px;margin-right:5px;color:var(--muted);opacity:.3;cursor:pointer;vertical-align:-2px;display:inline-flex}
+tr:hover .lockicon,.lockicon:focus-visible{opacity:1}
+.lockicon[aria-pressed="true"],.lockicon.on{opacity:1;color:var(--ink)}
+td.slotcell{white-space:nowrap}
+.homeband{background:var(--navy);color:var(--navy-ink)}
+.homeband .wrap{display:flex;flex-direction:column;gap:18px;padding-block:22px 34px}
+.homeband .topline{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.homeband .logo{height:34px;width:auto;display:block}
+.homeband .divider{width:1px;height:28px;background:rgba(255,255,255,.25)}
+.homeband .appname{font-weight:700;font-size:1.05rem;letter-spacing:.01em}
+.homeband h1{font-size:clamp(1.7rem,3.4vw,2.4rem);font-weight:800;letter-spacing:-.02em;color:var(--navy-ink)}
+.homeband p{color:rgba(255,255,255,.75);max-width:62ch}
+.homeband .savestate{color:rgba(255,255,255,.6)}
 .cell.hit{outline:2px solid var(--accent);outline-offset:-2px}
 tr.hit td{background:var(--accent-soft)}
 .searchbox{display:flex;gap:6px;align-items:center;flex:0 1 auto;min-width:0}
@@ -302,7 +329,7 @@ const int=(v,d)=>{const n=parseInt(v,10);return isNaN(n)?d:n;};
 const clone=o=>JSON.parse(JSON.stringify(o));
 const plural=(n,w,ws)=>`${n} ${n===1?w:(ws||w+'s')}`;
 const fmtDate=t=>t?new Date(t).toLocaleString([], {day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'}):'';
-const LIGHT={bg:'#f5f6f4',grid:'#e1e5e1',frame:'#7b868c',surface:'#ffffff',ink:'#1a2126',muted:'#5a656c',accent:'#0e6a78',warn:'#9a4f08',lockfill:'#e4e7e4',chipS:'58%',chipL:'74%'};
+const LIGHT={bg:'#f6f9fa',grid:'#e1e8eb',frame:'#6f8290',surface:'#ffffff',ink:'#0f2433',muted:'#5a6b76',accent:'#00a3bb',warn:'#9a4f08',lockfill:'#e4e7e4',chipS:'58%',chipL:'74%'};
 function pal(){try{const cs=getComputedStyle(document.documentElement);const g=n=>cs.getPropertyValue('--'+n).trim();
   const o={bg:g('surface-2'),grid:g('line'),frame:g('rackframe'),surface:g('surface'),ink:g('ink'),muted:g('muted'),accent:g('accent'),warn:g('warn'),lockfill:g('hatch'),chipS:g('chipS'),chipL:g('chipL')};
   return o.ink?o:LIGHT;}catch(e){return LIGHT;}}
@@ -348,7 +375,7 @@ function persist(){
   try{localStorage.setItem(KEY,JSON.stringify({version:2,projects:S.projects,seeded:true}));S.storageOk=true;}catch(e){S.storageOk=false;}
   const el=$('#savestate');if(el)el.textContent=saveText();
 }
-function saveText(){return S.storageOk?'Saved in this browser':'Not saved in this browser. Use “Save project file”.';}
+function saveText(){return S.storageOk?'Saved in this browser':'Not saved in this browser. Use Export → Project file.';}
 function migrateRecord(r){
   if(!r)return null;
   if(Array.isArray(r.moves)){r.plan=r.plan?normalisePlan(r.plan):null;r.moves=r.moves.map(m=>Object.assign({savedAt:0},m,{plan:normalisePlan(m.plan)}));return r;}
@@ -538,13 +565,12 @@ function moveStatus(m,pr){
 function homeView(){
   const list=[...S.projects].sort((a,b)=>b.updated-a.updated);
   return `
-  <div class="appbar"><div class="wrap"><div class="brand"><span class="brandmark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Core Rack Planner</div>
-  <span class="spacer"></span><span id="savestate" class="savestate">${esc(saveText())}</span></div></div>
-  <main class="wrap stack">
-    <section class="hero">
-      <h1>Plan core moves before the core moves</h1>
-      <p>Each project holds the saved layout of a core shed. Plan changes in a core move, check the move list, then save the move to the project.</p>
-    </section>
+  <header class="homeband"><div class="wrap">
+    <div class="topline"><img class="logo" src="data:image/png;base64,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" alt="Sunwater"><span class="divider" aria-hidden="true"></span><span class="appname">Core Rack Planner</span><span class="spacer"></span><span id="savestate" class="savestate small">${esc(saveText())}</span></div>
+    <h1>Plan core moves before the core moves</h1>
+    <p>Each project holds the saved layout of a core shed. Plan changes in a core move, check the move list, then save the move to the project.</p>
+  </div></header>
+  <main class="wrap stack" style="padding-top:24px">
     <div class="grid2">
       <section class="panel">
         <header><h2>New project</h2></header>
@@ -558,7 +584,7 @@ function homeView(){
       <section class="panel">
         <header><h2>Open a saved project</h2></header>
         <div class="stack">
-          <p class="muted">Projects and their core moves are kept in this browser automatically. To move them to another computer or share them, use <b>Save project file</b>, then open that file here.</p>
+          <p class="muted">Projects and their core moves are kept in this browser automatically. To move them to another computer or share them, open the project and choose <b>Export → Project file</b>, then open that file here.</p>
           <div class="row"><button data-act="open-file">Open project file (.json)</button></div>
         </div>
       </section>
@@ -567,7 +593,7 @@ function homeView(){
       <h2>Projects <span class="muted mono small">${list.length}</span></h2>
       ${list.length?list.map(pr=>projectCard(pr)).join(''):`<div class="empty">No projects yet. Create one above.</div>`}
     </section>
-    <footer class="foot">Data stays on this computer, in this browser. Clearing browser data removes it, so save a project file for anything you need to keep.</footer>
+    <footer class="foot">Data stays on this computer, in this browser. Clearing browser data removes it, so export a project file for anything you need to keep.</footer>
   </main>`;
 }
 function projectCard(pr){
@@ -603,12 +629,14 @@ function projectReadView(pr){
   return `
   <div class="appbar"><div class="wrap">
     <button class="ghost" data-act="home" aria-label="Back to projects">← Projects</button>
-    <div class="crumb"><strong title="${esc(pr.name)}">${esc(pr.name)}</strong><span class="pill draft">View only</span></div>
-    ${searchBar()}<span class="spacer"></span>
+    <div class="crumb grow"><strong title="${esc(pr.name)}">${esc(pr.name)}</strong><span class="pill draft">View only</span></div>
     <span id="savestate" class="savestate">${esc(saveText())}</span>
-    <div class="row" style="gap:6px"><button data-act="export-xlsx">Export Excel</button><button data-act="export-csv">Export CSV</button><button data-act="save-file">Save project file</button></div>
+    <details class="menu" id="exportMenu"><summary class="btn">Export</summary><div class="menu-pop" role="menu">
+      <button role="menuitem" data-act="export-xlsx">Excel workbook <span class="hint">.xlsx</span></button>
+      <button role="menuitem" data-act="export-csv">CSV file <span class="hint">.csv</span></button>
+      <button role="menuitem" data-act="save-file">Project file <span class="hint">.json</span></button></div></details>
   </div>
-  <div class="wrap"><nav class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-tab="${k}">${l}</button>`).join('')}</nav></div>
+  <div class="wrap tabrow"><nav class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-tab="${k}">${l}</button>`).join('')}</nav>${searchBar()}</div>
   </div>
   <main class="wrap">
     <div id="summary">${summary(p,P)}</div>
@@ -637,16 +665,14 @@ function moveView(){
   return `
   <div class="appbar"><div class="wrap">
     <button class="ghost" data-act="home" aria-label="Back to projects">← Projects</button>
-    <div class="crumb" style="flex-direction:column;align-items:flex-start;gap:0"><span class="sub">${esc(pr.name)} · core move</span><strong title="${esc(m.name)}">${esc(m.name)}</strong></div>
-    ${searchBar()}<span class="spacer"></span>
+    <div class="crumb" style="flex-direction:column;align-items:flex-start;gap:0"><span class="sub">${esc(pr.name)} · core move</span><strong title="${esc(m.name)}">${esc(m.name)}</strong></div><span class="spacer"></span>
     <span id="savestate" class="savestate">${esc(saveText())}</span>
-    <div class="row" style="gap:6px">
-      <button data-act="export-xlsx" title="One sheet per bay plus a full list">Export Excel</button>
-      <button data-act="export-csv">Export CSV</button>
-      <button data-act="save-file">Save project file</button>
-    </div>
+    <details class="menu" id="exportMenu"><summary class="btn">Export</summary><div class="menu-pop" role="menu">
+      <button role="menuitem" data-act="export-xlsx">Excel workbook <span class="hint">.xlsx</span></button>
+      <button role="menuitem" data-act="export-csv">CSV file <span class="hint">.csv</span></button>
+      <button role="menuitem" data-act="save-file">Project file <span class="hint">.json</span></button></div></details>
   </div>
-  <div class="wrap"><nav class="tabs" role="tablist">${tabs.map(([k,l,c])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-tab="${k}">${l}${c!==''?`<span class="count">${c}</span>`:''}</button>`).join('')}</nav></div>
+  <div class="wrap tabrow"><nav class="tabs" role="tablist">${tabs.map(([k,l,c])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-tab="${k}">${l}${c!==''?`<span class="count">${c}</span>`:''}</button>`).join('')}</nav>${searchBar()}</div>
   </div>
   <main class="wrap">
     <div id="summary">${summary(p,P)}</div>
@@ -737,6 +763,8 @@ function searchPanel(p,P){const M=S.match;if(!M)return'';
 function liveRender(id){const el0=document.getElementById(id);const pos=el0&&el0.selectionStart!=null?el0.selectionStart:null;const y=window.scrollY;render();window.scrollTo(0,y);const el=document.getElementById(id);
   if(el){el.focus();try{const n=pos??el.value.length;el.setSelectionRange(n,n);}catch(_){}}}
 
+const lockSvg=on=>on?'<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M5 7V5a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/></svg>'
+  :'<svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M5 7V5a3 3 0 0 1 5.8-1.1" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="3.2" y="7.2" width="9.6" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
 /* rack plan */
 function planTab(p,P,M,ro){
   if(!p.racks.length)return `<div class="empty">No bays yet. Open <b>Edit</b> and set up the bays under Edit Bay Settings.</div>`;
@@ -762,16 +790,17 @@ function planTab(p,P,M,ro){
       <header><div class="row" style="align-items:baseline;gap:8px"><h3>Bay ${esc(r.name)}</h3>${S.match&&S.match.byBay.get(r.id)?`<span class="pill held">${S.match.byBay.get(r.id)} found</span>`:''}${S.updated[r.id]?`<span class="pill upd">updated position, was ${esc(S.updated[r.id])}</span>`:''}</div>
         <div class="row" style="align-items:center;gap:10px"><span class="muted small mono">${R.used} of ${R.cells.filter(c=>!c.blocked).length} used</span>${lockBtn('lock-rack',r.id,R.locked,'Lock bay',ro)}</div></header>
       <div class="tablewrap"><table>
-        <thead><tr><th class="num">Slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}${M?'<th>Change</th>':''}${ro||R.locked?'':'<th>Slot lock</th>'}</tr></thead>
+        <thead><tr><th class="num">Slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}${M?'<th>Change</th>':''}</tr></thead>
         <tbody>${R.cells.map(c=>{const span=6+cols.length+(M?1:0);
-          const sl=ro||R.locked||c.blocked?'':`<td><button class="slotlock" aria-pressed="${c.pin==='slot'}" data-act="lock-slot" data-id="${r.id}" data-slot="${c.slot}">${c.pin==='slot'?'Locked':'Lock'}</button></td>`;
-          const tag=c.pin==='held'?' <span class="pill held">held</span>':c.pin==='slot'&&ro?' <span class="pill lock">locked</span>':'';
-          if(c.blocked)return `<tr class="blocked"><td class="num mono">${c.slot}</td><td colspan="${span+(ro||R.locked?0:1)}">Blocked, not for use</td></tr>`;
-          if(c.gap)return `<tr class="gap"><td class="num mono">${c.slot}</td><td colspan="${span}">Spare, kept free</td>${sl}</tr>`;
-          if(!c.item)return `<tr class="${c.closed?'locked-empty':'empty-slot'}"><td class="num mono">${c.slot}</td><td colspan="${span}">${R.locked?'Empty (bay locked)':c.closed?'Empty (slot locked)':'Empty'}</td>${sl}</tr>`;
+          const on=c.pin==='slot';const ic=lockSvg(on);
+          const sc=`<td class="num mono slotcell">${ro||R.locked?(on?`<span class="lockicon on" title="Slot locked">${ic}</span>`:''):`<button class="lockicon" aria-pressed="${on}" data-act="lock-slot" data-id="${r.id}" data-slot="${c.slot}" title="${on?'Unlock':'Lock'} slot ${esc(r.name)}-${c.slot}" aria-label="${on?'Unlock':'Lock'} slot ${esc(r.name)}-${c.slot}">${ic}</button>`}${c.slot}</td>`;
+          const tag=c.pin==='held'?' <span class="pill held">held</span>':'';
+          if(c.blocked)return `<tr class="blocked"><td class="num mono">${c.slot}</td><td colspan="${span}">Blocked, not for use</td></tr>`;
+          if(c.gap)return `<tr class="gap">${sc}<td colspan="${span}">Spare, kept free</td></tr>`;
+          if(!c.item)return `<tr class="${c.closed?'locked-empty':'empty-slot'}">${sc}<td colspan="${span}">${R.locked?'Empty (bay locked)':c.closed?'Empty (slot locked)':'Empty'}</td></tr>`;
           const it=c.item;let ch='';
           if(M){if(M.newIds.has(it.id))ch='<span class="pill new">New</span>';else if(M.moved.has(it.id)){const b=M.basePos[it.id];ch=`<span class="pill moved">from ${esc(loc(b))}</span>`;}}
-          return `<tr class="${S.match&&S.match.ids.has(it.id)?'hit':''}"><td class="num mono">${c.slot}</td><td><span class="chip" style="--h:${P.hue.get(it.feature||'')}">${esc(fname(it.feature))}</span></td><td class="mono">${esc(it.hole)}${tag}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(col=>`<td>${esc((it.custom||{})[col.id])}</td>`).join('')}${M?`<td>${ch}</td>`:''}${sl}</tr>`;
+          return `<tr class="${S.match&&S.match.ids.has(it.id)?'hit':''}">${sc}<td><span class="chip" style="--h:${P.hue.get(it.feature||'')}">${esc(fname(it.feature))}</span></td><td class="mono">${esc(it.hole)}${tag}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(col=>`<td>${esc((it.custom||{})[col.id])}</td>`).join('')}${M?`<td>${ch}</td>`:''}</tr>`;
         }).join('')||`<tr><td class="muted">This bay has no slots.</td></tr>`}</tbody>
       </table></div>
     </section>`;}).join('')}
@@ -1282,6 +1311,7 @@ function gotoRack(id){S.tab='plan';render();const el=document.getElementById('ra
 function saveMoveToProject(pr,m,quiet){pr.plan=clone(m.plan);pr.plan.name=pr.name;pr.plan.stage='done';deriveNames(pr.plan);const now=Date.now();m.savedAt=now;m.updated=Math.min(m.updated,now);pr.updated=now;persist();if(!quiet)toast(`Saved “${m.name}” to ${pr.name}`);}
 
 document.addEventListener('click',e=>{
+  document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menu-pop button'))d.open=false;});
   const b=e.target.closest('[data-act]');if(!b)return;
   const act=b.dataset.act,id=b.dataset.id,p=cur();
   if(act!=='cancel'&&!/^(del|clear|save-move|reorg)/.test(act))S.confirm=null;
