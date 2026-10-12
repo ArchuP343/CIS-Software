@@ -266,6 +266,16 @@ tr.locked-empty td{color:var(--muted);font-style:italic}
 .moves{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .crumb .sub{font-family:var(--f-body);font-size:.85rem;color:var(--muted);font-weight:500}
 .readonly-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.cell.dim{opacity:.22}
+.cell.hit{outline:2px solid var(--accent);outline-offset:-2px}
+tr.hit td{background:var(--accent-soft)}
+.searchbox{display:flex;gap:6px;align-items:center;flex:0 1 auto;min-width:0}
+.searchbox input{width:min(270px,56vw)}
+.chipbtn{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--surface-2)}
+.chipbtn button{border:0;background:transparent;padding:4px 10px}
+.chipbtn button.icon{padding:4px 8px 4px 2px}
+.condrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.condrow select{min-width:130px}
 </style>
 
 <div id="app"></div>
@@ -301,7 +311,7 @@ function pal(){try{const cs=getComputedStyle(document.documentElement);const g=n
    A project holds the saved shed state (plan). Core moves hold working copies (plan) that are saved back into the project.
    A plan: {name, stage, setup, racks (bays), map, customCols, options, items}. Bays: {id,name,rows (slots),blocked,x,y,locked,fixed,slotLocks,hold}. */
 const S={projects:[],seeded:false,view:'home',ctx:null,tab:'plan',q:'',confirm:null,imp:null,dirty:false,drag:null,storageOk:true,
-  addMode:'range',manualOpen:false,open:{},sel:null,updated:{},zoom:26,renaming:null,newMoveFor:null,focusAfter:null,modal:null,homeOpen:{}};
+  addMode:'range',manualOpen:false,open:{},sel:null,updated:{},zoom:26,renaming:null,newMoveFor:null,focusAfter:null,modal:null,homeOpen:{},filter:{q:'',conds:[],onlyMatches:true},filterOpen:false,match:null};
 
 function defaultsPlan(){return{
   stage:'done',setup:{rackCount:0,defaultRows:'',defaultBlocked:'',letter:'A',startNum:1,rowCount:1,backToBack:false,autoCount:true},
@@ -504,7 +514,7 @@ function render(){
   if(S.view==='work'&&!cur()&&!(projRec()&&!S.ctx.mid))S.view='home';
   const p=cur();
   const mc=$('#mapcanvas');const keep=mc?{l:mc.scrollLeft,t:mc.scrollTop}:null;
-  let html;
+  let html;S.match=null;
   if(S.view==='home'||!projRec())html=homeView();
   else if(isReadOnly())html=projectReadView(projRec());
   else html=p.stage==='holes'?holesStep(p):p.stage==='racks'?racksStep(p):moveView();
@@ -587,13 +597,14 @@ function projectCard(pr){
 
 /* read-only project */
 function projectReadView(pr){
-  const p=pr.plan;const P=computePlan(p);const held=P.held;
+  const p=pr.plan;const P=computePlan(p);const held=P.held;S.match=matchInfo(p,P);
   if(S.tab!=='plan'&&S.tab!=='map')S.tab='plan';
   const tabs=[['plan','Rack plan'],['map','Shed map']];
   return `
   <div class="appbar"><div class="wrap">
     <button class="ghost" data-act="home" aria-label="Back to projects">← Projects</button>
-    <div class="crumb grow"><strong title="${esc(pr.name)}">${esc(pr.name)}</strong><span class="pill draft">Saved project · view only</span></div>
+    <div class="crumb"><strong title="${esc(pr.name)}">${esc(pr.name)}</strong><span class="pill draft">View only</span></div>
+    ${searchBar()}<span class="spacer"></span>
     <span id="savestate" class="savestate">${esc(saveText())}</span>
     <div class="row" style="gap:6px"><button data-act="export-xlsx">Export Excel</button><button data-act="export-csv">Export CSV</button><button data-act="save-file">Save project file</button></div>
   </div>
@@ -602,15 +613,12 @@ function projectReadView(pr){
   <main class="wrap">
     <div id="summary">${summary(p,P)}</div>
     <div class="stack">
+      ${filterPanel(p)}${searchPanel(p,P)}
       <section class="panel readonly-bar">
         <p class="muted" style="max-width:70ch">This is the saved layout of the shed. To change it, plan the change in a core move and save that move to the project.</p>
-        <div class="row">
-          ${S.confirm==='reorg'?`<span class="small">Move every unlocked box into the best order?</span><button class="primary" data-act="reorg-yes">Reorganise</button><button data-act="cancel">Cancel</button>`:
-          `<button class="primary" data-act="reorg" ${held?'':'disabled'} title="${held?'':'Already in the best order'}">Reorganise shed into best order</button>`}
-          <button data-act="new-move" data-id="${pr.id}">+ New core move</button>
-        </div>
+        <button data-act="new-move" data-id="${pr.id}">+ New core move</button>
       </section>
-      ${held?`<div class="msg info">${plural(held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked. Reorganising moves them into the best order. Locked rows, bays and slots don’t change.</div>`:`<p class="muted small">The shed is in the best order. Locked rows, bays and slots are left as they are.</p>`}
+      ${held?`<div class="msg info">${plural(held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked. To move them into the best order, open a core move and press “Update unlocked bays to best positions”.</div>`:''}
       ${S.tab==='map'?mapTab(p,P,true):planTab(p,P,null,true)}
     </div>
     <footer class="foot">IDs read Row, Bay, Slot: A1-3 is Row A, Bay 1, Slot 3. Rows are lettered left to right on the shed map, bays numbered top to bottom, and slot 1 is the top of each bay.</footer>
@@ -619,7 +627,7 @@ function projectReadView(pr){
 
 /* core move workspace */
 function moveView(){
-  const pr=projRec(),m=moveRec(),p=m.plan,P=computePlan(p),M=computeMoves(p,P);
+  const pr=projRec(),m=moveRec(),p=m.plan,P=computePlan(p),M=computeMoves(p,P);S.match=matchInfo(p,P);
   const tabs=[['plan','Rack plan',''],['map','Shed map',''],['moves','Moves',M?M.steps.length:''],['edit','Edit','']];
   let body='';
   if(S.tab==='map')body=mapTab(p,P,false);
@@ -629,7 +637,8 @@ function moveView(){
   return `
   <div class="appbar"><div class="wrap">
     <button class="ghost" data-act="home" aria-label="Back to projects">← Projects</button>
-    <div class="crumb grow" style="flex-direction:column;align-items:flex-start;gap:0"><span class="sub">${esc(pr.name)} · core move</span><strong title="${esc(m.name)}">${esc(m.name)}</strong></div>
+    <div class="crumb" style="flex-direction:column;align-items:flex-start;gap:0"><span class="sub">${esc(pr.name)} · core move</span><strong title="${esc(m.name)}">${esc(m.name)}</strong></div>
+    ${searchBar()}<span class="spacer"></span>
     <span id="savestate" class="savestate">${esc(saveText())}</span>
     <div class="row" style="gap:6px">
       <button data-act="export-xlsx" title="One sheet per bay plus a full list">Export Excel</button>
@@ -642,6 +651,7 @@ function moveView(){
   <main class="wrap">
     <div id="summary">${summary(p,P)}</div>
     <div class="stack">
+      ${filterPanel(p)}${S.tab!=='edit'?searchPanel(p,P):''}
       ${P.held?`<div class="msg info row" style="align-items:center;justify-content:space-between"><span>${plural(P.held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked, so the rest of the plan isn’t disturbed.</span><button class="primary" data-act="reoptimise">Update unlocked bays to best positions</button></div>`:''}
       ${body}
     </div>
@@ -670,12 +680,62 @@ function rackElev(R,P,M,small){
   const cells=R.cells.map(c=>{const pin=c.pin==='slot'||c.pin==='bay'?' pinned':'';
     if(c.blocked)return `<div class="cell blocked" title="${esc(r.name)}-${c.slot}: blocked">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
     if(c.gap)return `<div class="cell gap" title="${esc(r.name)}-${c.slot}: spare (reserved)">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
-    if(c.item){const it=c.item;const moved=M&&M.moved.has(it.id);
-      return `<div class="cell filled${pin} ${moved?'moved':''}" style="--h:${P.hue.get(it.feature||'')}" title="${esc(r.name)}-${c.slot}: ${esc(fname(it.feature))} ${esc(it.hole)} box ${esc(it.box)}${it.of?' of '+esc(it.of):''}${c.pin?` (${c.pin==='held'?'held':'locked'})`:''}">${small?'':`<span class="n">${c.slot}</span><span>${esc(it.hole)}·${esc(it.box)}</span>`}</div>`;}
+    if(c.item){const it=c.item;const moved=M&&M.moved.has(it.id);const hl=S.match?(S.match.ids.has(it.id)?' hit':' dim'):'';
+      return `<div class="cell filled${pin}${hl} ${moved?'moved':''}" style="--h:${P.hue.get(it.feature||'')}" title="${esc(r.name)}-${c.slot}: ${esc(fname(it.feature))} ${esc(it.hole)} box ${esc(it.box)}${it.of?' of '+esc(it.of):''}${c.pin?` (${c.pin==='held'?'held':'locked'})`:''}">${small?'':`<span class="n">${c.slot}</span><span>${esc(it.hole)}·${esc(it.box)}</span>`}</div>`;}
     return `<div class="cell${pin}" title="${esc(r.name)}-${c.slot}: empty${c.pin?' (locked)':''}">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
   }).join('');
   return `<button class="rackcol" data-act="goto-rack" data-id="${r.id}" aria-label="Bay ${esc(r.name)}"><span class="rname">${esc(r.name)}</span><div class="rack ${small?'small':''} ${R.locked?'locked':''}">${cells||'<div class="cell">no slots</div>'}</div>${small?'':`<span class="rmeta">${R.used}/${R.cells.filter(c=>!c.blocked).length}${R.locked?' · locked':''}${S.updated[r.id]?' · moved':''}</span>`}</button>`;
 }
+
+/* search and filters */
+const FOPS={t:[['contains','contains'],['is','is exactly'],['starts','starts with'],['not','does not contain']],n:[['eq','equals'],['gte','at least'],['lte','at most'],['between','between']]};
+function filterFields(p){return[['feature','Feature ID','t'],['hole','Hole ID','t'],['box','Box','n'],['of','Of','n'],['from','From (m)','n'],['to','To (m)','n'],['row','Row','t'],['bay','Bay','t']].concat((p.customCols||[]).map(c=>['c:'+c.id,c.name,'t']));}
+const activeConds=()=>S.filter.conds.filter(c=>String(c.v??'').trim()!=='');
+const filterActive=()=>!!S.filter.q.trim()||activeConds().length>0;
+function fieldVal(it,field,P){const ps=P.pos[it.id];if(field==='bay')return ps?ps.rackName:'';if(field==='row')return ps?ps.rackName.replace(/\d+$/,''):'';if(field.startsWith('c:'))return (it.custom||{})[field.slice(2)]||'';return it[field]??'';}
+function condOk(c,it,P,type){const raw=fieldVal(it,c.field,P);
+  if(type==='n'){const x=parseFloat(raw),a=parseFloat(c.v),b=parseFloat(c.w);if(isNaN(x)||isNaN(a))return false;
+    if(c.op==='gte')return x>=a;if(c.op==='lte')return x<=a;if(c.op==='between'){const hi=isNaN(b)?a:b;return x>=Math.min(a,hi)&&x<=Math.max(a,hi);}return x===a;}
+  const s=String(raw).toLowerCase(),v=String(c.v).trim().toLowerCase();
+  if(c.op==='is')return s===v;if(c.op==='starts')return s.startsWith(v);if(c.op==='not')return !s.includes(v);return s.includes(v);}
+function matchInfo(p,P){if(!filterActive())return null;
+  const terms=S.filter.q.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);const conds=activeConds();const types=new Map(filterFields(p).map(f=>[f[0],f[2]]));
+  const ids=new Set(),byBay=new Map(),list=[];
+  P.sorted.forEach(it=>{
+    if(terms.length){const hay=[it.feature,it.hole,(it.feature||'')+'-'+(it.hole||'')].map(x=>String(x||'').toLowerCase());if(!terms.some(t=>hay.some(h=>h.includes(t))))return;}
+    if(!conds.every(c=>condOk(c,it,P,types.get(c.field)||'t')))return;
+    ids.add(it.id);list.push(it);const ps=P.pos[it.id];if(ps)byBay.set(ps.rackId,(byBay.get(ps.rackId)||0)+1);});
+  return{ids,byBay,list};}
+function searchBar(){const n=activeConds().length;
+  return `<div class="searchbox" role="search"><input id="gsearch" type="search" placeholder="Search holes, e.g. DD100" value="${esc(S.filter.q)}" aria-label="Search for boreholes" autocomplete="off">
+    <button data-act="filters-toggle" aria-pressed="${!!S.filterOpen}" class="${n?'primary':''}">Filters${n?` (${n})`:''}</button></div>`;}
+function condRow(p,c,i){const fs=filterFields(p);const f=fs.find(x=>x[0]===c.field)||fs[1];const ops=FOPS[f[2]];
+  return `<div class="condrow"><select id="cf_f_${i}" data-k="cond" data-i="${i}" data-f="field" aria-label="Field">${fs.map(x=>`<option value="${x[0]}" ${x[0]===f[0]?'selected':''}>${esc(x[1])}</option>`).join('')}</select>
+    <select id="cf_o_${i}" data-k="cond" data-i="${i}" data-f="op" aria-label="Condition">${ops.map(o=>`<option value="${o[0]}" ${o[0]===c.op?'selected':''}>${o[1]}</option>`).join('')}</select>
+    <input id="cf_v_${i}" data-k="cond" data-i="${i}" data-f="v" value="${esc(c.v||'')}" placeholder="${f[2]==='n'?'number':'text'}" style="width:150px" ${f[2]==='n'?'inputmode="decimal"':''} aria-label="Value">
+    ${c.op==='between'?`<span class="muted">and</span><input id="cf_w_${i}" data-k="cond" data-i="${i}" data-f="w" value="${esc(c.w||'')}" style="width:110px" inputmode="decimal" aria-label="Second value">`:''}
+    <button class="icon ghost danger" data-act="cond-del" data-i="${i}" aria-label="Remove condition">✕</button></div>`;}
+function filterPanel(p){if(!S.filterOpen)return'';const pr=projRec();const saved=pr.filters||[];
+  return `<section class="panel stack" style="gap:12px">
+    <header style="margin:0"><h2>Filters</h2><span class="muted small">Boxes must match every condition. The search box narrows the results further.</span></header>
+    ${saved.length?`<div class="row" style="align-items:center"><span class="label">Saved filters</span>${saved.map(f=>`<span class="chipbtn"><button data-act="filter-apply" data-id="${f.id}">${esc(f.name)}</button><button class="icon" data-act="filter-del" data-id="${f.id}" aria-label="Delete saved filter ${esc(f.name)}">✕</button></span>`).join('')}</div>`:''}
+    <div class="stack" style="gap:8px">${S.filter.conds.map((c,i)=>condRow(p,c,i)).join('')||'<p class="muted small">No conditions yet. Add one to filter by feature, hole, box, depth, row, bay or a custom column.</p>'}</div>
+    <div class="row"><button data-act="cond-add">+ Add condition</button>${S.filter.conds.length||S.filter.q?'<button class="ghost" data-act="filter-clear">Clear search and filters</button>':''}<span class="spacer"></span><button class="ghost" data-act="filters-toggle">Close</button></div>
+    ${activeConds().length?`<form id="filterSaveForm" class="row" style="align-items:flex-end" autocomplete="off"><div class="field"><label class="label" for="fs_name">Save these conditions as</label><input id="fs_name" placeholder="e.g. HQ core below 20 m"></div><button type="submit">Save filter</button></form>`:''}
+  </section>`;}
+function searchLocs(items,P){const m=new Map();items.forEach(it=>{const ps=P.pos[it.id];const k=ps?ps.rackName:'No space';if(!m.has(k))m.set(k,[]);if(ps)m.get(k).push(ps.slot);});
+  return[...m.entries()].map(([k,sl])=>sl.length?`${k} (${fmtRows([...new Set(sl)])})`:k).join(', ');}
+function searchPanel(p,P){const M=S.match;if(!M)return'';
+  const groups=[],idx=new Map();M.list.forEach(it=>{const k=(it.feature||'')+'\u0000'+(it.hole||'');if(!idx.has(k)){idx.set(k,groups.length);groups.push({feature:it.feature||'',hole:it.hole||'',items:[]});}groups[idx.get(k)].items.push(it);});
+  return `<section class="panel">
+    <header><h2>Search results</h2><div class="row" style="align-items:center"><span class="muted small">${plural(M.list.length,'box','boxes')} in ${plural(M.byBay.size,'bay')}</span>
+      <label class="check small"><input type="checkbox" id="sr_only" data-k="ui" data-f="onlyMatches" ${S.filter.onlyMatches?'checked':''}> Only show bays with results</label><button class="ghost" data-act="filter-clear">Clear</button></div></header>
+    ${groups.length?`<div class="tablewrap"><table><thead><tr><th>Feature</th><th>Hole ID</th><th class="num">Boxes</th><th>Box numbers</th><th>Location (bay and slots)</th><th></th></tr></thead><tbody>
+      ${groups.slice(0,40).map(g=>{const first=g.items.map(i=>P.pos[i.id]).find(Boolean);return `<tr><td><span class="chip" style="--h:${P.hue.get(g.feature)}">${esc(fname(g.feature))}</span></td><td class="mono">${esc(g.hole)}</td><td class="num mono">${g.items.length}</td><td class="mono small">${esc(boxSummary(g.items))}</td><td class="mono small">${esc(searchLocs(g.items,P))}</td><td style="text-align:right">${first?`<button class="icon" data-act="goto-rack" data-id="${first.rackId}">Show</button>`:''}</td></tr>`;}).join('')}
+      ${groups.length>40?`<tr><td colspan="6" class="muted">and ${groups.length-40} more holes</td></tr>`:''}</tbody></table></div>`:`<p class="muted">Nothing matches. Check the spelling, or loosen a filter.</p>`}
+  </section>`;}
+function liveRender(id){const el0=document.getElementById(id);const pos=el0&&el0.selectionStart!=null?el0.selectionStart:null;const y=window.scrollY;render();window.scrollTo(0,y);const el=document.getElementById(id);
+  if(el){el.focus();try{const n=pos??el.value.length;el.setSelectionRange(n,n);}catch(_){}}}
 
 /* rack plan */
 function planTab(p,P,M,ro){
@@ -696,9 +756,10 @@ function planTab(p,P,M,ro){
     <p class="muted small">Slot 1 is the top of the bay. Click a bay to jump to its table.${ro?'':' Locked bays and slots keep their boxes where they are, and everything else is planned around them.'}</p>
   </section>
   <div class="rackgrid">
-  ${P.racks.map(R=>{const r=R.rack;return `
+  ${S.match&&S.filter.onlyMatches&&!S.match.byBay.size?`<div class="empty">No bays hold boxes that match the search.</div>`:''}
+  ${P.racks.filter(R=>!S.match||!S.filter.onlyMatches||S.match.byBay.has(R.rack.id)).map(R=>{const r=R.rack;return `
     <section class="racksec" id="rack-${r.id}">
-      <header><div class="row" style="align-items:baseline;gap:8px"><h3>Bay ${esc(r.name)}</h3>${S.updated[r.id]?`<span class="pill upd">updated position, was ${esc(S.updated[r.id])}</span>`:''}</div>
+      <header><div class="row" style="align-items:baseline;gap:8px"><h3>Bay ${esc(r.name)}</h3>${S.match&&S.match.byBay.get(r.id)?`<span class="pill held">${S.match.byBay.get(r.id)} found</span>`:''}${S.updated[r.id]?`<span class="pill upd">updated position, was ${esc(S.updated[r.id])}</span>`:''}</div>
         <div class="row" style="align-items:center;gap:10px"><span class="muted small mono">${R.used} of ${R.cells.filter(c=>!c.blocked).length} used</span>${lockBtn('lock-rack',r.id,R.locked,'Lock bay',ro)}</div></header>
       <div class="tablewrap"><table>
         <thead><tr><th class="num">Slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}${M?'<th>Change</th>':''}${ro||R.locked?'':'<th>Slot lock</th>'}</tr></thead>
@@ -710,7 +771,7 @@ function planTab(p,P,M,ro){
           if(!c.item)return `<tr class="${c.closed?'locked-empty':'empty-slot'}"><td class="num mono">${c.slot}</td><td colspan="${span}">${R.locked?'Empty (bay locked)':c.closed?'Empty (slot locked)':'Empty'}</td>${sl}</tr>`;
           const it=c.item;let ch='';
           if(M){if(M.newIds.has(it.id))ch='<span class="pill new">New</span>';else if(M.moved.has(it.id)){const b=M.basePos[it.id];ch=`<span class="pill moved">from ${esc(loc(b))}</span>`;}}
-          return `<tr><td class="num mono">${c.slot}</td><td><span class="chip" style="--h:${P.hue.get(it.feature||'')}">${esc(fname(it.feature))}</span></td><td class="mono">${esc(it.hole)}${tag}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(col=>`<td>${esc((it.custom||{})[col.id])}</td>`).join('')}${M?`<td>${ch}</td>`:''}${sl}</tr>`;
+          return `<tr class="${S.match&&S.match.ids.has(it.id)?'hit':''}"><td class="num mono">${c.slot}</td><td><span class="chip" style="--h:${P.hue.get(it.feature||'')}">${esc(fname(it.feature))}</span></td><td class="mono">${esc(it.hole)}${tag}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(col=>`<td>${esc((it.custom||{})[col.id])}</td>`).join('')}${M?`<td>${ch}</td>`:''}${sl}</tr>`;
         }).join('')||`<tr><td class="muted">This bay has no slots.</td></tr>`}</tbody>
       </table></div>
     </section>`;}).join('')}
@@ -757,11 +818,13 @@ function mapSVG(p,P,o){
     s+=`<g ${o.interactive?`data-rowh="${g.key}" style="cursor:move"`:''}><rect x="${hx+1}" y="${hy+3}" width="${hw-2}" height="${C-6}" rx="4" fill="${rsel?pl.accent:pl.ink}"/><text x="${hx+hw/2}" y="${hy+C/2+4}" text-anchor="middle" font-size="${compact?Math.max(9,C*0.6):12}" font-weight="700" fill="${pl.surface}">${compact?esc(g.letter):`Row ${esc(g.letter)}`}</text></g>`;
     G.racks.forEach(R=>{const r=R.rack,x=r.x*C,y=r.y*C,w=RW*C,h=RL*C;
       const usable=R.cells.filter(c=>!c.blocked).length;const upd=!!o.interactive&&S.updated[r.id]!==undefined;const isSel=sel&&sel.type==='rack'&&sel.id===r.id;
-      const stroke=isSel?pl.accent:upd?pl.warn:R.locked?pl.ink:pl.frame;
-      s+=`<g data-rack="${r.id}" ${o.interactive?'style="cursor:grab"':''}><rect x="${x+1.5}" y="${y+1.5}" width="${w-3}" height="${h-3}" rx="3" fill="${R.locked?pl.lockfill:pl.surface}" stroke="${stroke}" stroke-width="${isSel||R.locked?2.5:1.5}" ${upd&&!isSel?'stroke-dasharray="5 3"':''}/>`;
+      const hits=o.interactive&&S.match?(S.match.byBay.get(r.id)||0):-1;
+      const stroke=isSel||hits>0?pl.accent:upd?pl.warn:R.locked?pl.ink:pl.frame;
+      s+=`<g data-rack="${r.id}" ${o.interactive?'style="cursor:grab"':''} ${hits===0?'opacity="0.3"':''}><rect x="${x+1.5}" y="${y+1.5}" width="${w-3}" height="${h-3}" rx="3" fill="${R.locked?pl.lockfill:pl.surface}" stroke="${stroke}" stroke-width="${isSel||R.locked||hits>0?2.5:1.5}" ${upd&&!isSel?'stroke-dasharray="5 3"':''}/>`;
       if(compact){s+=`<text x="${x+w/2}" y="${y+h/2}" text-anchor="middle" font-size="${Math.max(8,C*0.62)}" font-weight="700" fill="${pl.ink}">${esc(r.name)}</text>`;}
       else{s+=`<text x="${x+w/2}" y="${y+C*0.9}" text-anchor="middle" font-size="${Math.round(C*0.62)}" font-weight="700" fill="${pl.ink}">${esc(r.name)}</text>`;
         s+=`<text x="${x+w/2}" y="${y+C*1.5}" text-anchor="middle" font-size="${Math.max(9,C*0.38)}" fill="${pl.muted}">${R.used}/${usable}</text>`;
+        if(hits>0)s+=`<circle cx="${x+w-C*0.42}" cy="${y+C*0.42}" r="${C*0.34}" fill="${pl.accent}"/><text x="${x+w-C*0.42}" y="${y+C*0.42+C*0.13}" text-anchor="middle" font-size="${Math.max(8,C*0.36)}" font-weight="700" fill="${pl.surface}">${hits}</text>`;
         if(upd)s+=`<text x="${x+w/2}" y="${y+C*2.1}" text-anchor="middle" font-size="${Math.max(8,C*0.36)}" font-weight="700" fill="${pl.warn}">(updated</text><text x="${x+w/2}" y="${y+C*2.55}" text-anchor="middle" font-size="${Math.max(8,C*0.36)}" font-weight="700" fill="${pl.warn}">position)</text>`;
         if(R.locked)s+=`<text x="${x+w/2}" y="${y+h-C*0.85}" text-anchor="middle" font-size="${Math.max(8,C*0.34)}" font-weight="700" letter-spacing="1" fill="${pl.ink}">LOCKED</text>`;}
       const bx=x+C*0.3,bw=w-C*0.6,by=y+h-C*0.55,bh=Math.max(4,C*0.28);
@@ -1213,7 +1276,7 @@ function saveFile(p){download(safeName(p.name)+'.coreplan.json',new Blob([JSON.s
 
 /* ---------- actions ---------- */
 function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true;},3200);}
-function openCtx(pid,mid){S.ctx={pid,mid:mid||null};S.view='work';S.tab='plan';S.q='';S.imp=null;S.confirm=null;S.sel=null;S.updated={};S.renaming=null;S.newMoveFor=null;
+function openCtx(pid,mid){if(!S.ctx||S.ctx.pid!==pid){S.filter={q:'',conds:[],onlyMatches:true};S.filterOpen=false;}S.ctx={pid,mid:mid||null};S.view='work';S.tab='plan';S.q='';S.imp=null;S.confirm=null;S.sel=null;S.updated={};S.renaming=null;S.newMoveFor=null;
   const p=cur();if(p){const pr=projRec();p.name=mid?pr.name+' – '+moveRec().name:pr.name;}render();window.scrollTo(0,0);}
 function gotoRack(id){S.tab='plan';render();const el=document.getElementById('rack-'+id);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
 function saveMoveToProject(pr,m,quiet){pr.plan=clone(m.plan);pr.plan.name=pr.name;pr.plan.stage='done';deriveNames(pr.plan);const now=Date.now();m.savedAt=now;m.updated=Math.min(m.updated,now);pr.updated=now;persist();if(!quiet)toast(`Saved “${m.name}” to ${pr.name}`);}
@@ -1246,7 +1309,12 @@ document.addEventListener('click',e=>{
     case 'modal-close':S.modal=null;render();break;
     case 'modal-dl':modalDownload();break;
     case 'goto-rack':gotoRack(id);break;
-    case 'reorg':S.confirm='reorg';render();break;
+    case 'filters-toggle':S.filterOpen=!S.filterOpen;if(S.filterOpen&&!S.filter.conds.length){S.filter.conds.push({field:'hole',op:'contains',v:''});S.focusAfter='cf_v_0';}render();break;
+    case 'cond-add':S.filter.conds.push({field:'hole',op:'contains',v:''});S.focusAfter='cf_v_'+(S.filter.conds.length-1);render();break;
+    case 'cond-del':S.filter.conds.splice(+b.dataset.i,1);render();break;
+    case 'filter-clear':S.filter={q:'',conds:[],onlyMatches:S.filter.onlyMatches};render();break;
+    case 'filter-apply':{const f=(projRec().filters||[]).find(x=>x.id===id);if(f){S.filter.conds=clone(f.conds);render();toast(`Filter “${f.name}” applied`);}break;}
+    case 'filter-del':{const pr=projRec();pr.filters=(pr.filters||[]).filter(x=>x.id!==id);persist();render();break;}
     case 'reorg-yes':{const pr=projRec();reoptimise(pr.plan);pr.updated=Date.now();persist();S.confirm=null;render();toast('Shed reorganised into the best order');break;}
   }
   if(!editable)return;
@@ -1312,6 +1380,7 @@ document.addEventListener('submit',e=>{
     const P=computePlan(p);const ps=P.pos[p.items[before].id];
     toast(`Added ${plural(added,'box','boxes')} to ${[feat,hole].filter(Boolean).join('-')}`+(p.stage==='done'?(ps?`. First one goes in ${ps.rackName}-${ps.slot}`:'. Not enough space, add bays in Edit'):''));
     if($('#ab_feat')){$('#ab_feat').value=feat;$('#ab_hole').value=hole;$('#ab_of').value=of;const nx=S.addMode==='single'?$('#ab_box'):$('#ab_hole');nx.focus();nx.select();updateAbHint();}}
+  else if(f.id==='filterSaveForm'){const pr=projRec();const name=$('#fs_name').value.trim();if(!name){$('#fs_name').focus();return;}pr.filters=(pr.filters||[]).concat({id:uid(),name,conds:clone(activeConds())});persist();render();toast(`Saved filter “${name}”`);}
   else if(f.id==='colForm'){const p=cur();const n=$('#cc_new').value.trim();if(!n)return;p.customCols.push({id:uid(),name:n});touch(p);render();toast('Column added');}
 });
 
@@ -1323,7 +1392,9 @@ document.addEventListener('change',e=>{
   if(t.name==='abmode'){S.addMode=t.value;const form=$('#addForm');form.querySelectorAll('[data-mode]').forEach(el=>el.hidden=el.dataset.mode!==S.addMode);$('#ab_submit').textContent=S.addMode==='range'?'Add boxes':'Add box';updateAbHint();return;}
   const k=t.dataset.k;if(!k)return;const p=cur();const f=t.dataset.f;
   const val=t.type==='checkbox'?t.checked:t.value;
-  if(k==='ui'){if(f==='zoom'){S.zoom=int(val,26);render();}return;}
+  if(k==='ui'){if(f==='zoom'){S.zoom=int(val,26);render();}if(f==='onlyMatches'){S.filter.onlyMatches=val;render();}return;}
+  if(k==='cond'){const c=S.filter.conds[+t.dataset.i];if(!c)return;if(f==='v'||f==='w')return;c[f]=val;
+    if(f==='field'){const ty=(filterFields(p).find(x=>x[0]===val)||[0,0,'t'])[2];c.op=FOPS[ty][0][0];c.v='';c.w='';}render();return;}
   if(!p||isReadOnly())return;
   if(k==='setup'&&p.stage==='racks'){
     if(f==='rackCount'){p.setup.rackCount=clamp(int(val,1),1,500);p.setup.autoCount=false;}
@@ -1356,7 +1427,10 @@ document.addEventListener('change',e=>{
     render();return;}
 });
 
-document.addEventListener('input',e=>{if(/^ab_(feat|hole|range|box)$/.test(e.target.id))updateAbHint();if(e.target.id==='coreFilter'){S.q=e.target.value;const p=cur();const tb=$('#coreBody');if(tb)tb.innerHTML=coreRows(p,computePlan(p));}});
+let LIVE=null;
+document.addEventListener('input',e=>{const t=e.target;
+  if(t.id==='gsearch'){S.filter.q=t.value;clearTimeout(LIVE);LIVE=setTimeout(()=>liveRender('gsearch'),160);return;}
+  if(t.dataset&&t.dataset.k==='cond'&&(t.dataset.f==='v'||t.dataset.f==='w')){const c=S.filter.conds[+t.dataset.i];if(c){c[t.dataset.f]=t.value;clearTimeout(LIVE);const id=t.id;LIVE=setTimeout(()=>liveRender(id),220);}return;}if(/^ab_(feat|hole|range|box)$/.test(e.target.id))updateAbHint();if(e.target.id==='coreFilter'){S.q=e.target.value;const p=cur();const tb=$('#coreBody');if(tb)tb.innerHTML=coreRows(p,computePlan(p));}});
 document.addEventListener('focusout',e=>{
   if(!S.dirty)return;const box=e.target.closest&&e.target.closest('[data-live]');if(!box)return;
   if(e.relatedTarget&&box.contains(e.relatedTarget))return;
@@ -1417,7 +1491,9 @@ document.addEventListener('dragover',e=>{const li=e.target.closest&&e.target.clo
 document.addEventListener('drop',e=>{const li=e.target.closest&&e.target.closest('#featlist li');if(!li||S.drag==null)return;e.preventDefault();const p=cur();const order=featureOrder(p);
   const from=order.indexOf(S.drag),to=order.indexOf(li.dataset.feat);if(from>=0&&to>=0&&from!==to){const [x]=order.splice(from,1);order.splice(to,0,x);p.options.featureOrder=order;touch(p);}S.drag=null;render();});
 document.addEventListener('dragend',()=>{S.drag=null;document.querySelectorAll('#featlist li.dragover').forEach(x=>x.classList.remove('dragover'));});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.modal){S.modal=null;render();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.modal){S.modal=null;render();return;}
+  if(e.key==='Escape'&&e.target.id==='gsearch'&&S.filter.q){e.preventDefault();S.filter.q='';liveRender('gsearch');}
+  if(e.key==='Enter'&&e.target.id==='gsearch'){e.preventDefault();clearTimeout(LIVE);liveRender('gsearch');}});
 
 function runImport(p){
   const imp=S.imp;const data=dataRows(imp);
