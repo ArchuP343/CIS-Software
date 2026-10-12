@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"></head><body>
+<title>Core Rack Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: slim app bar + tabbed workspace. Plan view = shed elevation strip (racks drawn row 1 at top) above per-rack slot tables. */
+:root{
+  --bg:#eceeeb; --surface:#ffffff; --surface-2:#f5f6f4; --ink:#1a2126; --muted:#5a656c; --line:#d2d7d3;
+  --accent:#0e6a78; --accent-ink:#ffffff; --accent-soft:#dcecee;
+  --warn:#9a4f08; --warn-soft:#fbecd8; --bad:#b3261e; --bad-soft:#f9dedc; --ok:#2b7549; --ok-soft:#dcefe2;
+  --hatch:#c3c9c4; --rackframe:#7b868c; --chipS:58%; --chipL:80%; --chipInk:#172024;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12181b; --surface:#1a2226; --surface-2:#212a2f; --ink:#e3e9e8; --muted:#98a4a9; --line:#323d43;
+  --accent:#55b6c4; --accent-ink:#0b1417; --accent-soft:#1b383e;
+  --warn:#f0a95e; --warn-soft:#3b2b17; --bad:#f28b82; --bad-soft:#43201c; --ok:#80d09e; --ok-soft:#1a3424;
+  --hatch:#3a464c; --rackframe:#5d6a70; --chipS:42%; --chipL:36%; --chipInk:#eef3f2; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#12181b; --surface:#1a2226; --surface-2:#212a2f; --ink:#e3e9e8; --muted:#98a4a9; --line:#323d43;
+  --accent:#55b6c4; --accent-ink:#0b1417; --accent-soft:#1b383e;
+  --warn:#f0a95e; --warn-soft:#3b2b17; --bad:#f28b82; --bad-soft:#43201c; --ok:#80d09e; --ok-soft:#1a3424;
+  --hatch:#3a464c; --rackframe:#5d6a70; --chipS:42%; --chipL:36%; --chipInk:#eef3f2; color-scheme:dark;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:.01em}
+h1{font-size:1.9rem;line-height:1.1}
+h2{font-size:1.35rem}
+h3{font-size:1.1rem}
+p{margin:0}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.label{font-family:var(--f-display);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+a{color:var(--accent)}
+
+.wrap{padding-inline:16px;max-width:1400px;margin:0 auto}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.grow{flex:1 1 auto;min-width:0}
+
+/* buttons & inputs */
+button,.btn{font:inherit;font-weight:500;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:var(--r);padding:7px 12px;cursor:pointer;line-height:1.2;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.primary:hover{filter:brightness(1.08)}
+button.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+button.ghost:hover{color:var(--ink);border-color:var(--line)}
+button.danger{color:var(--bad)}
+button.danger.solid{background:var(--bad);color:var(--surface);border-color:var(--bad)}
+button.icon{padding:4px 8px;font-size:.9rem}
+button:disabled{opacity:.45;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:7px 9px;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);padding:0}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field input,.field select{width:100%}
+.field .hint{font-size:.78rem;color:var(--muted)}
+.check{display:flex;gap:8px;align-items:center;cursor:pointer}
+
+/* app bar */
+.appbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.appbar .wrap{display:flex;align-items:center;gap:12px;min-height:56px;flex-wrap:wrap;padding-block:8px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:1.15rem;letter-spacing:.02em}
+.brandmark{width:22px;height:22px;display:grid;grid-template-rows:repeat(4,1fr);gap:2px;padding:2px;border:2px solid var(--rackframe);border-radius:2px}
+.brandmark i{display:block;background:var(--accent);border-radius:1px}
+.brandmark i:nth-child(2){background:var(--hatch)}
+.crumb{display:flex;gap:8px;align-items:center;min-width:0}
+.crumb strong{font-family:var(--f-display);font-size:1.15rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.savestate{font-size:.8rem;color:var(--muted)}
+.spacer{flex:1}
+
+/* tabs */
+.tabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
+.tab{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;padding:12px 14px 9px;font-family:var(--f-display);font-size:1rem;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.tab:hover{color:var(--ink);border-color:transparent;border-bottom-color:var(--line)}
+.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab .count{font-family:var(--f-mono);font-size:.75rem;color:var(--muted);margin-left:4px;font-weight:400}
+
+/* summary strip */
+.summary{display:flex;flex-wrap:wrap;gap:6px 22px;padding-block:14px}
+.stat{display:flex;flex-direction:column}
+.stat b{font-family:var(--f-mono);font-size:1.15rem;font-weight:500;font-variant-numeric:tabular-nums}
+.stat.warn b{color:var(--warn)}
+.stat.bad b{color:var(--bad)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+.panel > header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px;align-items:start}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.notice{padding:10px 14px;border-radius:var(--r);background:var(--warn-soft);color:var(--ink);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent)}
+.notice.info{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+.notice strong{color:var(--warn)}
+.notice.info strong{color:var(--accent)}
+.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--r)}
+
+/* tables */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:6px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--f-display);font-weight:600;font-size:.82rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--surface-2);position:sticky;top:0}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right}
+td.mono{font-family:var(--f-mono);font-size:.86rem}
+tr.blocked td{background:repeating-linear-gradient(-45deg,transparent 0 6px,color-mix(in srgb,var(--hatch) 45%,transparent) 6px 8px);color:var(--muted)}
+tr.gap td{color:var(--muted);font-style:italic}
+tr.empty-slot td{color:var(--muted)}
+table.edit td{padding:3px 4px}
+table.edit input{width:100%;min-width:60px;padding:5px 7px;border-color:transparent;background:transparent}
+table.edit input:hover{border-color:var(--line)}
+table.edit input:focus{background:var(--surface);border-color:var(--accent)}
+table.edit td.w-s input{min-width:56px;width:64px}
+table.edit td.w-m input{min-width:90px}
+
+.chip{display:inline-flex;align-items:center;gap:6px;padding:1px 8px;border-radius:999px;font-size:.8rem;font-weight:600;background:hsl(var(--h,200) var(--chipS) var(--chipL));color:var(--chipInk);font-family:var(--f-mono)}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.75rem;font-weight:600}
+.pill.moved{background:var(--warn-soft);color:var(--warn)}
+.pill.new{background:var(--ok-soft);color:var(--ok)}
+.pill.stage{background:var(--bad-soft);color:var(--bad)}
+
+/* rack elevation */
+.shed{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 10px;align-items:flex-end}
+.rackcol{display:flex;flex-direction:column;align-items:center;gap:6px;flex:0 0 auto;cursor:pointer;background:none;border:0;padding:0;color:inherit}
+.rackcol:hover .rack{border-color:var(--accent)}
+.rackcol .rname{font-family:var(--f-display);font-weight:700;font-size:1rem}
+.rackcol .rmeta{font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
+.rack{border:3px solid var(--rackframe);border-top-width:5px;border-radius:2px;padding:3px;display:flex;flex-direction:column;gap:2px;background:var(--surface-2);width:112px}
+.rack.small{width:62px;border-width:2px;border-top-width:3px;padding:2px;gap:1px}
+.cell{height:18px;border-radius:2px;display:flex;align-items:center;gap:4px;padding:0 4px;font-family:var(--f-mono);font-size:.66rem;line-height:1;overflow:hidden;white-space:nowrap;background:var(--surface);border:1px solid var(--line)}
+.rack.small .cell{height:7px;padding:0;border-width:0}
+.cell .n{color:var(--muted);width:14px;text-align:right;flex:0 0 auto}
+.cell.filled{background:hsl(var(--h) var(--chipS) var(--chipL));border-color:transparent;color:var(--chipInk)}
+.cell.filled .n{color:inherit;opacity:.6}
+.cell.blocked{background:repeating-linear-gradient(-45deg,var(--surface) 0 3px,var(--hatch) 3px 5px);border-color:var(--hatch)}
+.cell.gap{border-style:dashed;border-color:var(--muted);background:transparent}
+.cell.moved{box-shadow:inset 3px 0 0 var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.legend .sw{display:inline-block;width:14px;height:10px;border-radius:2px;vertical-align:middle;margin-right:5px;border:1px solid var(--line)}
+
+.rackgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,560px),1fr));gap:16px;align-items:start}
+.racksec > header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:var(--r) var(--r) 0 0}
+.racksec > header h3{font-size:1.25rem}
+.racksec .tablewrap{border-radius:0 0 var(--r) var(--r)}
+
+/* home */
+.hero{padding-block:36px 8px;display:flex;flex-direction:column;gap:8px}
+.hero p{max-width:64ch;color:var(--muted)}
+.projlist{display:grid;gap:10px}
+.projcard{display:grid;grid-template-columns:1fr auto;gap:10px 16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.projcard h3{font-size:1.2rem}
+.projcard .meta{display:flex;flex-wrap:wrap;gap:4px 16px;color:var(--muted);font-size:.85rem}
+.projcard .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:600px){.projcard{grid-template-columns:1fr}.projcard .acts{justify-content:flex-start}}
+
+.featlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.featlist li{display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.featlist li.dragover{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.featlist .handle{cursor:grab;color:var(--muted);font-size:1rem;user-select:none}
+.featlist .pos{font-family:var(--f-mono);color:var(--muted);width:22px;text-align:right}
+
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.mapgrid{display:grid;grid-template-columns:minmax(110px,160px) minmax(0,1fr) 70px;gap:8px 10px;align-items:center}
+.mapgrid .hdr{font-size:.75rem}
+
+input::placeholder{text-transform:none}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--r);z-index:50;max-width:calc(100% - 32px);font-size:.9rem;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+footer.foot{padding-block:28px;color:var(--muted);font-size:.8rem}
+@media (prefers-reduced-motion:no-preference){button,.cell,.tab{transition:border-color .15s,background-color .15s,color .15s}}
+</style>
+
+<div id="app"></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<input type="file" id="fileProject" accept=".json,application/json" hidden>
+<input type="file" id="fileSheet" accept=".xlsx,.xls,.xlsm,.csv,.txt,.tsv" hidden>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+'use strict';
+const KEY='coreRackPlanner.v1';
+const $=(s,r=document)=>r.querySelector(s);
+const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-3);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const coll=new Intl.Collator('en',{numeric:true,sensitivity:'base'});
+const nat=(a,b)=>coll.compare(String(a??''),String(b??''));
+const numv=v=>{if(v===''||v==null)return Infinity;const n=parseFloat(v);return isNaN(n)?Infinity:n;};
+const colLetter=i=>{let s='';i=i+1;while(i>0){const r=(i-1)%26;s=String.fromCharCode(65+r)+s;i=Math.floor((i-1)/26);}return s;};
+const letterToIdx=s=>{s=String(s||'').trim().toUpperCase();if(!s)return -1;if(/^\d+$/.test(s))return (+s)-1;if(!/^[A-Z]+$/.test(s))return -2;let n=0;for(const ch of s)n=n*26+(ch.charCodeAt(0)-64);return n-1;};
+
+/* ---------- state ---------- */
+const S={projects:[],seeded:false,view:'home',currentId:null,tab:'plan',q:'',confirm:null,imp:null,dirty:false,drag:null,storageOk:true};
+
+function defaults(){return{
+  setup:{rackCount:4,defaultRows:12,defaultBlocked:'',letter:'A',startNum:1,pattern:'number'},
+  racks:[],customCols:[],
+  options:{useCustomOrder:false,featureOrder:[],gapAfterHole:0,gapAfterFeature:0,newRackPerFeature:false},
+  items:[],baseline:null};}
+
+function makeRack(p,i){return{id:uid(),name:rackName(p.setup,i),rows:+p.setup.defaultRows||1,blocked:parseRows(p.setup.defaultBlocked)};}
+function newProject(name,site){
+  const p=Object.assign({id:uid(),name:name||'Untitled plan',site:site||'',notes:'',created:Date.now(),updated:Date.now()},defaults());
+  for(let i=0;i<p.setup.rackCount;i++)p.racks.push(makeRack(p,i));
+  return p;}
+
+function exampleProject(){
+  const p=newProject('Example: Shed 2 core move','Example data, safe to delete');
+  p.setup.defaultRows=12;p.setup.defaultBlocked='1-2';p.setup.rackCount=4;
+  p.racks=[];for(let i=0;i<4;i++)p.racks.push(makeRack(p,i));
+  const col={id:uid(),name:'Core size'};p.customCols=[col];
+  const holes=[['ZXY','DD101',4,'NQ'],['BMA2','DD109',5,'HQ'],['BMA1','DD101',4,'HQ'],['BMA2','DD105',3,'HQ'],['BMA1','DD100',6,'HQ']];
+  holes.forEach(([f,h,n,size],hi)=>{let d=0;for(let b=1;b<=n;b++){const len=4.6+((b*7+hi*3)%9)/10;const from=d;d=+(d+len).toFixed(2);
+    p.items.push({id:uid(),feature:f,hole:h,box:String(b),of:String(n),from:from.toFixed(2),to:d.toFixed(2),custom:{[col.id]:size}});}});
+  return p;}
+
+function load(){
+  try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);if(Array.isArray(d.projects))S.projects=d.projects.map(normalise);S.seeded=!!d.seeded;}}
+  catch(e){S.storageOk=false;}
+  if(!S.seeded&&!S.projects.length){S.projects=[exampleProject()];S.seeded=true;persist(true);}
+}
+function persist(quiet){
+  try{localStorage.setItem(KEY,JSON.stringify({projects:S.projects,seeded:true}));S.storageOk=true;}
+  catch(e){S.storageOk=false;}
+  const el=$('#savestate');if(el)el.textContent=saveText();
+}
+function saveText(){return S.storageOk?'Saved in this browser':'Not saved in this browser. Use “Save project file”.';}
+function normalise(p){const d=defaults();p.setup=Object.assign(d.setup,p.setup||{});p.options=Object.assign(d.options,p.options||{});
+  p.racks=(p.racks||[]).map(r=>({id:r.id||uid(),name:r.name||'',rows:+r.rows||0,blocked:Array.isArray(r.blocked)?r.blocked:parseRows(r.blocked)}));
+  p.customCols=p.customCols||[];p.items=(p.items||[]).map(it=>Object.assign({id:uid(),feature:'',hole:'',box:'',of:'',from:'',to:'',custom:{}},it));
+  p.baseline=p.baseline||null;p.id=p.id||uid();return p;}
+const cur=()=>S.projects.find(p=>p.id===S.currentId);
+function touch(p){p.updated=Date.now();persist();}
+
+/* ---------- helpers ---------- */
+function parseRows(str){if(Array.isArray(str))return str;const out=new Set();String(str||'').split(/[,;\s]+/).forEach(t=>{if(!t)return;const m=t.match(/^(\d+)-(\d+)$/);
+  if(m){let a=+m[1],b=+m[2];if(a>b)[a,b]=[b,a];for(let i=a;i<=b&&i-a<1000;i++)out.add(i);}else if(/^\d+$/.test(t))out.add(+t);});
+  return[...out].sort((a,b)=>a-b);}
+function fmtRows(arr){if(!arr||!arr.length)return'';const a=[...arr].sort((x,y)=>x-y),out=[];let s=a[0],e=a[0];
+  for(let i=1;i<=a.length;i++){if(a[i]===e+1){e=a[i];continue;}out.push(s===e?String(s):s+'-'+e);s=e=a[i];}return out.join(', ');}
+function letterAdd(L,i){let code=0;for(const ch of L)code=code*26+(ch.charCodeAt(0)-64);code+=i;let s='';while(code>0){const r=(code-1)%26;s=String.fromCharCode(65+r)+s;code=Math.floor((code-1)/26);}return s;}
+function rackName(setup,i){const L=(String(setup.letter||'A').toUpperCase().replace(/[^A-Z]/g,''))||'A';const n=parseInt(setup.startNum,10);const start=isNaN(n)?1:n;
+  return setup.pattern==='letter'?letterAdd(L,i)+start:L+(start+i);}
+function featureOrder(p){
+  const feats=[...new Set(p.items.map(i=>i.feature||''))].sort((a,b)=>(a===''?1:0)-(b===''?1:0)||nat(a,b));
+  if(!p.options.useCustomOrder)return feats;
+  const custom=(p.options.featureOrder||[]).filter(f=>feats.includes(f));
+  return custom.concat(feats.filter(f=>!custom.includes(f)));}
+const fname=f=>f===''?'(no feature)':f;
+
+/* ---------- planning engine ---------- */
+function computePlan(p){
+  const feats=featureOrder(p);
+  const rank=new Map(feats.map((f,i)=>[f,i]));
+  const hue=new Map(feats.map((f,i)=>[f,Math.round((i*137.508+192)%360)]));
+  const sorted=[...p.items].sort((a,b)=>(rank.get(a.feature||'')-rank.get(b.feature||''))||nat(a.hole,b.hole)||(numv(a.box)-numv(b.box))||(numv(a.from)-numv(b.from))||(numv(a.to)-numv(b.to))||nat(a.id,b.id));
+  const o=p.options;
+  const racks=p.racks.map(r=>({rack:r,used:0,cells:Array.from({length:Math.max(0,r.rows|0)},(_,i)=>({slot:i+1,blocked:(r.blocked||[]).includes(i+1),item:null,gap:false}))}));
+  let ri=0,si=0;
+  const next=()=>{while(ri<racks.length){const c=racks[ri].cells;while(si<c.length&&c[si].blocked)si++;if(si<c.length)return c[si];ri++;si=0;}return null;};
+  const skip=n=>{for(let k=0;k<n;k++){const c=next();if(!c)return;c.gap=true;si++;}};
+  const pos={},unplaced=[];let prev=null;
+  for(const it of sorted){
+    if(prev){const nf=(prev.feature||'')!==(it.feature||''),nh=nf||prev.hole!==it.hole;
+      if(nf&&o.newRackPerFeature){if(ri<racks.length&&racks[ri].used>0){ri++;si=0;}}
+      else if(nf)skip(Math.max(+o.gapAfterFeature||0,+o.gapAfterHole||0));
+      else if(nh)skip(+o.gapAfterHole||0);}
+    prev=it;
+    const c=next();if(!c){unplaced.push(it);continue;}
+    c.item=it;racks[ri].used++;si++;
+    const r=racks[ri].rack;pos[it.id]={rackId:r.id,rackName:r.name,slot:c.slot,key:r.id+'|'+c.slot};
+  }
+  let usable=0,gaps=0;racks.forEach(R=>R.cells.forEach(c=>{if(!c.blocked)usable++;if(c.gap)gaps++;}));
+  const placed=sorted.length-unplaced.length;
+  return{sorted,racks,pos,unplaced,hue,feats,usable,gaps,placed,free:usable-placed-gaps};
+}
+
+function computeMoves(p,P){
+  const B=p.baseline;if(!B)return null;
+  const ids=new Set(p.items.map(i=>i.id));
+  const removed=Object.entries(B.positions).filter(([id])=>!ids.has(id)).map(([id,b])=>({kind:'remove',item:b.snap,from:b,to:null}));
+  const pending=[];const noSpace=[];
+  for(const it of P.sorted){const c=P.pos[it.id],b=B.positions[it.id];
+    if(!c){noSpace.push(it);continue;}
+    if(!b)pending.push({kind:'new',item:it,from:null,to:c});
+    else if(b.key!==c.key)pending.push({kind:'move',item:it,from:b,to:c});}
+  const occ=new Map();
+  for(const it of p.items){const b=B.positions[it.id];if(b)occ.set(b.key,it.id);}
+  const steps=[...removed];const work=pending.slice();let guard=0;
+  while(work.length&&guard++<10000){
+    let progressed=false;
+    for(let i=0;i<work.length;i++){const m=work[i];const o=occ.get(m.to.key);
+      if(o===undefined||o===m.item.id){if(m.from&&m.from.key&&occ.get(m.from.key)===m.item.id)occ.delete(m.from.key);occ.set(m.to.key,m.item.id);steps.push(m);work.splice(i,1);i--;progressed=true;}}
+    if(!progressed){const m=work[0];steps.push({kind:'stage',item:m.item,from:m.from,to:{label:'Staging area',key:'__stage_'+m.item.id}});
+      if(m.from&&m.from.key)occ.delete(m.from.key);m.from={label:'Staging area',key:'__stage_'+m.item.id};m.kind='unstage';}
+  }
+  const moved=new Set(pending.filter(m=>m.kind!=='new').map(m=>m.item.id));
+  return{steps,noSpace,moved,newIds:new Set(pending.filter(m=>m.kind==='new').map(m=>m.item.id)),count:pending.length,removed:removed.length};
+}
+const loc=x=>!x?'Incoming':x.label?x.label:`${x.rackName}-${x.slot}`;
+
+/* ---------- views ---------- */
+function render(){
+  const app=$('#app');
+  if(S.view==='project'&&!cur())S.view='home';
+  app.innerHTML=S.view==='home'?homeView():projectView();
+  S.dirty=false;
+}
+
+function homeView(){
+  const list=[...S.projects].sort((a,b)=>b.updated-a.updated);
+  return `
+  <div class="appbar"><div class="wrap"><div class="brand"><span class="brandmark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Core Rack Planner</div>
+  <span class="spacer"></span><span id="savestate" class="savestate">${esc(saveText())}</span></div></div>
+  <main class="wrap stack">
+    <section class="hero">
+      <h1>Plan where drill core goes before it goes on the rack</h1>
+      <p>Set up your racks, enter or import boxes, and the planner fills slots in order: feature, then hole, then box number, then depth. Add a box you missed and everything after it shifts for you.</p>
+    </section>
+    <div class="grid2">
+      <section class="panel">
+        <header><h2>New project</h2></header>
+        <form id="newForm" class="stack" autocomplete="off">
+          <div class="field"><label class="label" for="np_name">Project name</label><input id="np_name" placeholder="e.g. 2026 Spillway drilling, core move" required></div>
+          <div class="field"><label class="label" for="np_site">Shed / location</label><input id="np_site" placeholder="e.g. Core shed 2, bay B"></div>
+          <div class="row"><button class="primary" type="submit">Create project</button></div>
+        </form>
+      </section>
+      <section class="panel">
+        <header><h2>Open a saved project</h2></header>
+        <div class="stack">
+          <p class="muted">Projects are kept in this browser automatically. To move a plan to another computer or share it, use <b>Save project file</b> inside the project, then open that file here.</p>
+          <div class="row"><button data-act="open-file">Open project file (.json)</button></div>
+        </div>
+      </section>
+    </div>
+    <section class="stack">
+      <h2>Projects <span class="muted mono small">${list.length}</span></h2>
+      ${list.length?`<div class="projlist">${list.map(p=>{const P=computePlan(p);return `
+        <article class="projcard">
+          <div class="stack" style="gap:4px;min-width:0">
+            <h3>${esc(p.name)}</h3>
+            <div class="meta"><span>${esc(p.site||'No location set')}</span><span class="mono">${p.racks.length} racks</span><span class="mono">${p.items.length} boxes</span>${P.unplaced.length?`<span style="color:var(--warn)">${P.unplaced.length} don't fit</span>`:''}<span>Updated ${new Date(p.updated).toLocaleString()}</span></div>
+          </div>
+          <div class="acts">${S.confirm==='del:'+p.id?`<span class="small">Delete this project?</span><button class="danger solid" data-act="del-yes" data-id="${p.id}">Delete</button><button data-act="cancel">Keep</button>`:
+          `<button class="primary" data-act="open" data-id="${p.id}">Open</button><button data-act="dup" data-id="${p.id}">Duplicate</button><button class="ghost danger" data-act="del" data-id="${p.id}">Delete</button>`}</div>
+        </article>`;}).join('')}</div>`:`<div class="empty">No projects yet. Create one above.</div>`}
+    </section>
+    <footer class="foot">Data stays on this computer, in this browser. Clearing browser data removes it, so save a project file for anything you need to keep.</footer>
+  </main>`;
+}
+
+function projectView(){
+  const p=cur(),P=computePlan(p),M=computeMoves(p,P);
+  const tabs=[['setup','Setup',p.racks.length],['core','Core boxes',p.items.length],['plan','Rack plan',''],['moves','Moves',M?M.steps.length:''],['advanced','Advanced','']];
+  let body='';
+  if(S.tab==='setup')body=setupTab(p,P);
+  else if(S.tab==='core')body=coreTab(p,P);
+  else if(S.tab==='moves')body=movesTab(p,P,M);
+  else if(S.tab==='advanced')body=advancedTab(p,P);
+  else body=planTab(p,P,M);
+  return `
+  <div class="appbar"><div class="wrap">
+    <button class="ghost" data-act="home" aria-label="Back to projects">← Projects</button>
+    <div class="crumb grow"><strong title="${esc(p.name)}">${esc(p.name)}</strong></div>
+    <span id="savestate" class="savestate">${esc(saveText())}</span>
+    <div class="row" style="gap:6px">
+      <button data-act="export-xlsx" title="One sheet per rack plus a full list">Export Excel</button>
+      <button data-act="export-csv">Export CSV</button>
+      <button data-act="save-file">Save project file</button>
+    </div>
+  </div>
+  <div class="wrap"><nav class="tabs" role="tablist">${tabs.map(([k,l,c])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-tab="${k}">${l}${c!==''?`<span class="count">${c}</span>`:''}</button>`).join('')}</nav></div>
+  </div>
+  <main class="wrap">
+    <div id="summary">${summary(p,P)}</div>
+    <div class="stack">${body}</div>
+    <footer class="foot">Fill order: feature, then hole ID, then box number, then From depth. Row 1 is the top of each rack.</footer>
+  </main>`;
+}
+
+function summary(p,P){
+  return `<div class="summary">
+    <div class="stat"><span class="label">Racks</span><b>${p.racks.length}</b></div>
+    <div class="stat"><span class="label">Usable slots</span><b>${P.usable}</b></div>
+    <div class="stat"><span class="label">Boxes</span><b>${p.items.length}</b></div>
+    <div class="stat"><span class="label">Placed</span><b>${P.placed}</b></div>
+    ${P.gaps?`<div class="stat"><span class="label">Spare (reserved)</span><b>${P.gaps}</b></div>`:''}
+    <div class="stat ${P.free<0?'bad':''}"><span class="label">Free slots</span><b>${Math.max(0,P.free)}</b></div>
+    ${P.unplaced.length?`<div class="stat warn"><span class="label">Don't fit</span><b>${P.unplaced.length}</b></div>`:''}
+  </div>`;
+}
+function refreshSummary(){const p=cur();if(!p)return;const el=$('#summary');if(el)el.innerHTML=summary(p,computePlan(p));}
+
+/* setup */
+function setupTab(p,P){
+  const s=p.setup;
+  const example1=rackName(s,0),example2=rackName(s,1),example3=rackName(s,2);
+  return `
+  <section class="panel">
+    <header><h2>Project</h2></header>
+    <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr))">
+      <div class="field"><label class="label" for="pj_name">Project name</label><input id="pj_name" data-k="proj" data-f="name" value="${esc(p.name)}"></div>
+      <div class="field"><label class="label" for="pj_site">Shed / location</label><input id="pj_site" data-k="proj" data-f="site" value="${esc(p.site)}"></div>
+      <div class="field"><label class="label" for="pj_notes">Notes</label><input id="pj_notes" data-k="proj" data-f="notes" value="${esc(p.notes)}" placeholder="Optional"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <header><h2>Racks</h2><span class="muted small">New racks use these settings. Existing racks keep theirs unless you apply to all.</span></header>
+    <div class="formgrid">
+      <div class="field"><label class="label" for="st_count">Number of racks</label><input id="st_count" type="number" min="1" max="500" data-k="setup" data-f="rackCount" value="${p.racks.length}"></div>
+      <div class="field"><label class="label" for="st_rows">Rows per rack</label><input id="st_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="${esc(s.defaultRows)}"></div>
+      <div class="field"><label class="label" for="st_block">Blocked rows</label><input id="st_block" data-k="setup" data-f="defaultBlocked" value="${esc(s.defaultBlocked)}" placeholder="e.g. 1, 2 or 1-2"><span class="hint">Shown on the plan, never filled</span></div>
+      <div class="field"><label class="label" for="st_letter">Rack letter</label><input id="st_letter" maxlength="3" data-k="setup" data-f="letter" value="${esc(s.letter)}"></div>
+      <div class="field"><label class="label" for="st_start">Start number</label><input id="st_start" type="number" min="0" data-k="setup" data-f="startNum" value="${esc(s.startNum)}"></div>
+      <div class="field"><label class="label" for="st_pat">Naming</label><select id="st_pat" data-k="setup" data-f="pattern">
+        <option value="number" ${s.pattern!=='letter'?'selected':''}>Number counts up</option>
+        <option value="letter" ${s.pattern==='letter'?'selected':''}>Letter counts up</option></select>
+        <span class="hint mono">${esc(example1)}, ${esc(example2)}, ${esc(example3)}…</span></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button data-act="apply-rows">Apply rows to all racks</button>
+      <button data-act="apply-blocked">Apply blocked rows to all racks</button>
+      <button data-act="rename-all">Rename all racks</button>
+      <span class="spacer"></span>
+      <button class="primary" data-act="rack-add">+ Add rack</button>
+    </div>
+  </section>
+
+  <section class="stack">
+    <h2>Rack list</h2>
+    <p class="muted small">Edit any rack individually. Rack order here is the order core is filled in. Blocked rows accept lists and ranges, like <span class="mono">1, 2</span> or <span class="mono">1-2, 14</span>.</p>
+    <div class="tablewrap" data-live>
+      <table class="edit">
+        <thead><tr><th>Order</th><th>Rack ID</th><th class="num">Rows</th><th>Blocked rows</th><th class="num">Usable</th><th class="num">Planned</th><th></th></tr></thead>
+        <tbody>${p.racks.map((r,i)=>{const R=P.racks[i];const used=R?R.used:0;const usable=r.rows-(r.blocked||[]).filter(b=>b<=r.rows).length;return `
+          <tr>
+            <td class="mono muted" style="padding-left:10px">${i+1}</td>
+            <td class="w-m"><input id="rk_n_${r.id}" data-k="rack" data-id="${r.id}" data-f="name" value="${esc(r.name)}" aria-label="Rack ID"></td>
+            <td class="w-s"><input id="rk_r_${r.id}" data-k="rack" data-id="${r.id}" data-f="rows" inputmode="numeric" value="${r.rows}" aria-label="Rows" style="text-align:right"></td>
+            <td class="w-m"><input id="rk_b_${r.id}" data-k="rack" data-id="${r.id}" data-f="blocked" value="${esc(fmtRows(r.blocked))}" placeholder="none" aria-label="Blocked rows"></td>
+            <td class="num mono">${usable}</td>
+            <td class="num mono">${used}</td>
+            <td style="text-align:right"><button class="icon ghost" data-act="rack-up" data-id="${r.id}" ${i===0?'disabled':''} aria-label="Move up">↑</button><button class="icon ghost" data-act="rack-down" data-id="${r.id}" ${i===p.racks.length-1?'disabled':''} aria-label="Move down">↓</button><button class="icon ghost danger" data-act="rack-del" data-id="${r.id}" ${p.racks.length<=1?'disabled':''} aria-label="Remove rack">✕</button></td>
+          </tr>`;}).join('')}</tbody>
+      </table>
+    </div>
+    <div class="shed">${P.racks.map(R=>rackElev(R,P,null,true)).join('')}</div>
+  </section>`;
+}
+
+function rackElev(R,P,M,small){
+  const r=R.rack;
+  const cells=R.cells.map(c=>{
+    if(c.blocked)return `<div class="cell blocked" title="${esc(r.name)} row ${c.slot}: blocked">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
+    if(c.gap)return `<div class="cell gap" title="${esc(r.name)} row ${c.slot}: spare (reserved)">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
+    if(c.item){const it=c.item;const moved=M&&M.moved.has(it.id);
+      return `<div class="cell filled ${moved?'moved':''}" style="--h:${P.hue.get(it.feature||'')}" title="${esc(r.name)} row ${c.slot}: ${esc(fname(it.feature))} ${esc(it.hole)} box ${esc(it.box)}${it.of?' of '+esc(it.of):''}">${small?'':`<span class="n">${c.slot}</span><span>${esc(it.hole)}·${esc(it.box)}</span>`}</div>`;}
+    return `<div class="cell" title="${esc(r.name)} row ${c.slot}: empty">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
+  }).join('');
+  return `<button class="rackcol" data-act="goto-rack" data-id="${r.id}" aria-label="Rack ${esc(r.name)}"><span class="rname">${esc(r.name)}</span><div class="rack ${small?'small':''}">${cells||'<div class="cell">no rows</div>'}</div>${small?'':`<span class="rmeta">${R.used}/${R.cells.filter(c=>!c.blocked).length}</span>`}</button>`;
+}
+
+/* core boxes */
+function coreTab(p,P){
+  const cols=p.customCols;
+  return `
+  <div class="grid2">
+    <section class="panel">
+      <header><h2>Add boxes</h2><span class="muted small">Add a whole hole, a range, or one missed box</span></header>
+      <form id="addForm" class="stack" autocomplete="off">
+        <div class="formgrid">
+          <div class="field"><label class="label" for="ab_feat">Feature ID</label><input id="ab_feat" placeholder="BMA1" list="dl_feat"></div>
+          <div class="field"><label class="label" for="ab_hole">Hole ID</label><input id="ab_hole" placeholder="DD100" list="dl_hole"></div>
+          <div class="field"><label class="label" for="ab_b1">Box from</label><input id="ab_b1" inputmode="numeric" value="1"></div>
+          <div class="field"><label class="label" for="ab_b2">Box to</label><input id="ab_b2" inputmode="numeric" placeholder="same"></div>
+          <div class="field"><label class="label" for="ab_of">Of (total)</label><input id="ab_of" inputmode="numeric" placeholder="e.g. 6"></div>
+          <div class="field"><label class="label" for="ab_from">From (m)</label><input id="ab_from" inputmode="decimal" placeholder="optional"></div>
+          <div class="field"><label class="label" for="ab_to">To (m)</label><input id="ab_to" inputmode="decimal" placeholder="optional"></div>
+          ${cols.map(c=>`<div class="field"><label class="label" for="ab_c_${c.id}">${esc(c.name)}</label><input id="ab_c_${c.id}" data-col="${c.id}"></div>`).join('')}
+        </div>
+        <p class="hint muted small">Depths are applied to a single box. For a range, fill in depths in the table below. ${cols.length?'Custom values apply to every box added.':''}</p>
+        <div class="row"><button class="primary" type="submit">Add to plan</button></div>
+      </form>
+      <datalist id="dl_feat">${P.feats.filter(Boolean).map(f=>`<option value="${esc(f)}">`).join('')}</datalist>
+      <datalist id="dl_hole">${[...new Set(p.items.map(i=>i.hole).filter(Boolean))].sort(nat).map(h=>`<option value="${esc(h)}">`).join('')}</datalist>
+    </section>
+    <section class="panel">
+      <header><h2>Import from Excel or CSV</h2></header>
+      ${importPanel(p)}
+    </section>
+  </div>
+
+  <section class="stack">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2>All boxes <span class="muted mono small">${p.items.length}</span></h2>
+      <div class="row" style="align-items:center">
+        <input id="coreFilter" type="search" placeholder="Filter by feature, hole or box" value="${esc(S.q)}" style="width:min(260px,100%)" aria-label="Filter boxes">
+        ${p.items.length?(S.confirm==='clear'?`<span class="small">Remove all ${p.items.length} boxes?</span><button class="danger solid" data-act="clear-yes">Remove all</button><button data-act="cancel">Cancel</button>`:`<button class="ghost danger" data-act="clear">Remove all</button>`):''}
+      </div>
+    </div>
+    <p class="muted small">Listed in fill order. Edit any cell. The order and rack locations update when you leave the table.</p>
+    ${p.items.length?`<div class="tablewrap" data-live><table class="edit">
+      <thead><tr><th>Planned slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}<th></th></tr></thead>
+      <tbody id="coreBody">${coreRows(p,P)}</tbody></table></div>`:`<div class="empty">No boxes yet. Add a hole above or import a spreadsheet.</div>`}
+  </section>`;
+}
+function coreRows(p,P){
+  const q=S.q.trim().toLowerCase();
+  const rows=P.sorted.filter(it=>!q||[it.feature,it.hole,it.box,it.feature+'-'+it.hole].some(v=>String(v||'').toLowerCase().includes(q)));
+  if(!rows.length)return `<tr><td colspan="${9+p.customCols.length}" class="muted" style="padding:14px">No boxes match “${esc(S.q)}”.</td></tr>`;
+  const inp=(it,f,cls,num)=>`<td class="${cls||''}"><input id="it_${f}_${it.id}" data-k="item" data-id="${it.id}" data-f="${f}" value="${esc(it[f])}" ${num?'inputmode="decimal" style="text-align:right"':''} aria-label="${f}"></td>`;
+  return rows.map(it=>{const ps=P.pos[it.id];return `<tr>
+    <td class="mono" style="padding-left:10px">${ps?esc(ps.rackName+'-'+ps.slot):'<span class="pill stage">No space</span>'}</td>
+    ${inp(it,'feature','w-m')}${inp(it,'hole','w-m')}${inp(it,'box','w-s',1)}${inp(it,'of','w-s',1)}${inp(it,'from','w-s',1)}${inp(it,'to','w-s',1)}
+    ${p.customCols.map(c=>`<td class="w-m"><input id="it_c_${c.id}_${it.id}" data-k="item" data-id="${it.id}" data-c="${c.id}" value="${esc((it.custom||{})[c.id])}" aria-label="${esc(c.name)}"></td>`).join('')}
+    <td><button class="icon ghost danger" data-act="item-del" data-id="${it.id}" aria-label="Remove box">✕</button></td></tr>`;}).join('');
+}
+
+/* import */
+const FIELDS=[['feature','Feature ID',['feature','featureid','feat','feature code','structure','area']],
+  ['hole','Hole ID',['hole','holeid','hole id','hole_id','holename','holeno','holenumber','borehole','bore','drillhole','boreholeid']],
+  ['box','Box',['box','boxno','boxnumber','boxid','tray','trayno','traynumber','box#','core box']],
+  ['of','Of',['of','totalboxes','boxes','ofboxes','boxof','noofboxes','numberofboxes','total']],
+  ['from','From (m)',['from','fromm','depthfrom','from(m)','fromdepth','start','startdepth','top','depthfromm']],
+  ['to','To (m)',['to','tom','depthto','to(m)','todepth','end','enddepth','bottom','depthtom']]];
+const normH=s=>String(s??'').toLowerCase().replace(/[^a-z0-9#]/g,'');
+function detectHeader(rows){
+  let best=0,bestScore=0;
+  for(let r=0;r<Math.min(rows.length,15);r++){let score=0;(rows[r]||[]).forEach(c=>{const n=normH(c);if(n&&FIELDS.some(f=>f[2].map(normH).includes(n)))score++;});if(score>bestScore){bestScore=score;best=r;}}
+  return bestScore?best+1:1;}
+function autoMap(p,imp){
+  const hdr=imp.headerRow>0?(imp.rows[imp.headerRow-1]||[]):[];const map={};const used=new Set();
+  const find=(names)=>{const ns=names.map(normH);for(let i=0;i<hdr.length;i++){if(used.has(i))continue;if(ns.includes(normH(hdr[i]))){used.add(i);return i;}}return -1;};
+  FIELDS.forEach(([k,,syn])=>{map[k]=find(syn);});
+  p.customCols.forEach(c=>{map['c:'+c.id]=find([c.name]);});
+  imp.map=map;imp.split=map.feature<0;}
+function importPanel(p){
+  const imp=S.imp;
+  if(!imp)return `<div class="stack">
+    <p class="muted">Choose an .xlsx, .xls or .csv file. The planner looks for headings such as Feature ID, Hole ID, Box, Of, From and To. If your headings are different, you can point each field at a column letter instead.</p>
+    ${window.XLSX?'':'<p class="notice small">The Excel reader didn’t load (it needs an internet connection the first time). CSV files still work.</p>'}
+    <div class="row"><button class="primary" data-act="pick-sheet">Choose spreadsheet…</button></div></div>`;
+  const ncols=Math.max(0,...imp.rows.slice(0,50).map(r=>r.length));
+  const hdr=imp.headerRow>0?(imp.rows[imp.headerRow-1]||[]):[];
+  const opts=sel=>`<option value="-1"${sel<0?' selected':''}>Not imported</option>`+Array.from({length:ncols},(_,i)=>`<option value="${i}"${sel===i?' selected':''}>Column ${colLetter(i)}${hdr[i]!==undefined&&hdr[i]!==''?' · '+esc(String(hdr[i]).slice(0,30)):''}</option>`).join('');
+  const fields=FIELDS.map(f=>[f[0],f[1]]).concat(p.customCols.map(c=>['c:'+c.id,c.name]));
+  const data=imp.rows.slice(imp.headerRow>0?imp.headerRow:0).filter(r=>r.some(v=>String(v).trim()!==''));
+  const preview=buildImport(p,imp,data.slice(0,5));
+  return `<div class="stack">
+    <div class="row" style="align-items:center"><span class="mono small">${esc(imp.fileName)}</span><span class="muted small">${data.length} data rows</span><span class="spacer"></span><button class="ghost" data-act="imp-cancel">Cancel</button></div>
+    <div class="formgrid">
+      ${imp.sheets&&imp.sheets.length>1?`<div class="field"><label class="label" for="imp_sheet">Sheet</label><select id="imp_sheet" data-k="imp" data-f="sheet">${imp.sheets.map(s=>`<option ${s===imp.sheet?'selected':''}>${esc(s)}</option>`).join('')}</select></div>`:''}
+      <div class="field"><label class="label" for="imp_hr">Headings in row</label><input id="imp_hr" type="number" min="0" data-k="imp" data-f="headerRow" value="${imp.headerRow}"><span class="hint">0 = no heading row</span></div>
+    </div>
+    <div class="mapgrid">
+      <span class="label hdr">Planner field</span><span class="label hdr">Spreadsheet column</span><span class="label hdr">Letter</span>
+      ${fields.map(([k,l])=>{const v=imp.map[k]??-1;return `<label for="imp_m_${k}">${esc(l)}</label><select id="imp_m_${k}" data-k="imp" data-f="map" data-field="${k}">${opts(v)}</select><input id="imp_l_${k}" data-k="imp" data-f="letter" data-field="${k}" value="${v>=0?colLetter(v):''}" placeholder="e.g. C" aria-label="${esc(l)} column letter or number" style="text-transform:uppercase">`;}).join('')}
+    </div>
+    <div class="stack" style="gap:8px">
+      <label class="check"><input type="checkbox" id="imp_split" data-k="imp" data-f="split" ${imp.split?'checked':''}> Split combined IDs like <span class="mono">BMA1-DD100</span> into Feature and Hole</label>
+      <label class="check"><input type="checkbox" id="imp_extras" data-k="imp" data-f="extras" ${imp.extras?'checked':''}> Bring in other columns as custom columns</label>
+      <label class="check"><input type="checkbox" id="imp_dup" data-k="imp" data-f="skipDup" ${imp.skipDup?'checked':''}> Skip boxes already in the plan (same feature, hole and box)</label>
+      <div class="row" style="align-items:center"><label class="check"><input type="radio" name="impmode" id="imp_mode_a" data-k="imp" data-f="mode" value="append" ${imp.mode!=='replace'?'checked':''}> Add to existing boxes</label>
+      <label class="check"><input type="radio" name="impmode" id="imp_mode_r" data-k="imp" data-f="mode" value="replace" ${imp.mode==='replace'?'checked':''}> Replace all boxes</label></div>
+    </div>
+    <div><span class="label">Preview</span>
+      <div class="tablewrap" style="margin-top:6px"><table><thead><tr><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From</th><th class="num">To</th></tr></thead>
+      <tbody>${preview.items.length?preview.items.map(it=>`<tr><td class="mono">${esc(it.feature)}</td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td></tr>`).join(''):`<tr><td colspan="6" class="muted">Nothing to import yet. Map at least Hole ID or Feature ID.</td></tr>`}</tbody></table></div>
+    </div>
+    <div class="row"><button class="primary" data-act="imp-run">Import ${data.length} rows</button></div>
+  </div>`;
+}
+function buildImport(p,imp,dataRows){
+  const m=imp.map;const get=(row,k)=>{const i=m[k];return i>=0&&row[i]!=null?String(row[i]).trim():'';};
+  const hdr=imp.headerRow>0?(imp.rows[imp.headerRow-1]||[]):[];
+  const mappedIdx=new Set(Object.values(m).filter(v=>v>=0));
+  const extraCols=[];
+  if(imp.extras){const ncols=Math.max(0,...imp.rows.slice(0,50).map(r=>r.length));for(let i=0;i<ncols;i++){if(mappedIdx.has(i))continue;const name=String(hdr[i]??'').trim()||('Column '+colLetter(i));extraCols.push({i,name});}}
+  const items=[];
+  for(const row of dataRows){
+    let feature=get(row,'feature'),hole=get(row,'hole'),box=get(row,'box'),of=get(row,'of');
+    if(imp.split&&hole.includes('-')){const k=hole.indexOf('-');const f=hole.slice(0,k).trim(),h=hole.slice(k+1).trim();if(!feature||feature===f){feature=f;hole=h;}}
+    const bm=box.match(/^(\d+)\s*(?:\/|of)\s*(\d+)$/i);if(bm){box=bm[1];if(!of)of=bm[2];}
+    if(!feature&&!hole)continue;
+    const custom={};p.customCols.forEach(c=>{const v=get(row,'c:'+c.id);if(v)custom[c.id]=v;});
+    const extras={};extraCols.forEach(e=>{const v=row[e.i]!=null?String(row[e.i]).trim():'';if(v)extras[e.name]=v;});
+    items.push({id:uid(),feature,hole,box,of,from:get(row,'from'),to:get(row,'to'),custom,_extras:extras});
+  }
+  return{items,extraCols};
+}
+async function readSheetFile(file){
+  const name=file.name;const buf=await file.arrayBuffer();
+  let imp={fileName:name,mode:'append',skipDup:true,extras:false,headerRow:1,map:{}};
+  if(window.XLSX){const wb=XLSX.read(buf,{type:'array'});imp.wb=wb;imp.sheets=wb.SheetNames;imp.sheet=wb.SheetNames[0];imp.rows=sheetRows(wb,imp.sheet);}
+  else if(/\.(csv|txt|tsv)$/i.test(name)){imp.rows=parseCSV(new TextDecoder().decode(buf));}
+  else{toast('The Excel reader isn’t available offline. Save the sheet as CSV and try again.');return;}
+  imp.headerRow=detectHeader(imp.rows);S.imp=imp;autoMap(cur(),imp);render();
+}
+function sheetRows(wb,name){return XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:false,defval:''});}
+function parseCSV(text){
+  const delim=(text.split('\n')[0].match(/\t/g)||[]).length>(text.split('\n')[0].match(/,/g)||[]).length?'\t':',';
+  const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;}
+    else if(c==='"')q=true;else if(c===delim){row.push(f);f='';}
+    else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f='';}
+    else f+=c;}
+  if(f!==''||row.length){row.push(f);rows.push(row);}
+  return rows;}
+
+/* plan */
+function planTab(p,P,M){
+  if(!p.racks.length)return `<div class="empty">No racks yet. Add racks in Setup.</div>`;
+  const counts=new Map();P.sorted.forEach(it=>counts.set(it.feature||'',(counts.get(it.feature||'')||0)+1));
+  const cols=p.customCols;
+  return `
+  ${P.unplaced.length?`<div class="notice"><strong>${P.unplaced.length} box${P.unplaced.length>1?'es':''} don't fit.</strong> Add racks or rows in Setup, or reduce spare slots in Advanced. First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
+  <section class="panel">
+    <header><h2>Shed overview</h2>
+      <div class="legend small">${P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span> <span class="muted">${counts.get(f)||0}</span></span>`).join('')}
+      <span><span class="sw" style="background:repeating-linear-gradient(-45deg,var(--surface) 0 2px,var(--hatch) 2px 4px)"></span>Blocked</span>
+      ${P.gaps?`<span><span class="sw" style="border-style:dashed;border-color:var(--muted)"></span>Spare</span>`:''}
+      ${M&&M.moved.size?`<span><span class="sw" style="box-shadow:inset 3px 0 0 var(--warn)"></span>Moves</span>`:''}</div>
+    </header>
+    ${P.sorted.length?'':`<p class="muted" style="margin-bottom:10px">No boxes yet. Add or import them in <b>Core boxes</b>.</p>`}
+    <div class="shed">${P.racks.map(R=>rackElev(R,P,M,false)).join('')}</div>
+    <p class="muted small">Row 1 is the top of the rack. Click a rack to jump to its table.</p>
+  </section>
+  <div class="rackgrid">
+  ${P.racks.map(R=>{const r=R.rack;return `
+    <section class="racksec" id="rack-${r.id}">
+      <header><h3>Rack ${esc(r.name)}</h3><span class="muted small mono">${R.used} of ${R.cells.filter(c=>!c.blocked).length} slots used</span></header>
+      <div class="tablewrap"><table>
+        <thead><tr><th class="num">Slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}${M?'<th>Change</th>':''}</tr></thead>
+        <tbody>${R.cells.map(c=>{const span=6+cols.length+(M?1:0);
+          if(c.blocked)return `<tr class="blocked"><td class="num mono">${c.slot}</td><td colspan="${span}">Blocked, not for use</td></tr>`;
+          if(c.gap)return `<tr class="gap"><td class="num mono">${c.slot}</td><td colspan="${span}">Spare, kept free</td></tr>`;
+          if(!c.item)return `<tr class="empty-slot"><td class="num mono">${c.slot}</td><td colspan="${span}">Empty</td></tr>`;
+          const it=c.item;let ch='';
+          if(M){if(M.newIds.has(it.id))ch='<span class="pill new">New</span>';else if(M.moved.has(it.id)){const b=p.baseline.positions[it.id];ch=`<span class="pill moved">from ${esc(b.rackName)}-${b.slot}</span>`;}}
+          return `<tr><td class="num mono">${c.slot}</td><td><span class="chip" style="--h:${P.hue.get(it.feature||'')}">${esc(fname(it.feature))}</span></td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(col=>`<td>${esc((it.custom||{})[col.id])}</td>`).join('')}${M?`<td>${ch}</td>`:''}</tr>`;
+        }).join('')||`<tr><td class="muted">This rack has no rows. Set rows in Setup.</td></tr>`}</tbody>
+      </table></div>
+    </section>`;}).join('')}
+  </div>`;
+}
+
+/* moves */
+function movesTab(p,P,M){
+  const B=p.baseline;
+  return `
+  <section class="panel">
+    <header><h2>Baseline</h2>${B?`<span class="muted small">Set ${new Date(B.takenAt).toLocaleString()}</span>`:''}</header>
+    <div class="stack">
+      <p class="muted" style="max-width:70ch">A baseline records where every box sits right now. After you add boxes or change racks, this tab lists the moves needed to get from the baseline to the new plan, in an order where each slot is free before a box goes into it.</p>
+      <div class="row">
+        <button class="primary" data-act="baseline-set">${B?'Update baseline to current plan':'Set current plan as baseline'}</button>
+        ${B?(S.confirm==='baseclear'?`<button class="danger solid" data-act="baseline-clear-yes">Clear baseline</button><button data-act="cancel">Cancel</button>`:`<button class="ghost danger" data-act="baseline-clear">Clear baseline</button>`):''}
+      </div>
+    </div>
+  </section>
+  ${!B?`<div class="empty">No baseline yet. Set one when the plan matches what is physically in the shed.</div>`:
+  !M.steps.length&&!M.noSpace.length?`<div class="notice info"><strong>No moves needed.</strong> The plan matches the baseline.</div>`:`
+  <section class="stack">
+    <div class="row" style="justify-content:space-between;align-items:baseline"><h2>Move list</h2><span class="muted small">${M.count} box${M.count===1?'':'es'} to place${M.removed?`, ${M.removed} removed`:''}</span></div>
+    ${M.steps.some(s=>s.kind==='stage')?`<p class="notice small">Some boxes need to swap places, so a few go to a staging area first and come back later in the list.</p>`:''}
+    ${M.noSpace.length?`<p class="notice small"><strong>${M.noSpace.length} box${M.noSpace.length>1?'es have':' has'} no slot</strong> in the new plan. Add racks or rows in Setup.</p>`:''}
+    <div class="tablewrap"><table>
+      <thead><tr><th class="num">Step</th><th>Action</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th>From</th><th>To</th></tr></thead>
+      <tbody>${M.steps.map((s,i)=>{const it=s.item||{};const lab={move:['moved','Move'],new:['new','Place new'],stage:['stage','To staging'],unstage:['moved','From staging'],remove:['stage','Remove']}[s.kind];
+        return `<tr><td class="num mono">${i+1}</td><td><span class="pill ${lab[0]}">${lab[1]}</span></td><td class="mono">${esc(fname(it.feature||''))}</td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}${it.of?' / '+esc(it.of):''}</td><td class="mono">${esc(loc(s.from))}</td><td class="mono">${s.to?esc(loc(s.to)):'Out of plan'}</td></tr>`;}).join('')}</tbody>
+    </table></div>
+  </section>`}`;
+}
+
+/* advanced */
+function advancedTab(p,P){
+  const o=p.options;const order=P.feats;
+  return `
+  <div class="grid2">
+  <section class="panel">
+    <header><h2>Feature order</h2></header>
+    <div class="stack">
+      <p class="muted small">By default features sort A to Z, with numbers in numeric order (BMA1, BMA2, BMA10). Turn on your own order to drag features into place. The rack tables update straight away.</p>
+      <label class="check"><input type="checkbox" id="opt_custom" data-k="opt" data-f="useCustomOrder" ${o.useCustomOrder?'checked':''}> Use my own feature order</label>
+      ${order.length?`<ul class="featlist" id="featlist">${order.map((f,i)=>`<li ${o.useCustomOrder?`draggable="true"`:''} data-feat="${esc(f)}">
+        ${o.useCustomOrder?'<span class="handle" aria-hidden="true">⋮⋮</span>':''}<span class="pos">${i+1}</span><span class="chip" style="--h:${P.hue.get(f)}">${esc(fname(f))}</span>
+        <span class="muted small grow">${p.items.filter(it=>(it.feature||'')===f).length} boxes</span>
+        ${o.useCustomOrder?`<button class="icon ghost" data-act="feat-up" data-feat="${esc(f)}" ${i===0?'disabled':''} aria-label="Move up">↑</button><button class="icon ghost" data-act="feat-down" data-feat="${esc(f)}" ${i===order.length-1?'disabled':''} aria-label="Move down">↓</button>`:''}
+      </li>`).join('')}</ul>`:'<div class="empty">Features appear here once boxes are added.</div>'}
+      ${o.useCustomOrder?`<div class="row"><button data-act="feat-reset">Reset to A to Z</button></div>`:''}
+    </div>
+  </section>
+  <div class="stack">
+  <section class="panel">
+    <header><h2>Spacing</h2></header>
+    <div class="stack">
+      <p class="muted small">Leave empty slots so later boxes for a hole or feature can go in without shifting everything after them.</p>
+      <div class="formgrid">
+        <div class="field"><label class="label" for="opt_gh">Spare slots after each hole</label><input id="opt_gh" type="number" min="0" max="50" data-k="opt" data-f="gapAfterHole" value="${+o.gapAfterHole||0}"></div>
+        <div class="field"><label class="label" for="opt_gf">Spare slots after each feature</label><input id="opt_gf" type="number" min="0" max="50" data-k="opt" data-f="gapAfterFeature" value="${+o.gapAfterFeature||0}"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="opt_nr" data-k="opt" data-f="newRackPerFeature" ${o.newRackPerFeature?'checked':''}> Start each feature in a new rack</label>
+    </div>
+  </section>
+  <section class="panel">
+    <header><h2>Custom columns</h2></header>
+    <div class="stack">
+      <p class="muted small">Extra columns appear after To (m) in every rack table, the box list and exports. Examples: core size, logged by, photo taken.</p>
+      ${p.customCols.length?`<div class="stack" style="gap:8px" data-live>${p.customCols.map(c=>`<div class="row" style="align-items:center;flex-wrap:nowrap">
+        <input id="cc_${c.id}" class="grow" data-k="col" data-id="${c.id}" data-f="name" value="${esc(c.name)}" aria-label="Column name">
+        ${S.confirm==='col:'+c.id?`<button class="danger solid" data-act="col-del-yes" data-id="${c.id}">Delete</button><button data-act="cancel">Keep</button>`:`<button class="ghost danger" data-act="col-del" data-id="${c.id}">Delete</button>`}</div>`).join('')}</div>`:''}
+      <form id="colForm" class="row" autocomplete="off"><input id="cc_new" class="grow" placeholder="New column name"><button type="submit">Add column</button></form>
+    </div>
+  </section>
+  <section class="panel">
+    <header><h2>Sort rules</h2></header>
+    <ol class="steps"><li>Feature ID (A to Z and 1 to 9, or your own order)</li><li>Hole ID (DD100 before DD101)</li><li>Box number</li><li>From depth, then To depth</li></ol>
+  </section>
+  </div></div>`;
+}
+
+/* ---------- export ---------- */
+function planRowsAll(p,P){
+  const head=['Rack','Slot','Feature','Hole ID','Box','Of','From (m)','To (m)',...p.customCols.map(c=>c.name),'Status'];
+  const rows=[];
+  P.racks.forEach(R=>R.cells.forEach(c=>{const it=c.item;
+    rows.push([R.rack.name,c.slot,it?it.feature:'',it?it.hole:'',it?numOr(it.box):'',it?numOr(it.of):'',it?numOr(it.from):'',it?numOr(it.to):'',...p.customCols.map(col=>it?((it.custom||{})[col.id]||''):''),c.blocked?'Blocked':c.gap?'Spare':it?'':'Empty']);}));
+  P.unplaced.forEach(it=>rows.push(['(no space)','',it.feature,it.hole,numOr(it.box),numOr(it.of),numOr(it.from),numOr(it.to),...p.customCols.map(col=>(it.custom||{})[col.id]||''),'Does not fit']));
+  return{head,rows};}
+const numOr=v=>{if(v===''||v==null)return'';const n=Number(v);return isNaN(n)?v:n;};
+const safeName=s=>String(s||'plan').replace(/[\\/:*?"<>|]+/g,'_').trim()||'plan';
+function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);}
+function exportCSV(p){const P=computePlan(p);const{head,rows}=planRowsAll(p,P);
+  const csv=[head,...rows].map(r=>r.map(v=>{const s=String(v??'');return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');
+  download(safeName(p.name)+' - rack plan.csv',new Blob(['﻿'+csv],{type:'text/csv'}));toast('CSV exported');}
+function exportXLSX(p){
+  if(!window.XLSX){toast('Excel export needs an internet connection the first time. Exported CSV instead.');return exportCSV(p);}
+  const P=computePlan(p),M=computeMoves(p,P);const wb=XLSX.utils.book_new();const{head,rows}=planRowsAll(p,P);
+  const used=new Set();const sname=s=>{let n=String(s).replace(/[\[\]:*?\/\\]/g,'_').slice(0,31)||'Sheet';let b=n,k=2;while(used.has(n.toLowerCase())){n=(b.slice(0,28)+'_'+k++);}used.add(n.toLowerCase());return n;};
+  const all=XLSX.utils.aoa_to_sheet([[p.name+(p.site?' · '+p.site:'')],[],head,...rows]);all['!cols']=head.map((h,i)=>({wch:i<2?7:Math.max(10,h.length+2)}));
+  XLSX.utils.book_append_sheet(wb,all,sname('All racks'));
+  const rh=head.slice(1,-1).concat(['Status']);
+  P.racks.forEach(R=>{const aoa=[['Rack ID',R.rack.name],[],rh];R.cells.forEach(c=>{const it=c.item;aoa.push([c.slot,it?it.feature:'',it?it.hole:'',it?numOr(it.box):'',it?numOr(it.of):'',it?numOr(it.from):'',it?numOr(it.to):'',...p.customCols.map(col=>it?((it.custom||{})[col.id]||''):''),c.blocked?'Blocked':c.gap?'Spare':it?'':'Empty']);});
+    const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=rh.map((h,i)=>({wch:i===0?6:Math.max(10,h.length+2)}));XLSX.utils.book_append_sheet(wb,ws,sname('Rack '+R.rack.name));});
+  if(M&&M.steps.length){const aoa=[['Step','Action','Feature','Hole ID','Box','Of','From','To']];M.steps.forEach((s,i)=>{const it=s.item||{};aoa.push([i+1,{move:'Move',new:'Place new',stage:'To staging',unstage:'From staging',remove:'Remove'}[s.kind],it.feature||'',it.hole||'',numOr(it.box),numOr(it.of),loc(s.from),s.to?loc(s.to):'Out of plan']);});
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),sname('Moves'));}
+  XLSX.writeFile(wb,safeName(p.name)+' - rack plan.xlsx');toast('Excel file exported');}
+function saveFile(p){download(safeName(p.name)+'.coreplan.json',new Blob([JSON.stringify({app:'core-rack-planner',version:1,project:p},null,2)],{type:'application/json'}));toast('Project file saved');}
+
+/* ---------- actions ---------- */
+function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true;},2800);}
+function openProject(id){S.currentId=id;S.view='project';S.tab='plan';S.q='';S.imp=null;S.confirm=null;render();window.scrollTo(0,0);}
+function setRackCount(p,n){n=Math.max(1,Math.min(500,n|0));while(p.racks.length<n)p.racks.push(makeRack(p,p.racks.length));if(p.racks.length>n)p.racks.length=n;p.setup.rackCount=n;}
+function moveIn(arr,i,d){const j=i+d;if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const act=b.dataset.act,id=b.dataset.id,p=cur();
+  if(act!=='cancel'&&!/^(del|clear|baseline-clear|col-del)/.test(act))S.confirm=null;
+  switch(act){
+    case 'home':S.view='home';S.imp=null;render();window.scrollTo(0,0);break;
+    case 'open':openProject(id);break;
+    case 'dup':{const src=S.projects.find(x=>x.id===id);const cp=normalise(JSON.parse(JSON.stringify(src)));cp.id=uid();cp.name=src.name+' (copy)';cp.created=cp.updated=Date.now();S.projects.push(cp);persist();render();toast('Project duplicated');break;}
+    case 'del':S.confirm='del:'+id;render();break;
+    case 'del-yes':S.projects=S.projects.filter(x=>x.id!==id);S.confirm=null;persist();render();toast('Project deleted');break;
+    case 'cancel':S.confirm=null;render();break;
+    case 'open-file':$('#fileProject').value='';$('#fileProject').click();break;
+    case 'tab':S.tab=b.dataset.tab;S.confirm=null;render();break;
+    case 'export-xlsx':exportXLSX(p);break;
+    case 'export-csv':exportCSV(p);break;
+    case 'save-file':saveFile(p);break;
+    case 'apply-rows':p.racks.forEach(r=>r.rows=+p.setup.defaultRows||1);touch(p);render();toast('Rows applied to all racks');break;
+    case 'apply-blocked':{const bl=parseRows(p.setup.defaultBlocked);p.racks.forEach(r=>r.blocked=bl.slice());touch(p);render();toast('Blocked rows applied to all racks');break;}
+    case 'rename-all':p.racks.forEach((r,i)=>r.name=rackName(p.setup,i));touch(p);render();toast('Racks renamed');break;
+    case 'rack-add':p.racks.push(makeRack(p,p.racks.length));p.setup.rackCount=p.racks.length;touch(p);render();break;
+    case 'rack-del':if(p.racks.length>1){p.racks=p.racks.filter(r=>r.id!==id);p.setup.rackCount=p.racks.length;touch(p);render();}break;
+    case 'rack-up':case 'rack-down':{const i=p.racks.findIndex(r=>r.id===id);moveIn(p.racks,i,act==='rack-up'?-1:1);touch(p);render();break;}
+    case 'item-del':p.items=p.items.filter(it=>it.id!==id);touch(p);render();break;
+    case 'clear':S.confirm='clear';render();break;
+    case 'clear-yes':p.items=[];S.confirm=null;touch(p);render();toast('All boxes removed');break;
+    case 'pick-sheet':$('#fileSheet').value='';$('#fileSheet').click();break;
+    case 'imp-cancel':S.imp=null;render();break;
+    case 'imp-run':runImport(p);break;
+    case 'goto-rack':{if(S.tab!=='plan'){S.tab='plan';render();}const el=document.getElementById('rack-'+id);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});break;}
+    case 'baseline-set':{const P=computePlan(p);const positions={};p.items.forEach(it=>{const ps=P.pos[it.id];if(ps)positions[it.id]=Object.assign({},ps,{snap:{feature:it.feature,hole:it.hole,box:it.box,of:it.of}});});p.baseline={takenAt:Date.now(),positions};touch(p);render();toast('Baseline set');break;}
+    case 'baseline-clear':S.confirm='baseclear';render();break;
+    case 'baseline-clear-yes':p.baseline=null;S.confirm=null;touch(p);render();break;
+    case 'feat-up':case 'feat-down':{const order=featureOrder(p);const i=order.indexOf(b.dataset.feat);moveIn(order,i,act==='feat-up'?-1:1);p.options.featureOrder=order;touch(p);render();break;}
+    case 'feat-reset':p.options.featureOrder=[];p.options.useCustomOrder=false;touch(p);render();break;
+    case 'col-del':S.confirm='col:'+id;render();break;
+    case 'col-del-yes':p.customCols=p.customCols.filter(c=>c.id!==id);p.items.forEach(it=>{if(it.custom)delete it.custom[id];});S.confirm=null;touch(p);render();break;
+  }
+});
+
+document.addEventListener('submit',e=>{
+  e.preventDefault();const f=e.target;
+  if(f.id==='newForm'){const name=$('#np_name').value.trim();if(!name){$('#np_name').focus();return;}const p=newProject(name,$('#np_site').value.trim());S.projects.push(p);persist();S.currentId=p.id;S.view='project';S.tab='setup';render();toast('Project created. Set up your racks.');}
+  else if(f.id==='addForm'){const p=cur();const feat=$('#ab_feat').value.trim(),hole=$('#ab_hole').value.trim();
+    if(!feat&&!hole){toast('Enter a Feature ID or Hole ID.');$('#ab_feat').focus();return;}
+    let b1=parseInt($('#ab_b1').value,10),b2=parseInt($('#ab_b2').value,10);const of=$('#ab_of').value.trim();
+    const custom={};p.customCols.forEach(c=>{const el=document.getElementById('ab_c_'+c.id);if(el&&el.value.trim())custom[c.id]=el.value.trim();});
+    let added=0;
+    if(isNaN(b1)){p.items.push({id:uid(),feature:feat,hole,box:$('#ab_b1').value.trim(),of,from:$('#ab_from').value.trim(),to:$('#ab_to').value.trim(),custom});added=1;}
+    else{if(isNaN(b2))b2=b1;if(b2<b1)[b1,b2]=[b2,b1];if(b2-b1>999){toast('That range is too large. Add up to 1000 boxes at a time.');return;}
+      for(let b=b1;b<=b2;b++){const single=b1===b2;p.items.push({id:uid(),feature:feat,hole,box:String(b),of,from:single?$('#ab_from').value.trim():'',to:single?$('#ab_to').value.trim():'',custom:Object.assign({},custom)});added++;}}
+    touch(p);render();
+    const P=computePlan(p);const ps=P.pos[p.items[p.items.length-added].id];
+    toast(`Added ${added} box${added>1?'es':''}`+(ps?`, first one goes in ${ps.rackName}-${ps.slot}`:'. Not enough space, add racks in Setup'));
+    const nf=$('#ab_b1');if(nf){$('#ab_feat').value=feat;$('#ab_hole').value=hole;$('#ab_hole').focus();$('#ab_hole').select();}}
+  else if(f.id==='colForm'){const p=cur();const n=$('#cc_new').value.trim();if(!n)return;p.customCols.push({id:uid(),name:n});touch(p);render();toast('Column added');}
+});
+
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='fileProject'){const file=t.files[0];if(file)file.text().then(txt=>{try{const d=JSON.parse(txt);const pr=normalise(d.project||d);if(!Array.isArray(pr.racks))throw 0;
+    if(S.projects.some(x=>x.id===pr.id))pr.id=uid();pr.updated=Date.now();S.projects.push(pr);persist();openProject(pr.id);toast('Project opened');}catch(err){toast('That file isn’t a Core Rack Planner project.');}});return;}
+  if(t.id==='fileSheet'){const file=t.files[0];if(file)readSheetFile(file).catch(()=>toast('Couldn’t read that file. Try saving it as .xlsx or .csv.'));return;}
+  const k=t.dataset.k;if(!k)return;const p=cur();if(!p)return;const f=t.dataset.f;
+  const live=!!t.closest('[data-live]');
+  if(k==='proj'){p[f]=t.value;touch(p);if(f==='name'){const c=$('.crumb strong');if(c)c.textContent=t.value;}return;}
+  if(k==='setup'){if(f==='rackCount'){setRackCount(p,parseInt(t.value,10)||1);}else p.setup[f]=t.value;touch(p);render();const el=document.getElementById(t.id);if(el)el.focus();return;}
+  if(k==='rack'){const r=p.racks.find(x=>x.id===t.dataset.id);if(!r)return;
+    if(f==='name')r.name=t.value.trim();else if(f==='rows')r.rows=Math.max(0,Math.min(500,parseInt(t.value,10)||0));else if(f==='blocked'){r.blocked=parseRows(t.value);t.value=fmtRows(r.blocked);}
+    touch(p);S.dirty=true;refreshSummary();return;}
+  if(k==='item'){const it=p.items.find(x=>x.id===t.dataset.id);if(!it)return;if(t.dataset.c){it.custom=it.custom||{};it.custom[t.dataset.c]=t.value.trim();}else it[f]=t.value.trim();touch(p);S.dirty=true;refreshSummary();return;}
+  if(k==='col'){const c=p.customCols.find(x=>x.id===t.dataset.id);if(c){c.name=t.value.trim()||c.name;touch(p);S.dirty=true;}return;}
+  if(k==='opt'){if(t.type==='checkbox'){p.options[f]=t.checked;if(f==='useCustomOrder'&&t.checked&&!(p.options.featureOrder||[]).length)p.options.featureOrder=featureOrder(Object.assign({},p,{options:Object.assign({},p.options,{useCustomOrder:false})}));}
+    else p.options[f]=Math.max(0,Math.min(50,parseInt(t.value,10)||0));touch(p);render();return;}
+  if(k==='imp'&&S.imp){const imp=S.imp;
+    if(f==='sheet'){imp.sheet=t.value;imp.rows=sheetRows(imp.wb,imp.sheet);imp.headerRow=detectHeader(imp.rows);autoMap(p,imp);}
+    else if(f==='headerRow'){imp.headerRow=Math.max(0,parseInt(t.value,10)||0);autoMap(p,imp);}
+    else if(f==='map')imp.map[t.dataset.field]=parseInt(t.value,10);
+    else if(f==='letter'){const i=letterToIdx(t.value);if(i===-2){toast('Use a column letter like C, or a number like 3.');return;}imp.map[t.dataset.field]=i;}
+    else if(f==='mode')imp.mode=t.value;
+    else imp[f]=t.checked;
+    render();return;}
+});
+
+document.addEventListener('input',e=>{if(e.target.id==='coreFilter'){S.q=e.target.value;const p=cur();const tb=$('#coreBody');if(tb)tb.innerHTML=coreRows(p,computePlan(p));}});
+document.addEventListener('focusout',e=>{
+  if(!S.dirty)return;const box=e.target.closest&&e.target.closest('[data-live]');if(!box)return;
+  if(e.relatedTarget&&box.contains(e.relatedTarget))return;
+  setTimeout(()=>{if(!S.dirty)return;const a=document.activeElement;if(a&&a.closest&&a.closest('[data-live]'))return;const y=window.scrollY;render();window.scrollTo(0,y);},0);
+});
+
+/* drag to reorder features */
+document.addEventListener('dragstart',e=>{const li=e.target.closest&&e.target.closest('#featlist li');if(!li)return;S.drag=li.dataset.feat;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',S.drag);}catch(_){}});
+document.addEventListener('dragover',e=>{const li=e.target.closest&&e.target.closest('#featlist li');if(!li||S.drag==null)return;e.preventDefault();document.querySelectorAll('#featlist li.dragover').forEach(x=>x.classList.remove('dragover'));li.classList.add('dragover');});
+document.addEventListener('drop',e=>{const li=e.target.closest&&e.target.closest('#featlist li');if(!li||S.drag==null)return;e.preventDefault();const p=cur();const order=featureOrder(p);
+  const from=order.indexOf(S.drag),to=order.indexOf(li.dataset.feat);if(from>=0&&to>=0&&from!==to){const [x]=order.splice(from,1);order.splice(to,0,x);p.options.featureOrder=order;touch(p);}S.drag=null;render();});
+document.addEventListener('dragend',()=>{S.drag=null;document.querySelectorAll('#featlist li.dragover').forEach(x=>x.classList.remove('dragover'));});
+
+function runImport(p){
+  const imp=S.imp;const data=imp.rows.slice(imp.headerRow>0?imp.headerRow:0).filter(r=>r.some(v=>String(v).trim()!==''));
+  if((imp.map.hole??-1)<0&&(imp.map.feature??-1)<0){toast('Map Hole ID or Feature ID to a column first.');return;}
+  const{items,extraCols}=buildImport(p,imp,data);
+  if(imp.mode==='replace')p.items=[];
+  const colIds={};extraCols.forEach(e=>{let c=p.customCols.find(x=>x.name.toLowerCase()===e.name.toLowerCase());if(!c){c={id:uid(),name:e.name};p.customCols.push(c);}colIds[e.name]=c.id;});
+  const key=it=>[(it.feature||'').toLowerCase(),(it.hole||'').toLowerCase(),String(it.box||'').toLowerCase()].join('|');
+  const have=new Set(p.items.map(key));let added=0,skipped=0;
+  items.forEach(it=>{Object.entries(it._extras).forEach(([n,v])=>{it.custom[colIds[n]]=v;});delete it._extras;
+    if(imp.skipDup&&it.box!==''&&have.has(key(it))){skipped++;return;}have.add(key(it));p.items.push(it);added++;});
+  S.imp=null;touch(p);render();toast(`Imported ${added} box${added===1?'':'es'}${skipped?`, skipped ${skipped} already in the plan`:''}`);
+}
+
+load();render();
+})();
+</script>
+
+</body></html>
