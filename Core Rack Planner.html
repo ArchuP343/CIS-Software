@@ -216,6 +216,35 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:16px 0}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:var(--r);z-index:50;max-width:calc(100% - 32px);font-size:.9rem;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 footer.foot{padding-block:28px;color:var(--muted);font-size:.8rem}
 @media (prefers-reduced-motion:no-preference){button,.cell,.tab{transition:border-color .15s,background-color .15s,color .15s}}
+
+/* map, edit sections, locking */
+.mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px;align-items:start}
+@media (max-width:920px){.mapwrap{grid-template-columns:1fr}}
+.mapcanvas{overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2);max-height:78vh}
+#shedmap{display:block;user-select:none;-webkit-user-select:none}
+#shedmap [data-rack],#shedmap [data-rowh],#shedmap [data-label]{touch-action:none}
+#shedmap [data-rack].droptarget > rect:first-child{stroke:var(--accent);stroke-width:4}
+#shedmap .dragging{opacity:.85}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 116px);display:flex;flex-direction:column;gap:12px}
+.side ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.toolbar .field{width:120px}
+.modal{position:fixed;inset:0;background:rgba(10,15,18,.55);display:grid;place-items:center;z-index:60;padding:16px}
+.modal .box{background:var(--surface);color:var(--ink);border-radius:var(--r);padding:18px;width:min(980px,100%);max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.modal img{max-width:100%;height:auto;border:1px solid var(--line);background:#fff;align-self:flex-start}
+details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85rem;color:var(--muted);margin-left:10px}
+.lockbtn{font-size:.8rem;padding:4px 10px}
+.lockbtn[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.rack.locked{border-color:var(--ink)}
+.rowgroup{display:flex;flex-direction:column;gap:8px;padding-right:16px;border-right:1px dashed var(--line);flex:0 0 auto}
+.rowgroup:last-child{border-right:0;padding-right:0}
+.rowgroup>header{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.rowgroup>header .rname{font-family:var(--f-display);font-weight:700;font-size:1.05rem}
+.rowgroup .racks{display:flex;gap:10px;align-items:flex-end}
+.pill.upd{background:var(--warn-soft);color:var(--warn)}
+.pill.lock{background:var(--ink);color:var(--surface)}
+tr.locked-empty td{color:var(--muted);font-style:italic}
+.preview-map{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:var(--r)}
 </style>
 
 <div id="app"></div>
@@ -228,6 +257,7 @@ footer.foot{padding-block:28px;color:var(--muted);font-size:.8rem}
 (function(){
 'use strict';
 const KEY='coreRackPlanner.v1';
+const RW=3,RL=4,AISLE=2;
 const $=(s,r=document)=>r.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-3);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -236,47 +266,52 @@ const nat=(a,b)=>coll.compare(String(a??''),String(b??''));
 const numv=v=>{if(v===''||v==null)return Infinity;const n=parseFloat(v);return isNaN(n)?Infinity:n;};
 const colLetter=i=>{let s='';i=i+1;while(i>0){const r=(i-1)%26;s=String.fromCharCode(65+r)+s;i=Math.floor((i-1)/26);}return s;};
 const letterToIdx=s=>{s=String(s||'').trim().toUpperCase();if(!s)return -1;if(/^\d+$/.test(s))return (+s)-1;if(!/^[A-Z]+$/.test(s))return -2;let n=0;for(const ch of s)n=n*26+(ch.charCodeAt(0)-64);return n-1;};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const int=(v,d)=>{const n=parseInt(v,10);return isNaN(n)?d:n;};
+const LIGHT={bg:'#f5f6f4',grid:'#e1e5e1',frame:'#7b868c',surface:'#ffffff',ink:'#1a2126',muted:'#5a656c',accent:'#0e6a78',warn:'#9a4f08',lockfill:'#e4e7e4',chipS:'58%',chipL:'74%'};
+function pal(){try{const cs=getComputedStyle(document.documentElement);const g=n=>cs.getPropertyValue('--'+n).trim();
+  const o={bg:g('surface-2'),grid:g('line'),frame:g('rackframe'),surface:g('surface'),ink:g('ink'),muted:g('muted'),accent:g('accent'),warn:g('warn'),lockfill:g('hatch'),chipS:g('chipS'),chipL:g('chipL')};
+  return o.ink?o:LIGHT;}catch(e){return LIGHT;}}
 
 /* ---------- state ---------- */
-const S={addMode:'range',manualOpen:false,projects:[],seeded:false,view:'home',currentId:null,tab:'plan',q:'',confirm:null,imp:null,dirty:false,drag:null,storageOk:true};
+const S={projects:[],seeded:false,view:'home',currentId:null,tab:'plan',q:'',confirm:null,imp:null,dirty:false,drag:null,storageOk:true,
+  addMode:'range',manualOpen:false,open:{},sel:null,updated:{},zoom:26,renaming:null,focusAfter:null,modal:null};
 
 function defaults(){return{
-  setup:{rackCount:4,defaultRows:12,defaultBlocked:'',letter:'A',startNum:1,pattern:'number'},
-  racks:[],customCols:[],
+  setup:{rackCount:0,defaultRows:'',defaultBlocked:'',letter:'A',startNum:1,rowCount:1,backToBack:false,autoCount:true},
+  racks:[],layout:{rows:[]},map:{title:'',w:0,h:0,labels:[]},customCols:[],
   options:{useCustomOrder:false,featureOrder:[],gapAfterHole:0,gapAfterFeature:0,newRackPerFeature:false},
   items:[],baseline:null};}
-
-function makeRack(p,i){return{id:uid(),name:rackName(p.setup,i),rows:+p.setup.defaultRows||12,blocked:parseRows(p.setup.defaultBlocked)};}
+function makeRack(p){return{id:uid(),name:'',rows:int(p.setup.defaultRows,12)||12,blocked:parseRows(p.setup.defaultBlocked),locked:false,lock:{}};}
 function newProject(name,site){
-  const p=Object.assign({id:uid(),name:name||'Untitled plan',site:site||'',notes:'',stage:'holes',created:Date.now(),updated:Date.now()},defaults());
-  p.setup.defaultRows='';p.setup.rackCount=0;p.setup.autoCount=true;
-  return p;}
-
+  return Object.assign({id:uid(),name:name||'Untitled plan',site:site||'',notes:'',stage:'holes',created:Date.now(),updated:Date.now()},defaults());}
 function exampleProject(){
   const p=newProject('Example: Shed 2 core move','Example data, safe to delete');p.stage='done';
-  p.setup.defaultRows=12;p.setup.defaultBlocked='1-2';p.setup.rackCount=4;
-  p.racks=[];for(let i=0;i<4;i++)p.racks.push(makeRack(p,i));
+  p.setup.defaultRows='12';p.setup.defaultBlocked='1-2';p.setup.rowCount=2;p.setup.autoCount=false;
+  p.racks=Array.from({length:6},()=>makeRack(p));p.layout=autoLayout(p.racks,2,false);p.setup.rackCount=6;
+  p.map.title='Core shed 2';p.map.labels=[{id:uid(),x:2,y:16,text:'Roller door'}];
   const col={id:uid(),name:'Core size'};p.customCols=[col];
   const holes=[['ZXY','DD101',4,'NQ'],['BMA2','DD109',5,'HQ'],['BMA1','DD101',4,'HQ'],['BMA2','DD105',3,'HQ'],['BMA1','DD100',6,'HQ']];
   holes.forEach(([f,h,n,size],hi)=>{let d=0;for(let b=1;b<=n;b++){const len=4.6+((b*7+hi*3)%9)/10;const from=d;d=+(d+len).toFixed(2);
     p.items.push({id:uid(),feature:f,hole:h,box:String(b),of:String(n),from:from.toFixed(2),to:d.toFixed(2),custom:{[col.id]:size}});}});
-  return p;}
+  deriveNames(p);return p;}
 
 function load(){
   try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);if(Array.isArray(d.projects))S.projects=d.projects.map(normalise);S.seeded=!!d.seeded;}}
   catch(e){S.storageOk=false;}
-  if(!S.seeded&&!S.projects.length){S.projects=[exampleProject()];S.seeded=true;persist(true);}
+  if(!S.seeded&&!S.projects.length){S.projects=[exampleProject()];S.seeded=true;persist();}
 }
-function persist(quiet){
-  try{localStorage.setItem(KEY,JSON.stringify({projects:S.projects,seeded:true}));S.storageOk=true;}
-  catch(e){S.storageOk=false;}
+function persist(){
+  try{localStorage.setItem(KEY,JSON.stringify({projects:S.projects,seeded:true}));S.storageOk=true;}catch(e){S.storageOk=false;}
   const el=$('#savestate');if(el)el.textContent=saveText();
 }
 function saveText(){return S.storageOk?'Saved in this browser':'Not saved in this browser. Use “Save project file”.';}
 function normalise(p){const d=defaults();p.setup=Object.assign(d.setup,p.setup||{});p.options=Object.assign(d.options,p.options||{});
-  p.racks=(p.racks||[]).map(r=>({id:r.id||uid(),name:r.name||'',rows:+r.rows||0,blocked:Array.isArray(r.blocked)?r.blocked:parseRows(r.blocked)}));
+  p.racks=(p.racks||[]).map(r=>({id:r.id||uid(),name:r.name||'',rows:+r.rows||0,blocked:Array.isArray(r.blocked)?r.blocked:parseRows(r.blocked),locked:!!r.locked,lock:r.lock||{}}));
+  if(!p.layout||!Array.isArray(p.layout.rows))p.layout={rows:p.racks.length?[{id:uid(),x:2,y:2,width:1,rackIds:p.racks.map(r=>r.id)}]:[]};
+  p.map=Object.assign({title:'',w:0,h:0,labels:[]},p.map||{});if(!Array.isArray(p.map.labels))p.map.labels=[];
   p.customCols=p.customCols||[];p.items=(p.items||[]).map(it=>Object.assign({id:uid(),feature:'',hole:'',box:'',of:'',from:'',to:'',custom:{}},it));
-  p.baseline=p.baseline||null;p.id=p.id||uid();p.stage=p.stage||'done';return p;}
+  p.baseline=p.baseline||null;p.id=p.id||uid();p.stage=p.stage||'done';deriveNames(p);return p;}
 const cur=()=>S.projects.find(p=>p.id===S.currentId);
 function touch(p){p.updated=Date.now();persist();}
 
@@ -296,39 +331,91 @@ function featureOrder(p){
   return custom.concat(feats.filter(f=>!custom.includes(f)));}
 const fname=f=>f===''?'(no feature)':f;
 
+
+const cleanLetter=L=>(String(L||'A').toUpperCase().replace(/[^A-Z]/g,''))||'A';
+
+/* ---------- layout: rows of racks ---------- */
+function rowDims(row){const n=row.rackIds.length;const cols=row.width===2?2:1;const len=Math.max(1,Math.ceil(n/cols));return{w:cols*RW,h:len*RL,len,cols};}
+function rackCell(row,k){const{len,cols}=rowDims(row);const col=cols===2&&k>=len?1:0;const kk=col?k-len:k;return{x:row.x+col*RW,y:row.y+kk*RL};}
+function sortedRows(p){return[...p.layout.rows].sort((a,b)=>a.x-b.x||a.y-b.y);}
+function deriveNames(p){
+  if(!p.layout)p.layout={rows:[]};const L=p.layout;const byId=new Map(p.racks.map(r=>[r.id,r]));const seen=new Set();
+  L.rows.forEach(row=>{row.rackIds=(row.rackIds||[]).filter(id=>byId.has(id)&&!seen.has(id)&&!!seen.add(id));});
+  const orphans=p.racks.filter(r=>!seen.has(r.id));
+  if(orphans.length){if(!L.rows.length)L.rows.push({id:uid(),x:2,y:2,width:1,rackIds:[]});const last=sortedRows(p).pop();last.rackIds.push(...orphans.map(r=>r.id));}
+  L.rows=L.rows.filter(r=>r.rackIds.length);
+  const first=cleanLetter(p.setup.letter),start=int(p.setup.startNum,1);const ordered=[];
+  sortedRows(p).forEach((row,i)=>{row.letter=letterAdd(first,i);row.rackIds.forEach((id,k)=>{const r=byId.get(id);r.name=row.letter+(start+k);r.rowId=row.id;ordered.push(r);});});
+  p.racks=ordered;
+}
+function autoLayout(racks,R,b2b){
+  R=clamp(R|0,1,Math.max(1,racks.length));const per=Math.ceil(racks.length/R)||1;const rows=[];let x=2;
+  for(let i=0;i<R;i++){const ids=racks.slice(i*per,(i+1)*per).map(r=>r.id);if(!ids.length)break;const row={id:uid(),x,y:2,width:b2b?2:1,rackIds:ids};rows.push(row);x+=rowDims(row).w+AISLE;}
+  return{rows};
+}
+function relayout(p,n,R,b2b){
+  deriveNames(p);n=clamp(n|0,1,500);R=clamp(R|0,1,n);
+  let racks=p.racks.slice();while(racks.length<n)racks.push(makeRack(p));if(racks.length>n)racks=racks.slice(0,n);
+  const per=Math.ceil(n/R);const old=sortedRows(p);const rows=[];
+  for(let i=0;i<R;i++){const ids=racks.slice(i*per,(i+1)*per).map(r=>r.id);if(!ids.length)break;const o=old[i];
+    rows.push({id:o?o.id:uid(),x:o?o.x:2,y:o?o.y:2,width:b2b===undefined?(o?o.width:(p.setup.backToBack?2:1)):(b2b?2:1),rackIds:ids,_new:!o});}
+  let x=rows.length?rows[0].x:2;
+  rows.forEach((r,i)=>{if(i>0&&(b2b!==undefined||r._new))r.x=x;x=r.x+rowDims(r).w+AISLE;delete r._new;});
+  if(b2b!==undefined)p.setup.backToBack=b2b;
+  p.racks=racks;p.layout.rows=rows;p.setup.rackCount=n;p.setup.rowCount=rows.length;deriveNames(p);
+}
+function rowOf(p,rackId){for(const row of p.layout.rows){const i=row.rackIds.indexOf(rackId);if(i>=0)return{row,i};}return null;}
+function swapRacks(p,a,b){const A=rowOf(p,a),B=rowOf(p,b);if(!A||!B)return;A.row.rackIds[A.i]=b;B.row.rackIds[B.i]=a;}
+function nameSnapshot(p){deriveNames(p);return new Map(p.racks.map(r=>[r.id,r.name]));}
+function markUpdated(p,before){deriveNames(p);p.racks.forEach(r=>{const old=before.get(r.id);if(old===undefined||old===r.name)return;
+  const orig=S.updated[r.id]!==undefined?S.updated[r.id]:old;if(orig===r.name)delete S.updated[r.id];else S.updated[r.id]=orig;});}
+function mapBounds(p){let w=0,h=0;p.layout.rows.forEach(r=>{const d=rowDims(r);w=Math.max(w,r.x+d.w);h=Math.max(h,r.y+d.h);});
+  (p.map.labels||[]).forEach(l=>{w=Math.max(w,l.x+Math.ceil(String(l.text).length*0.4)+2);h=Math.max(h,l.y+1);});
+  return{w:Math.max(int(p.map.w,0),w+2,12),h:Math.max(int(p.map.h,0),h+2,10)};}
+
+/* ---------- locking ---------- */
+function setLock(p,ids,on){const P=computePlan(p);ids.forEach(id=>{const r=p.racks.find(x=>x.id===id);if(!r)return;
+  if(on){const R=P.racks.find(x=>x.rack.id===id);r.lock={};if(R)R.cells.forEach(c=>{if(c.item)r.lock[c.slot]=c.item.id;});r.locked=true;}else{r.locked=false;r.lock={};}});}
+
 /* ---------- planning engine ---------- */
 function computePlan(p){
+  deriveNames(p);
   const feats=featureOrder(p);
   const rank=new Map(feats.map((f,i)=>[f,i]));
   const hue=new Map(feats.map((f,i)=>[f,Math.round((i*137.508+192)%360)]));
   const sorted=[...p.items].sort((a,b)=>(rank.get(a.feature||'')-rank.get(b.feature||''))||nat(a.hole,b.hole)||(numv(a.box)-numv(b.box))||(numv(a.from)-numv(b.from))||(numv(a.to)-numv(b.to))||nat(a.id,b.id));
-  const o=p.options;
-  const racks=p.racks.map(r=>({rack:r,used:0,cells:Array.from({length:Math.max(0,r.rows|0)},(_,i)=>({slot:i+1,blocked:(r.blocked||[]).includes(i+1),item:null,gap:false}))}));
+  const o=p.options;const byId=new Map(p.items.map(i=>[i.id,i]));
+  const racks=p.racks.map(r=>({rack:r,used:0,locked:!!r.locked,cells:Array.from({length:Math.max(0,r.rows|0)},(_,i)=>({slot:i+1,blocked:(r.blocked||[]).includes(i+1),item:null,gap:false,fixed:false}))}));
+  const pos={},lockedIds=new Set();
+  const place=(R,c,it)=>{c.item=it;R.used++;pos[it.id]={rackId:R.rack.id,rackName:R.rack.name,slot:c.slot,key:R.rack.id+'|'+c.slot};};
+  racks.forEach(R=>{if(!R.locked)return;Object.entries(R.rack.lock||{}).forEach(([slot,id])=>{const c=R.cells[(+slot)-1];const it=byId.get(id);
+    if(!c||c.blocked||!it||lockedIds.has(id))return;c.fixed=true;place(R,c,it);lockedIds.add(id);});});
+  const pool=sorted.filter(it=>!lockedIds.has(it.id));
   let ri=0,si=0;
-  const next=()=>{while(ri<racks.length){const c=racks[ri].cells;while(si<c.length&&c[si].blocked)si++;if(si<c.length)return c[si];ri++;si=0;}return null;};
+  const next=()=>{while(ri<racks.length){if(racks[ri].locked){ri++;si=0;continue;}const c=racks[ri].cells;while(si<c.length&&c[si].blocked)si++;if(si<c.length)return c[si];ri++;si=0;}return null;};
   const skip=n=>{for(let k=0;k<n;k++){const c=next();if(!c)return;c.gap=true;si++;}};
-  const pos={},unplaced=[];let prev=null;
-  for(const it of sorted){
+  const unplaced=[];let prev=null;
+  for(const it of pool){
     if(prev){const nf=(prev.feature||'')!==(it.feature||''),nh=nf||prev.hole!==it.hole;
-      if(nf&&o.newRackPerFeature){if(ri<racks.length&&racks[ri].used>0){ri++;si=0;}}
+      if(nf&&o.newRackPerFeature){next();if(ri<racks.length&&racks[ri].used>0){ri++;si=0;}}
       else if(nf)skip(Math.max(+o.gapAfterFeature||0,+o.gapAfterHole||0));
       else if(nh)skip(+o.gapAfterHole||0);}
     prev=it;
     const c=next();if(!c){unplaced.push(it);continue;}
-    c.item=it;racks[ri].used++;si++;
-    const r=racks[ri].rack;pos[it.id]={rackId:r.id,rackName:r.name,slot:c.slot,key:r.id+'|'+c.slot};
+    place(racks[ri],c,it);si++;
   }
-  let usable=0,gaps=0;racks.forEach(R=>R.cells.forEach(c=>{if(!c.blocked)usable++;if(c.gap)gaps++;}));
-  const placed=sorted.length-unplaced.length;
-  return{sorted,racks,pos,unplaced,hue,feats,usable,gaps,placed,free:usable-placed-gaps};
+  let usable=0,gaps=0,free=0;racks.forEach(R=>R.cells.forEach(c=>{if(c.blocked)return;usable++;if(c.gap)gaps++;else if(!c.item&&!R.locked)free++;}));
+  const rowList=sortedRows(p).map(row=>({row,racks:row.rackIds.map(id=>racks.find(R=>R.rack.id===id)).filter(Boolean)}));
+  return{sorted,racks,rowList,pos,unplaced,hue,feats,usable,gaps,placed:sorted.length-unplaced.length,free,locked:lockedIds.size};
 }
 
 function computeMoves(p,P){
   const B=p.baseline;if(!B)return null;
+  const nm=new Map(p.racks.map(r=>[r.id,r.name]));const fix=b=>b?Object.assign({},b,{rackName:nm.get(b.rackId)||b.rackName}):b;
   const ids=new Set(p.items.map(i=>i.id));
-  const removed=Object.entries(B.positions).filter(([id])=>!ids.has(id)).map(([id,b])=>({kind:'remove',item:b.snap,from:b,to:null}));
+  const removed=Object.entries(B.positions).filter(([id])=>!ids.has(id)).map(([id,b])=>({kind:'remove',item:b.snap,from:fix(b),to:null}));
   const pending=[];const noSpace=[];
-  for(const it of P.sorted){const c=P.pos[it.id],b=B.positions[it.id];
+  for(const it of P.sorted){const c=P.pos[it.id],b=fix(B.positions[it.id]);
     if(!c){noSpace.push(it);continue;}
     if(!b)pending.push({kind:'new',item:it,from:null,to:c});
     else if(b.key!==c.key)pending.push({kind:'move',item:it,from:b,to:c});}
@@ -346,16 +433,24 @@ function computeMoves(p,P){
   return{steps,noSpace,moved,newIds:new Set(pending.filter(m=>m.kind==='new').map(m=>m.item.id)),count:pending.length,removed:removed.length};
 }
 const loc=x=>!x?'Incoming':x.label?x.label:`${x.rackName}-${x.slot}`;
+const nameOf=(p,id,fallback)=>{const r=p.racks.find(x=>x.id===id);return r?r.name:fallback;};
 
 /* ---------- views ---------- */
 function render(){
   const app=$('#app');
   if(S.view==='project'&&!cur())S.view='home';
   const p=cur();
-  app.innerHTML=S.view==='home'?homeView():p.stage==='holes'?holesStep(p):p.stage==='racks'?racksStep(p):projectView();
+  const mc=$('#mapcanvas');const keep=mc?{l:mc.scrollLeft,t:mc.scrollTop}:null;
+  app.innerHTML=(S.view==='home'?homeView():p.stage==='holes'?holesStep(p):p.stage==='racks'?racksStep(p):projectView())+modalView();
+  const mc2=$('#mapcanvas');if(mc2&&keep){mc2.scrollLeft=keep.l;mc2.scrollTop=keep.t;}
   if(S.focusAfter){const el=document.getElementById(S.focusAfter);S.focusAfter=null;if(el){el.focus();if(el.select)el.select();}}
   S.dirty=false;
 }
+function modalView(){if(!S.modal)return'';return `<div class="modal" role="dialog" aria-modal="true" aria-label="Shed map image"><div class="box">
+  <div class="row" style="justify-content:space-between;align-items:center"><h2>Shed map image</h2><button data-act="modal-close">Close</button></div>
+  <p class="muted small">The PNG has been downloaded. If it didn’t download, right-click the image and choose “Save Image As”, or use the button below.</p>
+  <img src="${S.modal.png}" alt="Top-down map of the core shed racks">
+  <div class="row"><button class="primary" data-act="modal-dl">Download PNG again</button></div></div></div>`;}
 
 function homeView(){
   const list=[...S.projects].sort((a,b)=>b.updated-a.updated);
@@ -365,14 +460,14 @@ function homeView(){
   <main class="wrap stack">
     <section class="hero">
       <h1>Plan where drill core goes before it goes on the rack</h1>
-      <p>Set up your racks, enter or import boxes, and the planner fills slots in order: feature, then hole, then box number, then depth. Add a box you missed and everything after it shifts for you.</p>
+      <p>Add your holes and boxes, set up the racks, and the planner fills slots in order: feature, then hole, then box number, then depth. Add a box you missed and everything after it shifts for you.</p>
     </section>
     <div class="grid2">
       <section class="panel">
         <header><h2>New project</h2></header>
         <form id="newForm" class="stack" autocomplete="off">
           <div class="field"><label class="label" for="np_name">Project name</label><input id="np_name" placeholder="e.g. 2026 Spillway drilling, core move" required></div>
-          <div class="field"><label class="label" for="np_site">Shed / location</label><input id="np_site" placeholder="e.g. Core shed 2, bay B"></div>
+          <div class="field"><label class="label" for="np_site">Shed / location</label><input id="np_site" placeholder="e.g. Core shed 2"></div>
           <div class="row"><button class="primary" type="submit">Create project</button></div>
         </form>
       </section>
@@ -389,11 +484,11 @@ function homeView(){
       ${list.length?`<div class="projlist">${list.map(p=>{const P=computePlan(p);return `
         <article class="projcard">
           <div class="stack" style="gap:4px;min-width:0">
-            <h3>${esc(p.name)}</h3>
-            <div class="meta"><span>${esc(p.site||'No location set')}</span><span class="mono">${p.racks.length} racks</span><span class="mono">${p.items.length} boxes</span>${P.unplaced.length?`<span style="color:var(--warn)">${P.unplaced.length} don't fit</span>`:''}<span>Updated ${new Date(p.updated).toLocaleString()}</span></div>
+            ${S.renaming===p.id?`<form id="renameForm" class="row" data-id="${p.id}" style="align-items:center"><input id="rn_name" value="${esc(p.name)}" aria-label="Project name" style="min-width:min(320px,100%)"><input id="rn_site" value="${esc(p.site)}" placeholder="Shed / location" aria-label="Shed / location"><button class="primary" type="submit">Save</button><button type="button" data-act="cancel">Cancel</button></form>`:`<h3>${esc(p.name)}</h3>`}
+            <div class="meta"><span>${esc(p.site||'No location set')}</span><span class="mono">${p.racks.length} racks</span><span class="mono">${p.items.length} boxes</span>${p.stage!=='done'?'<span>Setup not finished</span>':''}${P.unplaced.length&&p.stage==='done'?`<span style="color:var(--warn)">${P.unplaced.length} don't fit</span>`:''}<span>Updated ${new Date(p.updated).toLocaleString()}</span></div>
           </div>
           <div class="acts">${S.confirm==='del:'+p.id?`<span class="small">Delete this project?</span><button class="danger solid" data-act="del-yes" data-id="${p.id}">Delete</button><button data-act="cancel">Keep</button>`:
-          `<button class="primary" data-act="open" data-id="${p.id}">Open</button><button data-act="dup" data-id="${p.id}">Duplicate</button><button class="ghost danger" data-act="del" data-id="${p.id}">Delete</button>`}</div>
+          `<button class="primary" data-act="open" data-id="${p.id}">Open</button><button data-act="rename" data-id="${p.id}">Rename</button><button data-act="dup" data-id="${p.id}">Duplicate</button><button class="ghost danger" data-act="del" data-id="${p.id}">Delete</button>`}</div>
         </article>`;}).join('')}</div>`:`<div class="empty">No projects yet. Create one above.</div>`}
     </section>
     <footer class="foot">Data stays on this computer, in this browser. Clearing browser data removes it, so save a project file for anything you need to keep.</footer>
@@ -402,12 +497,11 @@ function homeView(){
 
 function projectView(){
   const p=cur(),P=computePlan(p),M=computeMoves(p,P);
-  const tabs=[['plan','Rack plan',''],['core','Holes & boxes',p.items.length],['setup','Racks',p.racks.length],['moves','Moves',M?M.steps.length:''],['advanced','Advanced','']];
+  const tabs=[['plan','Rack plan',''],['map','Shed map',''],['moves','Moves',M?M.steps.length:''],['edit','Edit','']];
   let body='';
-  if(S.tab==='setup')body=setupTab(p,P);
-  else if(S.tab==='core')body=coreTab(p,P);
+  if(S.tab==='map')body=mapTab(p,P);
   else if(S.tab==='moves')body=movesTab(p,P,M);
-  else if(S.tab==='advanced')body=advancedTab(p,P);
+  else if(S.tab==='edit')body=editTab(p,P);
   else body=planTab(p,P,M);
   return `
   <div class="appbar"><div class="wrap">
@@ -425,124 +519,224 @@ function projectView(){
   <main class="wrap">
     <div id="summary">${summary(p,P)}</div>
     <div class="stack">${body}</div>
-    <footer class="foot">Fill order: feature, then hole ID, then box number, then From depth. Row 1 is the top of each rack.</footer>
+    <footer class="foot">Fill order: feature, then hole ID, then box number, then From depth. Rows are lettered left to right on the shed map, racks numbered top to bottom, and slot 1 is the top of each rack.</footer>
   </main>`;
 }
 
 function summary(p,P){
   return `<div class="summary">
+    <div class="stat"><span class="label">Rows</span><b>${p.layout.rows.length}</b></div>
     <div class="stat"><span class="label">Racks</span><b>${p.racks.length}</b></div>
     <div class="stat"><span class="label">Usable slots</span><b>${P.usable}</b></div>
     <div class="stat"><span class="label">Boxes</span><b>${p.items.length}</b></div>
     <div class="stat"><span class="label">Placed</span><b>${P.placed}</b></div>
+    ${P.locked?`<div class="stat"><span class="label">In locked racks</span><b>${P.locked}</b></div>`:''}
     ${P.gaps?`<div class="stat"><span class="label">Spare (reserved)</span><b>${P.gaps}</b></div>`:''}
-    <div class="stat ${P.free<0?'bad':''}"><span class="label">Free slots</span><b>${Math.max(0,P.free)}</b></div>
+    <div class="stat"><span class="label">Free slots</span><b>${Math.max(0,P.free)}</b></div>
     ${P.unplaced.length?`<div class="stat warn"><span class="label">Don't fit</span><b>${P.unplaced.length}</b></div>`:''}
   </div>`;
 }
 function refreshSummary(){const p=cur();if(!p)return;const el=$('#summary');if(el)el.innerHTML=summary(p,computePlan(p));}
-
-/* setup */
-function setupTab(p,P){
-  const s=p.setup;
-  const example1=rackName(s,0),example2=rackName(s,1),example3=rackName(s,2);
-  return `
-  <section class="panel">
-    <header><h2>Project</h2></header>
-    <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr))">
-      <div class="field"><label class="label" for="pj_name">Project name</label><input id="pj_name" data-k="proj" data-f="name" value="${esc(p.name)}"></div>
-      <div class="field"><label class="label" for="pj_site">Shed / location</label><input id="pj_site" data-k="proj" data-f="site" value="${esc(p.site)}"></div>
-      <div class="field"><label class="label" for="pj_notes">Notes</label><input id="pj_notes" data-k="proj" data-f="notes" value="${esc(p.notes)}" placeholder="Optional"></div>
-    </div>
-  </section>
-
-  <section class="panel">
-    <header><h2>Racks</h2><span class="muted small">New racks use these settings. Existing racks keep theirs unless you apply to all.</span></header>
-    <div class="formgrid">
-      <div class="field"><label class="label" for="st_count">Number of racks</label><input id="st_count" type="number" min="1" max="500" data-k="setup" data-f="rackCount" value="${p.racks.length}"></div>
-      <div class="field"><label class="label" for="st_rows">Rows per rack</label><input id="st_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="${esc(s.defaultRows)}"></div>
-      <div class="field"><label class="label" for="st_block">Blocked rows</label><input id="st_block" data-k="setup" data-f="defaultBlocked" value="${esc(s.defaultBlocked)}" placeholder="e.g. 1, 2 or 1-2"><span class="hint">Shown on the plan, never filled</span></div>
-      <div class="field"><label class="label" for="st_letter">Rack letter</label><input id="st_letter" maxlength="3" data-k="setup" data-f="letter" value="${esc(s.letter)}"></div>
-      <div class="field"><label class="label" for="st_start">Start number</label><input id="st_start" type="number" min="0" data-k="setup" data-f="startNum" value="${esc(s.startNum)}"></div>
-      <div class="field"><label class="label" for="st_pat">Naming</label><select id="st_pat" data-k="setup" data-f="pattern">
-        <option value="number" ${s.pattern!=='letter'?'selected':''}>Number goes up</option>
-        <option value="letter" ${s.pattern==='letter'?'selected':''}>Letter goes up</option></select>
-        <span class="hint mono">${esc(example1)}, ${esc(example2)}, ${esc(example3)}…</span></div>
-    </div>
-    <div class="row" style="margin-top:14px">
-      <button data-act="apply-rows">Apply rows to all racks</button>
-      <button data-act="apply-blocked">Apply blocked rows to all racks</button>
-      <button data-act="rename-all">Rename all racks</button>
-      <span class="spacer"></span>
-      <button data-act="fit-racks">Fit number of racks to boxes</button>
-      <button class="primary" data-act="rack-add">+ Add rack</button>
-    </div>
-  </section>
-  ${!p.racks.length?`<div class="notice info"><strong>No racks yet.</strong> Enter rows per rack and the number of racks above, or press “Fit number of racks to boxes”.</div>`:''}
-
-  <section class="stack">
-    <h2>Rack list</h2>
-    <p class="muted small">Edit any rack individually. Rack order here is the order core is filled in. Blocked rows accept lists and ranges, like <span class="mono">1, 2</span> or <span class="mono">1-2, 14</span>.</p>
-    <div class="tablewrap" data-live>
-      <table class="edit">
-        <thead><tr><th>Order</th><th>Rack ID</th><th class="num">Rows</th><th>Blocked rows</th><th class="num">Usable</th><th class="num">Planned</th><th></th></tr></thead>
-        <tbody>${p.racks.map((r,i)=>{const R=P.racks[i];const used=R?R.used:0;const usable=r.rows-(r.blocked||[]).filter(b=>b<=r.rows).length;return `
-          <tr>
-            <td class="mono muted" style="padding-left:10px">${i+1}</td>
-            <td class="w-m"><input id="rk_n_${r.id}" data-k="rack" data-id="${r.id}" data-f="name" value="${esc(r.name)}" aria-label="Rack ID"></td>
-            <td class="w-s"><input id="rk_r_${r.id}" data-k="rack" data-id="${r.id}" data-f="rows" inputmode="numeric" value="${r.rows}" aria-label="Rows" style="text-align:right"></td>
-            <td class="w-m"><input id="rk_b_${r.id}" data-k="rack" data-id="${r.id}" data-f="blocked" value="${esc(fmtRows(r.blocked))}" placeholder="none" aria-label="Blocked rows"></td>
-            <td class="num mono">${usable}</td>
-            <td class="num mono">${used}</td>
-            <td style="text-align:right"><button class="icon ghost" data-act="rack-up" data-id="${r.id}" ${i===0?'disabled':''} aria-label="Move up">↑</button><button class="icon ghost" data-act="rack-down" data-id="${r.id}" ${i===p.racks.length-1?'disabled':''} aria-label="Move down">↓</button><button class="icon ghost danger" data-act="rack-del" data-id="${r.id}" ${p.racks.length<=1?'disabled':''} aria-label="Remove rack">✕</button></td>
-          </tr>`;}).join('')}</tbody>
-      </table>
-    </div>
-    <div class="shed">${P.racks.map(R=>rackElev(R,P,null,true)).join('')}</div>
-  </section>`;
-}
+const lockBtn=(act,id,on,labelOff)=>`<button class="lockbtn" aria-pressed="${on}" data-act="${act}" data-id="${id}">${on?'Locked':labelOff}</button>`;
 
 function rackElev(R,P,M,small){
   const r=R.rack;
   const cells=R.cells.map(c=>{
-    if(c.blocked)return `<div class="cell blocked" title="${esc(r.name)} row ${c.slot}: blocked">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
-    if(c.gap)return `<div class="cell gap" title="${esc(r.name)} row ${c.slot}: spare (reserved)">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
+    if(c.blocked)return `<div class="cell blocked" title="${esc(r.name)} slot ${c.slot}: blocked">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
+    if(c.gap)return `<div class="cell gap" title="${esc(r.name)} slot ${c.slot}: spare (reserved)">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
     if(c.item){const it=c.item;const moved=M&&M.moved.has(it.id);
-      return `<div class="cell filled ${moved?'moved':''}" style="--h:${P.hue.get(it.feature||'')}" title="${esc(r.name)} row ${c.slot}: ${esc(fname(it.feature))} ${esc(it.hole)} box ${esc(it.box)}${it.of?' of '+esc(it.of):''}">${small?'':`<span class="n">${c.slot}</span><span>${esc(it.hole)}·${esc(it.box)}</span>`}</div>`;}
-    return `<div class="cell" title="${esc(r.name)} row ${c.slot}: empty">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
+      return `<div class="cell filled ${moved?'moved':''}" style="--h:${P.hue.get(it.feature||'')}" title="${esc(r.name)} slot ${c.slot}: ${esc(fname(it.feature))} ${esc(it.hole)} box ${esc(it.box)}${it.of?' of '+esc(it.of):''}">${small?'':`<span class="n">${c.slot}</span><span>${esc(it.hole)}·${esc(it.box)}</span>`}</div>`;}
+    return `<div class="cell" title="${esc(r.name)} slot ${c.slot}: empty">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
   }).join('');
-  return `<button class="rackcol" data-act="goto-rack" data-id="${r.id}" aria-label="Rack ${esc(r.name)}"><span class="rname">${esc(r.name)}</span><div class="rack ${small?'small':''}">${cells||'<div class="cell">no rows</div>'}</div>${small?'':`<span class="rmeta">${R.used}/${R.cells.filter(c=>!c.blocked).length}</span>`}</button>`;
+  return `<button class="rackcol" data-act="goto-rack" data-id="${r.id}" aria-label="Rack ${esc(r.name)}"><span class="rname">${esc(r.name)}</span><div class="rack ${small?'small':''} ${R.locked?'locked':''}">${cells||'<div class="cell">no slots</div>'}</div>${small?'':`<span class="rmeta">${R.used}/${R.cells.filter(c=>!c.blocked).length}${R.locked?' · locked':''}${S.updated[r.id]?' · moved':''}</span>`}</button>`;
 }
 
-/* core boxes */
-function coreTab(p,P){
+/* plan */
+function planTab(p,P,M){
+  if(!p.racks.length)return `<div class="empty">No racks yet. Open <b>Edit</b> and set up the racks under Edit Rack Settings.</div>`;
+  const counts=new Map();P.sorted.forEach(it=>counts.set(it.feature||'',(counts.get(it.feature||'')||0)+1));
   const cols=p.customCols;
   return `
-  <div class="grid2">
-    <section class="panel">
-      <header><h2>Import from Excel or CSV</h2></header>
-      ${importPanel(p)}
-    </section>
-    <section class="panel">
-      <header><h2>Add holes manually</h2><span class="muted small">Add a whole hole, or one box you missed</span></header>
-      ${addBoxForm(p,P)}
-    </section>
-  </div>
-
-  <section class="stack">
-    <div class="row" style="justify-content:space-between;align-items:center">
-      <h2>All boxes <span class="muted mono small">${p.items.length}</span></h2>
-      <div class="row" style="align-items:center">
-        <input id="coreFilter" type="search" placeholder="Filter by feature, hole or box" value="${esc(S.q)}" style="width:min(260px,100%)" aria-label="Filter boxes">
-        ${p.items.length?(S.confirm==='clear'?`<span class="small">Remove all ${p.items.length} boxes?</span><button class="danger solid" data-act="clear-yes">Remove all</button><button data-act="cancel">Cancel</button>`:`<button class="ghost danger" data-act="clear">Remove all</button>`):''}
-      </div>
-    </div>
-    <p class="muted small">Listed in fill order. Edit any cell. The order and rack locations update when you leave the table.</p>
-    ${p.items.length?`<div class="tablewrap" data-live><table class="edit">
-      <thead><tr><th>Planned slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}<th></th></tr></thead>
-      <tbody id="coreBody">${coreRows(p,P)}</tbody></table></div>`:`<div class="empty">No boxes yet. Add a hole above or import a spreadsheet.</div>`}
-  </section>`;
+  ${P.unplaced.length?`<div class="notice"><strong>${P.unplaced.length} box${P.unplaced.length>1?'es':''} don't fit.</strong> Add racks or slots in Edit, unlock a rack, or reduce spare slots. First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
+  <section class="panel">
+    <header><h2>Shed overview</h2>
+      <div class="legend small">${P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span> <span class="muted">${counts.get(f)||0}</span></span>`).join('')}
+      <span><span class="sw" style="background:repeating-linear-gradient(-45deg,var(--surface) 0 2px,var(--hatch) 2px 4px)"></span>Blocked</span>
+      ${P.gaps?`<span><span class="sw" style="border-style:dashed;border-color:var(--muted)"></span>Spare</span>`:''}
+      ${M&&M.moved.size?`<span><span class="sw" style="box-shadow:inset 3px 0 0 var(--warn)"></span>Moves</span>`:''}</div>
+    </header>
+    ${P.sorted.length?'':`<p class="muted" style="margin-bottom:10px">No boxes yet. Add or import them in <b>Edit</b>, under Holes &amp; boxes.</p>`}
+    <div class="shed">${P.rowList.map(G=>{const all=G.racks.length&&G.racks.every(R=>R.locked);return `<div class="rowgroup"><header><span class="rname">Row ${esc(G.row.letter)}</span>${lockBtn('lock-row',G.row.id,all,'Lock row')}</header><div class="racks">${G.racks.map(R=>rackElev(R,P,M,false)).join('')}</div></div>`;}).join('')}</div>
+    <p class="muted small">Slot 1 is the top of the rack. Click a rack to jump to its table. Locked racks keep their boxes where they are, and everything else is planned around them.</p>
+  </section>
+  <div class="rackgrid">
+  ${P.racks.map(R=>{const r=R.rack;return `
+    <section class="racksec" id="rack-${r.id}">
+      <header><div class="row" style="align-items:baseline;gap:8px"><h3>Rack ${esc(r.name)}</h3>${S.updated[r.id]?`<span class="pill upd">updated position, was ${esc(S.updated[r.id])}</span>`:''}</div>
+        <div class="row" style="align-items:center;gap:10px"><span class="muted small mono">${R.used} of ${R.cells.filter(c=>!c.blocked).length} used</span>${lockBtn('lock-rack',r.id,R.locked,'Lock rack')}</div></header>
+      <div class="tablewrap"><table>
+        <thead><tr><th class="num">Slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}${M?'<th>Change</th>':''}</tr></thead>
+        <tbody>${R.cells.map(c=>{const span=6+cols.length+(M?1:0);
+          if(c.blocked)return `<tr class="blocked"><td class="num mono">${c.slot}</td><td colspan="${span}">Blocked, not for use</td></tr>`;
+          if(c.gap)return `<tr class="gap"><td class="num mono">${c.slot}</td><td colspan="${span}">Spare, kept free</td></tr>`;
+          if(!c.item)return `<tr class="${R.locked?'locked-empty':'empty-slot'}"><td class="num mono">${c.slot}</td><td colspan="${span}">${R.locked?'Empty (rack locked)':'Empty'}</td></tr>`;
+          const it=c.item;let ch='';
+          if(M){if(M.newIds.has(it.id))ch='<span class="pill new">New</span>';else if(M.moved.has(it.id)){const b=p.baseline.positions[it.id];ch=`<span class="pill moved">from ${esc(nameOf(p,b.rackId,b.rackName))}-${b.slot}</span>`;}}
+          return `<tr><td class="num mono">${c.slot}</td><td><span class="chip" style="--h:${P.hue.get(it.feature||'')}">${esc(fname(it.feature))}</span></td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(col=>`<td>${esc((it.custom||{})[col.id])}</td>`).join('')}${M?`<td>${ch}</td>`:''}</tr>`;
+        }).join('')||`<tr><td class="muted">This rack has no slots. Set slots in Edit.</td></tr>`}</tbody>
+      </table></div>
+    </section>`;}).join('')}
+  </div>`;
 }
+
+/* shed map */
+function featBreakdown(R,P){const m=new Map();R.cells.forEach(c=>{if(c.item){const f=c.item.feature||'';m.set(f,(m.get(f)||0)+1);}});return[...m.entries()];}
+function mapSVG(p,P,o){
+  const C=o.C,pl=o.pal,B=mapBounds(p),W=B.w*C,H=B.h*C,exp=!!o.export,compact=!!o.compact;
+  const rinfo=new Map(P.racks.map(R=>[R.rack.id,R]));const sel=o.interactive?S.sel:null;
+  const fc=f=>`hsl(${P.hue.get(f)}, ${pl.chipS}, ${pl.chipL})`;
+  let legend='',legH=0;const top=exp?66:0;
+  if(exp){const items=P.feats.map(f=>({c:fc(f),t:fname(f)}));if(p.racks.some(r=>r.locked))items.push({c:pl.lockfill,t:'Locked rack',stroke:pl.ink});
+    let lx=0,ly=0;const maxW=Math.max(W,340);items.forEach(it=>{const w=26+it.t.length*7.4+16;if(lx+w>maxW&&lx>0){lx=0;ly+=22;}
+      legend+=`<rect x="${lx}" y="${ly}" width="16" height="11" rx="2" fill="${it.c}" ${it.stroke?`stroke="${it.stroke}"`:''}/><text x="${lx+22}" y="${ly+10}" font-size="12" fill="${pl.ink}">${esc(it.t)}</text>`;lx+=w;});
+    legH=items.length?ly+30:0;}
+  const ox=exp?16:0,oy=top;const totalW=exp?Math.max(W+32,372):W,totalH=exp?top+H+16+legH+8:H;
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" ${o.interactive?'id="shedmap"':''} width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" ${exp?'font-family="Arial, Helvetica, sans-serif"':'style="font-family:var(--f-mono)"'} role="img" aria-label="Top-down shed map">`;
+  const gid='grid'+C+(exp?'x':'');
+  s+=`<defs><pattern id="${gid}" width="${C}" height="${C}" patternUnits="userSpaceOnUse"><path d="M ${C} 0 L 0 0 0 ${C}" fill="none" stroke="${pl.grid}" stroke-width="1"/></pattern></defs>`;
+  if(exp)s+=`<rect width="${totalW}" height="${totalH}" fill="#ffffff"/><text x="16" y="32" font-size="21" font-weight="700" fill="${pl.ink}">${esc(p.map.title||p.name)}</text><text x="16" y="52" font-size="12" fill="${pl.muted}">${esc([p.site,`${p.racks.length} racks in ${p.layout.rows.length} row${p.layout.rows.length>1?'s':''}`,new Date().toLocaleDateString()].filter(Boolean).join(' · '))}</text>`;
+  s+=`<g transform="translate(${ox} ${oy})"><rect width="${W}" height="${H}" fill="${pl.bg}"/><rect width="${W}" height="${H}" fill="url(#${gid})"/><rect x="1" y="1" width="${W-2}" height="${H-2}" fill="none" stroke="${pl.frame}" stroke-width="2"/>`;
+  P.rowList.forEach(G=>{const row=G.row,d=rowDims(row);const all=G.racks.length&&G.racks.every(R=>R.locked);
+    const hx=row.x*C,hy=(row.y-1)*C,hw=d.w*C;const rsel=sel&&sel.type==='row'&&sel.id===row.id;
+    s+=`<g data-rowg="${row.id}">`;
+    s+=`<g ${o.interactive?`data-rowh="${row.id}" style="cursor:move"`:''}><rect x="${hx+1}" y="${hy+3}" width="${hw-2}" height="${C-6}" rx="4" fill="${rsel?pl.accent:pl.ink}"/><text x="${hx+hw/2}" y="${hy+C/2+4}" text-anchor="middle" font-size="${compact?Math.max(9,C*0.6):12}" font-weight="700" fill="${pl.surface}">${compact?esc(row.letter):`Row ${esc(row.letter)}${all?' · locked':''}`}</text></g>`;
+    G.racks.forEach((R,k)=>{const r=R.rack,cell=rackCell(row,k),x=cell.x*C,y=cell.y*C,w=RW*C,h=RL*C;
+      const usable=R.cells.filter(c=>!c.blocked).length;const upd=!!o.interactive&&S.updated[r.id]!==undefined;const isSel=sel&&sel.type==='rack'&&sel.id===r.id;
+      const stroke=isSel?pl.accent:upd?pl.warn:R.locked?pl.ink:pl.frame;
+      s+=`<g data-rack="${r.id}" ${o.interactive?'style="cursor:grab"':''}><rect x="${x+1.5}" y="${y+1.5}" width="${w-3}" height="${h-3}" rx="3" fill="${R.locked?pl.lockfill:pl.surface}" stroke="${stroke}" stroke-width="${isSel||R.locked?2.5:1.5}" ${upd&&!isSel?'stroke-dasharray="5 3"':''}/>`;
+      if(compact){s+=`<text x="${x+w/2}" y="${y+h/2}" text-anchor="middle" font-size="${Math.max(8,C*0.62)}" font-weight="700" fill="${pl.ink}">${esc(r.name)}</text>`;}
+      else{s+=`<text x="${x+w/2}" y="${y+C*0.9}" text-anchor="middle" font-size="${Math.round(C*0.62)}" font-weight="700" fill="${pl.ink}">${esc(r.name)}</text>`;
+        s+=`<text x="${x+w/2}" y="${y+C*1.5}" text-anchor="middle" font-size="${Math.max(9,C*0.38)}" fill="${pl.muted}">${R.used}/${usable}</text>`;
+        if(upd)s+=`<text x="${x+w/2}" y="${y+C*2.1}" text-anchor="middle" font-size="${Math.max(8,C*0.36)}" font-weight="700" fill="${pl.warn}">(updated</text><text x="${x+w/2}" y="${y+C*2.55}" text-anchor="middle" font-size="${Math.max(8,C*0.36)}" font-weight="700" fill="${pl.warn}">position)</text>`;
+        if(R.locked)s+=`<text x="${x+w/2}" y="${y+h-C*0.85}" text-anchor="middle" font-size="${Math.max(8,C*0.34)}" font-weight="700" letter-spacing="1" fill="${pl.ink}">LOCKED</text>`;}
+      const bx=x+C*0.3,bw=w-C*0.6,by=y+h-C*0.55,bh=Math.max(4,C*0.28);
+      s+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="1.5" fill="${pl.grid}"/>`;
+      let cx=bx;featBreakdown(R,P).forEach(([f,n])=>{const ww=usable?bw*n/usable:0;s+=`<rect x="${cx}" y="${by}" width="${ww}" height="${bh}" fill="${fc(f)}"/>`;cx+=ww;});
+      s+=`</g>`;});
+    s+=`</g>`;});
+  (p.map.labels||[]).forEach(l=>{const lsel=sel&&sel.type==='label'&&sel.id===l.id;const tw=String(l.text).length*C*0.36+C*0.8;
+    s+=`<g data-label="${l.id}" ${o.interactive?'style="cursor:move"':''}><rect x="${l.x*C}" y="${l.y*C+3}" width="${tw}" height="${C-6}" rx="3" fill="${pl.surface}" stroke="${lsel?pl.accent:pl.frame}" stroke-width="${lsel?2:1}" stroke-dasharray="${lsel?'':'4 3'}"/><text x="${l.x*C+C*0.4}" y="${l.y*C+C/2+4}" font-size="${Math.max(9,C*0.46)}" font-weight="600" fill="${pl.ink}">${esc(l.text)}</text></g>`;});
+  s+=`</g>`;
+  if(exp&&legend)s+=`<g transform="translate(16 ${top+H+18})">${legend}</g>`;
+  return s+`</svg>`;
+}
+function holesInRack(R){const out=[];R.cells.forEach(c=>{if(!c.item)return;const it=c.item;const k=(it.feature||'')+'-'+(it.hole||'');const last=out[out.length-1];
+  if(last&&last.k===k)last.items.push(it);else out.push({k,feature:it.feature,hole:it.hole,items:[it]});});return out;}
+function mapSide(p,P){
+  const sel=S.sel;
+  if(sel&&sel.type==='rack'){const R=P.racks.find(x=>x.rack.id===sel.id);if(R){const r=R.rack;const row=p.layout.rows.find(x=>x.id===r.rowId);const hs=holesInRack(R);
+    return `<div><span class="label">Rack</span><h2>${esc(r.name)}</h2></div>
+      ${S.updated[r.id]!==undefined?`<span class="pill upd" style="align-self:flex-start">updated position, was ${esc(S.updated[r.id])}</span>`:''}
+      <p class="muted small">Row ${esc(row?row.letter:'')} · ${R.used} of ${R.cells.filter(c=>!c.blocked).length} slots used</p>
+      ${hs.length?`<ul class="small">${hs.map(h=>`<li><span class="mono">${esc([h.feature,h.hole].filter(Boolean).join('-'))}</span> <span class="muted">box ${esc(boxSummary(h.items))}</span></li>`).join('')}</ul>`:'<p class="muted small">Empty in the current plan.</p>'}
+      <div class="row">${lockBtn('lock-rack',r.id,R.locked,'Lock rack')}<button data-act="goto-rack" data-id="${r.id}">Show in rack plan</button></div>
+      <p class="muted small">${R.locked?'Locked: its boxes stay where they are and the rest of the plan works around it.':'Drag this rack onto another rack to swap them. The rack takes the ID of its new position and the plan updates.'}</p>`;}}
+  if(sel&&sel.type==='row'){const row=p.layout.rows.find(x=>x.id===sel.id);if(row){const all=row.rackIds.every(id=>(p.racks.find(r=>r.id===id)||{}).locked);
+    return `<div><span class="label">Row</span><h2>Row ${esc(row.letter)}</h2></div>
+      <div class="row" style="align-items:center"><span>${row.rackIds.length} rack${row.rackIds.length>1?'s':''}</span><span class="spacer"></span><button class="icon" data-act="row-del-rack" data-id="${row.id}" aria-label="Remove last rack from row" ${p.racks.length<=1?'disabled':''}>−</button><button class="icon" data-act="row-add-rack" data-id="${row.id}" aria-label="Add rack to row">+</button></div>
+      <label class="check"><input type="checkbox" id="row_b2b_${row.id}" data-k="row" data-id="${row.id}" data-f="width" ${row.width===2?'checked':''}> Back to back (2 racks wide)</label>
+      <div class="row">${lockBtn('lock-row',row.id,all,'Lock row')}</div>
+      <p class="muted small">Drag the row’s dark header to move the whole row. Rows are lettered left to right, so moving a row past another changes its letter.</p>`;}}
+  if(sel&&sel.type==='label'){const l=p.map.labels.find(x=>x.id===sel.id);if(l)return `<div><span class="label">Label</span><h2>Map label</h2></div>
+      <div class="field"><label class="label" for="lb_text">Text</label><input id="lb_text" data-k="label" data-id="${l.id}" data-f="text" value="${esc(l.text)}"></div>
+      <div class="row"><button class="ghost danger" data-act="label-del" data-id="${l.id}">Delete label</button></div>`;}
+  return `<div><span class="label">How it works</span><h2>Shed map</h2></div>
+    <ul class="small"><li>Drag a rack onto another rack to swap them.</li><li>Drag a row’s dark header to move the whole row. It snaps to the grid.</li><li>Rows are lettered left to right. Racks are numbered top to bottom.</li><li>Click a rack, row or label to see its options.</li></ul>
+    <div class="legend small">${P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span></span>`).join('')}</div>`;
+}
+function mapTab(p,P){
+  const B=mapBounds(p);const upd=Object.entries(S.updated).filter(([id])=>p.racks.some(r=>r.id===id));
+  return `<section class="panel"><div class="toolbar">
+      <div class="field grow" style="width:auto;min-width:min(220px,100%)"><label class="label" for="mp_title">Map title</label><input id="mp_title" data-k="map" data-f="title" value="${esc(p.map.title)}" placeholder="${esc(p.name)}"></div>
+      <div class="field"><label class="label" for="mp_w">Shed width</label><input id="mp_w" type="number" min="1" data-k="map" data-f="w" value="${B.w}"></div>
+      <div class="field"><label class="label" for="mp_h">Shed length</label><input id="mp_h" type="number" min="1" data-k="map" data-f="h" value="${B.h}"></div>
+      <div class="field"><label class="label" for="mp_zoom">Zoom</label><select id="mp_zoom" data-k="ui" data-f="zoom">${[[18,'Small'],[26,'Medium'],[34,'Large']].map(([v,l])=>`<option value="${v}" ${S.zoom===v?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div class="row"><button data-act="map-add-row">+ Row</button><button data-act="map-add-label">+ Label</button><button data-act="map-auto">Tidy layout</button><button class="primary" data-act="map-png">Save as PNG</button></div>
+    </div><p class="muted small" style="margin-top:8px">Sizes are in grid squares. One rack is ${RW} × ${RL} squares.</p></section>
+    ${upd.length?`<div class="msg warn row" style="align-items:center;justify-content:space-between"><span>${upd.length} rack${upd.length>1?'s have':' has'} a new ID from the map: ${upd.map(([id,old])=>`<b class="mono">${esc(nameOf(p,id,''))}</b> (was ${esc(old)})`).join(', ')}. The rack plan has been updated to match.</span><button class="ghost" data-act="clear-updated">Clear notes</button></div>`:''}
+    <div class="mapwrap"><div class="mapcanvas" id="mapcanvas">${mapSVG(p,P,{C:S.zoom,pal:pal(),interactive:true})}</div><aside class="panel side">${mapSide(p,P)}</aside></div>`;
+}
+function exportPNG(p){
+  const P=computePlan(p);const svg=mapSVG(p,P,{C:26,pal:LIGHT,export:true});
+  const img=new Image();
+  img.onload=()=>{const sc=2;const cv=document.createElement('canvas');cv.width=img.width*sc;cv.height=img.height*sc;const ctx=cv.getContext('2d');ctx.scale(sc,sc);ctx.drawImage(img,0,0);
+    let url;try{url=cv.toDataURL('image/png');}catch(e){toast('Couldn’t create the image in this browser.');return;}
+    S.modal={png:url,name:safeName(p.map.title||p.name)+' - shed map.png'};render();modalDownload();};
+  img.onerror=()=>toast('Couldn’t create the image.');
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+function modalDownload(){if(!S.modal)return;const a=document.createElement('a');a.href=S.modal.png;a.download=S.modal.name;document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),500);}
+
+/* edit */
+function editTab(p,P){
+  const sec=(key,title,cap,body)=>`<details class="manual sec" data-sec="${key}" ${S.open[key]?'open':''}><summary><span>${title}<span class="cap">${cap}</span></span></summary><div class="body stack">${body}</div></details>`;
+  const holes=new Set(p.items.map(i=>(i.feature||'')+'|'+(i.hole||''))).size;
+  return sec('holes','Holes &amp; boxes',`${holes} hole${holes===1?'':'s'} · ${p.items.length} box${p.items.length===1?'':'es'}`,holesBody(p,P))
+    +sec('racks','Edit Rack Settings',`${p.racks.length} rack${p.racks.length===1?'':'s'} in ${p.layout.rows.length} row${p.layout.rows.length===1?'':'s'}`,rackSettings(p,P))
+    +sec('adv','Advanced','Feature order, spacing and custom columns',advancedTab(p,P));
+}
+function holesBody(p,P){
+  const cols=p.customCols;
+  return `<div class="grid2">
+    <section class="panel"><header><h3>Import from Excel or CSV</h3></header>${importPanel(p)}</section>
+    <section class="panel"><header><h3>Add holes manually</h3><span class="muted small">Add a whole hole, or one box you missed</span></header>${addBoxForm(p,P)}</section>
+  </div>
+  <div class="row" style="justify-content:space-between;align-items:center">
+    <h3>All boxes <span class="muted mono small">${p.items.length}</span></h3>
+    <div class="row" style="align-items:center">
+      <input id="coreFilter" type="search" placeholder="Filter by feature, hole or box" value="${esc(S.q)}" style="width:min(260px,100%)" aria-label="Filter boxes">
+      ${p.items.length?(S.confirm==='clear'?`<span class="small">Remove all ${p.items.length} boxes?</span><button class="danger solid" data-act="clear-yes">Remove all</button><button data-act="cancel">Cancel</button>`:`<button class="ghost danger" data-act="clear">Remove all</button>`):''}
+    </div>
+  </div>
+  <p class="muted small">Listed in fill order. Edit any cell. The order and rack locations update when you leave the table.</p>
+  ${p.items.length?`<div class="tablewrap" data-live><table class="edit">
+    <thead><tr><th>Planned slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}<th></th></tr></thead>
+    <tbody id="coreBody">${coreRows(p,P)}</tbody></table></div>`:`<div class="empty">No boxes yet. Import a spreadsheet or add a hole above.</div>`}`;
+}
+function rackSettings(p,P){
+  const s=p.setup;const rows=p.layout.rows;const allB2B=rows.length>0&&rows.every(r=>r.width===2);
+  const slotsShown=s.defaultRows||(p.racks[0]?p.racks[0].rows:'');
+  const need=racksNeeded(p);
+  return `<div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr))">
+      <div class="field"><label class="label" for="st_rows">Slots per rack</label><input id="st_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="${esc(slotsShown)}"><span class="hint">Applies to every rack</span></div>
+      <div class="field"><label class="label" for="st_block">Blocked slots</label><input id="st_block" data-k="setup" data-f="defaultBlocked" value="${esc(s.defaultBlocked)}" placeholder="e.g. 1-2"><span class="hint">Shown on the plan, never filled</span></div>
+      <div class="field"><label class="label" for="st_count">Number of racks</label><input id="st_count" type="number" min="1" max="500" data-k="setup" data-f="rackCount" value="${p.racks.length}"><span class="hint">${need?`${need} needed for all boxes`:'&nbsp;'}</span></div>
+      <div class="field"><label class="label" for="st_rowsct">Rows of racks</label><input id="st_rowsct" type="number" min="1" max="50" data-k="setup" data-f="rowCount" value="${rows.length||1}"><span class="hint">Racks are split evenly</span></div>
+      <div class="field"><label class="label" for="st_letter">First row letter</label><input id="st_letter" maxlength="3" data-k="setup" data-f="letter" value="${esc(s.letter)}"></div>
+      <div class="field"><label class="label" for="st_start">First rack number</label><input id="st_start" type="number" min="0" data-k="setup" data-f="startNum" value="${esc(s.startNum)}"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="st_b2b" data-k="setup" data-f="backToBack" ${allB2B?'checked':''}> Racks in each row are back to back (rows are 2 racks wide)</label>
+    <div class="row"><button data-act="fit-racks">Fit number of racks to boxes</button><button data-act="rack-add">+ Add rack</button></div>
+    <p class="muted small">Rack IDs come from the shed map: the row letter (A is furthest left) and the rack’s position from the top. To move individual racks or rows, use the Shed map tab.</p>
+    <div class="tablewrap" data-live>
+      <table class="edit">
+        <thead><tr><th>Rack ID</th><th>Row</th><th class="num">Slots</th><th>Blocked slots</th><th class="num">Usable</th><th class="num">Planned</th><th>Locked</th><th></th></tr></thead>
+        <tbody>${P.rowList.map(G=>G.racks.map((R,i)=>{const r=R.rack;const usable=R.cells.filter(c=>!c.blocked).length;return `
+          <tr>
+            <td class="mono" style="padding-left:10px"><b>${esc(r.name)}</b>${S.updated[r.id]!==undefined?` <span class="pill upd">was ${esc(S.updated[r.id])}</span>`:''}</td>
+            <td class="mono muted">${esc(G.row.letter)}</td>
+            <td class="w-s"><input id="rk_r_${r.id}" data-k="rack" data-id="${r.id}" data-f="rows" inputmode="numeric" value="${r.rows}" aria-label="Slots" style="text-align:right"></td>
+            <td class="w-m"><input id="rk_b_${r.id}" data-k="rack" data-id="${r.id}" data-f="blocked" value="${esc(fmtRows(r.blocked))}" placeholder="none" aria-label="Blocked slots"></td>
+            <td class="num mono">${usable}</td>
+            <td class="num mono">${R.used}</td>
+            <td style="padding-left:10px"><input type="checkbox" id="rk_l_${r.id}" data-k="rack" data-id="${r.id}" data-f="locked" ${R.locked?'checked':''} aria-label="Lock rack ${esc(r.name)}"></td>
+            <td style="text-align:right"><button class="icon ghost" data-act="rack-up" data-id="${r.id}" ${i===0?'disabled':''} aria-label="Move up in row">↑</button><button class="icon ghost" data-act="rack-down" data-id="${r.id}" ${i===G.racks.length-1?'disabled':''} aria-label="Move down in row">↓</button><button class="icon ghost danger" data-act="rack-del" data-id="${r.id}" ${p.racks.length<=1?'disabled':''} aria-label="Remove rack">✕</button></td>
+          </tr>`;}).join('')).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+/* import, manual entry and wizard step 1 (shared) */
 function coreRows(p,P){
   const q=S.q.trim().toLowerCase();
   const rows=P.sorted.filter(it=>!q||[it.feature,it.hole,it.box,it.feature+'-'+it.hole].some(v=>String(v||'').toLowerCase().includes(q)));
@@ -621,44 +815,51 @@ function holesStep(p){
     </div>
   </div></main>`;
 }
-function genRacks(p,n){return Array.from({length:n},(_,i)=>makeRack(p,i));}
+
+function genRacks(p,n){return Array.from({length:n},()=>makeRack(p));}
 function rackDims(p){const rows=parseInt(p.setup.defaultRows,10);if(!(rows>0))return{valid:false,rows:0,usable:0};const usable=rows-parseRows(p.setup.defaultBlocked).filter(b=>b<=rows).length;return{valid:usable>0,rows,usable};}
-function racksNeeded(p){const d=rackDims(p);if(!d.valid)return 0;if(!p.items.length)return 1;
-  for(let n=Math.max(1,Math.ceil(p.items.length/d.usable));n<=500;n++){if(!computePlan(Object.assign({},p,{racks:genRacks(p,n)})).unplaced.length)return n;}return 500;}
-function syncWizardRacks(p){const d=rackDims(p);if(!d.valid){p.racks=[];return;}
-  const n=p.setup.autoCount!==false?racksNeeded(p):Math.max(1,Math.min(500,parseInt(p.setup.rackCount,10)||1));p.setup.rackCount=n;p.racks=genRacks(p,n);}
-function fitRacks(p){const P0=computePlan(p);let guard=0;
-  while(computePlan(p).unplaced.length&&p.racks.length<500&&guard++<500)p.racks.push(makeRack(p,p.racks.length));
-  while(p.racks.length>1){const P=computePlan(p);const last=P.racks[P.racks.length-1];if(last.used>0)break;const t=p.racks.pop();if(computePlan(p).unplaced.length){p.racks.push(t);break;}}
-  p.setup.rackCount=p.racks.length;return P0;}
+function racksNeeded(p){const d=rackDims(p);const usable=d.valid?d.usable:(p.racks[0]?p.racks[0].rows-(p.racks[0].blocked||[]).length:0);if(!(usable>0))return 0;if(!p.items.length)return 1;
+    for(let n=Math.max(1,Math.ceil(p.items.length/usable));n<=500;n++){const t=Object.assign({},p,{racks:Array.from({length:n},()=>({id:uid(),name:'',rows:d.valid?d.rows:p.racks[0].rows,blocked:d.valid?parseRows(p.setup.defaultBlocked):p.racks[0].blocked.slice(),locked:false,lock:{}})),layout:{rows:[]}});
+    if(!computePlan(t).unplaced.length)return n;}return 500;}
+function syncWizardRacks(p){const d=rackDims(p);if(!d.valid){p.racks=[];p.layout={rows:[]};return;}
+  const n=p.setup.autoCount!==false?racksNeeded(p):clamp(int(p.setup.rackCount,1),1,500);p.setup.rackCount=n;
+  p.racks=genRacks(p,n);const R=clamp(int(p.setup.rowCount,1),1,n);p.setup.rowCount=R;p.layout=autoLayout(p.racks,R,!!p.setup.backToBack);deriveNames(p);}
+function fitRacks(p){
+  let guard=0;const lastRow=()=>sortedRows(p).pop();
+  if(!p.racks.length){p.racks.push(makeRack(p));deriveNames(p);}
+  while(computePlan(p).unplaced.length&&p.racks.length<500&&guard++<500){const r=makeRack(p);p.racks.push(r);lastRow().rackIds.push(r.id);}
+  while(p.racks.length>1){const P=computePlan(p);const row=lastRow();const id=row.rackIds[row.rackIds.length-1];const R=P.racks.find(x=>x.rack.id===id);
+    if(!R||R.used>0||R.locked)break;row.rackIds.pop();p.racks=p.racks.filter(r=>r.id!==id);deriveNames(p);
+    if(computePlan(p).unplaced.length){const r=makeRack(p);p.racks.push(r);lastRow().rackIds.push(r.id);deriveNames(p);break;}}
+  p.setup.rackCount=p.racks.length;p.setup.rowCount=p.layout.rows.length;deriveNames(p);}
+function rowRanges(p){return sortedRows(p).map(row=>{const ids=row.rackIds;const f=p.racks.find(r=>r.id===ids[0]),l=p.racks.find(r=>r.id===ids[ids.length-1]);return ids.length>1?`${f.name}–${l.name}`:f.name;});}
 function racksStep(p){
   const s=p.setup,d=rackDims(p),auto=s.autoCount!==false,need=racksNeeded(p);
-  const P=computePlan(p);const cap=d.usable*p.racks.length;
+  const P=computePlan(p);const cap=d.usable*p.racks.length;const ranges=rowRanges(p);
   return `${wizBar(p,2)}
   <main class="wrap"><div class="wizard">
     <div class="intro"><span class="label">Step 2 of 2</span><h1>Set up the racks</h1>
       <p>Enter how many slots each rack has. The number of racks is worked out from your ${p.items.length} box${p.items.length===1?'':'es'}.</p></div>
     <section class="panel">
-      <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr))">
-        <div class="field"><label class="label" for="wz_rows">Slots per rack</label><input id="wz_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="${esc(s.defaultRows)}" placeholder="e.g. 12"><span class="hint">All rows on a rack, including blocked ones</span></div>
-        <div class="field"><label class="label" for="wz_block">Blocked rows</label><input id="wz_block" data-k="setup" data-f="defaultBlocked" value="${esc(s.defaultBlocked)}" placeholder="e.g. 1-2"><span class="hint">Shown on the plan, never filled</span></div>
+      <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr))">
+        <div class="field"><label class="label" for="wz_rows">Slots per rack</label><input id="wz_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="${esc(s.defaultRows)}" placeholder="e.g. 12"><span class="hint">All slots on a rack, including blocked ones</span></div>
+        <div class="field"><label class="label" for="wz_block">Blocked slots</label><input id="wz_block" data-k="setup" data-f="defaultBlocked" value="${esc(s.defaultBlocked)}" placeholder="e.g. 1-2"><span class="hint">Shown on the plan, never filled. Slot 1 is the top.</span></div>
         <div class="field"><label class="label" for="wz_count">Number of racks</label><input id="wz_count" type="number" min="1" max="500" data-k="setup" data-f="rackCount" value="${d.valid?p.racks.length:''}" ${d.valid?'':'disabled'} placeholder="Enter slots first">
           <span class="hint">${!d.valid?'Calculated once slots per rack is entered':auto?`Calculated from ${p.items.length} boxes`:`You set this. ${need} needed for all boxes. <button type="button" class="ghost icon" data-act="auto-count" style="padding:0 4px;color:var(--accent)">Use ${need}</button>`}</span></div>
       </div>
       <hr class="sep">
-      <div class="formgrid">
-        <div class="field"><label class="label" for="wz_letter">Rack letter</label><input id="wz_letter" maxlength="3" data-k="setup" data-f="letter" value="${esc(s.letter)}"></div>
-        <div class="field"><label class="label" for="wz_start">Start number</label><input id="wz_start" type="number" min="0" data-k="setup" data-f="startNum" value="${esc(s.startNum)}"></div>
-        <div class="field"><label class="label" for="wz_pat">Naming</label><select id="wz_pat" data-k="setup" data-f="pattern">
-          <option value="number" ${s.pattern!=='letter'?'selected':''}>Number goes up</option><option value="letter" ${s.pattern==='letter'?'selected':''}>Letter goes up</option></select>
-          <span class="hint mono">${esc(rackName(s,0))}, ${esc(rackName(s,1))}, ${esc(rackName(s,2))}…</span></div>
+      <h3 style="margin-bottom:10px">Rows</h3>
+      <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr))">
+        <div class="field"><label class="label" for="wz_rowct">Rows of racks</label><input id="wz_rowct" type="number" min="1" max="50" data-k="setup" data-f="rowCount" value="${esc(s.rowCount||1)}" ${d.valid?'':'disabled'}><span class="hint">Separate lines of racks in the shed. Each row gets its own letter.</span></div>
       </div>
+      <label class="check" style="margin-top:10px"><input type="checkbox" id="wz_b2b" data-k="setup" data-f="backToBack" ${s.backToBack?'checked':''} ${d.valid?'':'disabled'}> Racks in each row are back to back (rows are 2 racks wide)</label>
+      ${d.valid&&ranges.length?`<p class="small" style="margin-top:10px">${ranges.length} row${ranges.length>1?'s':''}: <span class="mono">${ranges.map(esc).join(' · ')}</span></p>`:''}
     </section>
     ${!s.defaultRows?`<div class="msg info">Enter slots per rack to work out how many racks you need.</div>`:
-      !d.valid?`<div class="msg err">Every row is blocked, so nothing can be placed. Reduce the blocked rows.</div>`:
+      !d.valid?`<div class="msg err">Every slot is blocked, so nothing can be placed. Reduce the blocked slots.</div>`:
       `<section class="panel"><header><h2>Preview</h2><span class="calcline"><span class="mono">${p.racks.length}</span> rack${p.racks.length>1?'s':''} × <span class="mono">${d.usable}</span> usable slots = <span class="mono">${cap}</span> slots for <span class="mono">${p.items.length}</span> boxes</span></header>
-        ${P.unplaced.length?`<div class="msg warn" style="margin-bottom:12px">${P.unplaced.length} box${P.unplaced.length>1?'es':''} won’t fit with ${p.racks.length} rack${p.racks.length>1?'s':''}. Add racks or slots.</div>`:`<p class="muted small" style="margin-bottom:10px">${Math.max(0,P.free)} slot${P.free===1?'':'s'} spare after all boxes are placed.</p>`}
-        <div class="shed">${P.racks.map(R=>rackElev(R,P,null,false)).join('')}</div></section>`}
+        ${P.unplaced.length?`<div class="msg warn" style="margin-bottom:12px">${P.unplaced.length} box${P.unplaced.length>1?'es':''} won’t fit with ${p.racks.length} rack${p.racks.length>1?'s':''}. Add racks or slots.</div>`:`<p class="muted small" style="margin-bottom:10px">${Math.max(0,P.free)} slot${P.free===1?'':'s'} spare after all boxes are placed. Top-down view; you can rearrange it on the Shed map later.</p>`}
+        <div class="preview-map">${mapSVG(p,P,{C:16,pal:pal(),compact:true})}</div></section>`}
     <div class="wizfoot">
       <button class="ghost" data-act="back-holes">← Back to hole info</button>
       <button class="primary" data-act="build-racks" ${d.valid?'':'disabled'}>Build rack plan →</button>
@@ -781,42 +982,6 @@ function parseCSV(text){
   if(f!==''||row.length){row.push(f);rows.push(row);}
   return rows;}
 
-/* plan */
-function planTab(p,P,M){
-  if(!p.racks.length)return `<div class="empty">No racks yet. Add racks on the Racks tab.</div>`;
-  const counts=new Map();P.sorted.forEach(it=>counts.set(it.feature||'',(counts.get(it.feature||'')||0)+1));
-  const cols=p.customCols;
-  return `
-  ${P.unplaced.length?`<div class="notice"><strong>${P.unplaced.length} box${P.unplaced.length>1?'es':''} don't fit.</strong> Add racks or rows on the Racks tab, or reduce spare slots in Advanced. First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
-  <section class="panel">
-    <header><h2>Shed overview</h2>
-      <div class="legend small">${P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span> <span class="muted">${counts.get(f)||0}</span></span>`).join('')}
-      <span><span class="sw" style="background:repeating-linear-gradient(-45deg,var(--surface) 0 2px,var(--hatch) 2px 4px)"></span>Blocked</span>
-      ${P.gaps?`<span><span class="sw" style="border-style:dashed;border-color:var(--muted)"></span>Spare</span>`:''}
-      ${M&&M.moved.size?`<span><span class="sw" style="box-shadow:inset 3px 0 0 var(--warn)"></span>Moves</span>`:''}</div>
-    </header>
-    ${P.sorted.length?'':`<p class="muted" style="margin-bottom:10px">No boxes yet. Add or import them in <b>Holes &amp; boxes</b>.</p>`}
-    <div class="shed">${P.racks.map(R=>rackElev(R,P,M,false)).join('')}</div>
-    <p class="muted small">Row 1 is the top of the rack. Click a rack to jump to its table.</p>
-  </section>
-  <div class="rackgrid">
-  ${P.racks.map(R=>{const r=R.rack;return `
-    <section class="racksec" id="rack-${r.id}">
-      <header><h3>Rack ${esc(r.name)}</h3><span class="muted small mono">${R.used} of ${R.cells.filter(c=>!c.blocked).length} slots used</span></header>
-      <div class="tablewrap"><table>
-        <thead><tr><th class="num">Slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}${M?'<th>Change</th>':''}</tr></thead>
-        <tbody>${R.cells.map(c=>{const span=6+cols.length+(M?1:0);
-          if(c.blocked)return `<tr class="blocked"><td class="num mono">${c.slot}</td><td colspan="${span}">Blocked, not for use</td></tr>`;
-          if(c.gap)return `<tr class="gap"><td class="num mono">${c.slot}</td><td colspan="${span}">Spare, kept free</td></tr>`;
-          if(!c.item)return `<tr class="empty-slot"><td class="num mono">${c.slot}</td><td colspan="${span}">Empty</td></tr>`;
-          const it=c.item;let ch='';
-          if(M){if(M.newIds.has(it.id))ch='<span class="pill new">New</span>';else if(M.moved.has(it.id)){const b=p.baseline.positions[it.id];ch=`<span class="pill moved">from ${esc(b.rackName)}-${b.slot}</span>`;}}
-          return `<tr><td class="num mono">${c.slot}</td><td><span class="chip" style="--h:${P.hue.get(it.feature||'')}">${esc(fname(it.feature))}</span></td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(col=>`<td>${esc((it.custom||{})[col.id])}</td>`).join('')}${M?`<td>${ch}</td>`:''}</tr>`;
-        }).join('')||`<tr><td class="muted">This rack has no rows. Set rows on the Racks tab.</td></tr>`}</tbody>
-      </table></div>
-    </section>`;}).join('')}
-  </div>`;
-}
 
 /* moves */
 function movesTab(p,P,M){
@@ -837,7 +1002,7 @@ function movesTab(p,P,M){
   <section class="stack">
     <div class="row" style="justify-content:space-between;align-items:baseline"><h2>Move list</h2><span class="muted small">${M.count} box${M.count===1?'':'es'} to place${M.removed?`, ${M.removed} removed`:''}</span></div>
     ${M.steps.some(s=>s.kind==='stage')?`<p class="notice small">Some boxes need to swap places, so a few go to a staging area first and come back later in the list.</p>`:''}
-    ${M.noSpace.length?`<p class="notice small"><strong>${M.noSpace.length} box${M.noSpace.length>1?'es have':' has'} no slot</strong> in the new plan. Add racks or rows on the Racks tab.</p>`:''}
+    ${M.noSpace.length?`<p class="notice small"><strong>${M.noSpace.length} box${M.noSpace.length>1?'es have':' has'} no slot</strong> in the new plan. Add racks or slots in Edit.</p>`:''}
     <div class="tablewrap"><table>
       <thead><tr><th class="num">Step</th><th>Action</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th>From</th><th>To</th></tr></thead>
       <tbody>${M.steps.map((s,i)=>{const it=s.item||{};const lab={move:['moved','Move'],new:['new','Place new'],stage:['stage','To staging'],unstage:['moved','From staging'],remove:['stage','Remove']}[s.kind];
@@ -845,6 +1010,7 @@ function movesTab(p,P,M){
     </table></div>
   </section>`}`;
 }
+
 
 /* advanced */
 function advancedTab(p,P){
@@ -893,6 +1059,7 @@ function advancedTab(p,P){
   </div></div>`;
 }
 
+
 /* ---------- export ---------- */
 function planRowsAll(p,P){
   const head=['Rack','Slot','Feature','Hole ID','Box','Of','From (m)','To (m)',...p.customCols.map(c=>c.name),'Status'];
@@ -921,11 +1088,12 @@ function exportXLSX(p){
   XLSX.writeFile(wb,safeName(p.name)+' - rack plan.xlsx');toast('Excel file exported');}
 function saveFile(p){download(safeName(p.name)+'.coreplan.json',new Blob([JSON.stringify({app:'core-rack-planner',version:1,project:p},null,2)],{type:'application/json'}));toast('Project file saved');}
 
+
 /* ---------- actions ---------- */
-function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true;},2800);}
-function openProject(id){S.currentId=id;S.view='project';S.tab='plan';S.q='';S.imp=null;S.confirm=null;render();window.scrollTo(0,0);}
-function setRackCount(p,n){n=Math.max(1,Math.min(500,n|0));while(p.racks.length<n)p.racks.push(makeRack(p,p.racks.length));if(p.racks.length>n)p.racks.length=n;p.setup.rackCount=n;}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true;},3000);}
+function openProject(id){S.currentId=id;S.view='project';S.tab='plan';S.q='';S.imp=null;S.confirm=null;S.sel=null;S.updated={};render();window.scrollTo(0,0);}
 function moveIn(arr,i,d){const j=i+d;if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];}
+function gotoRack(id){S.tab='plan';render();const el=document.getElementById('rack-'+id);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
 
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;
@@ -934,48 +1102,61 @@ document.addEventListener('click',e=>{
   switch(act){
     case 'home':S.view='home';S.imp=null;render();window.scrollTo(0,0);break;
     case 'open':openProject(id);break;
+    case 'rename':S.renaming=id;S.focusAfter='rn_name';render();break;
     case 'dup':{const src=S.projects.find(x=>x.id===id);const cp=normalise(JSON.parse(JSON.stringify(src)));cp.id=uid();cp.name=src.name+' (copy)';cp.created=cp.updated=Date.now();S.projects.push(cp);persist();render();toast('Project duplicated');break;}
     case 'del':S.confirm='del:'+id;render();break;
     case 'del-yes':S.projects=S.projects.filter(x=>x.id!==id);S.confirm=null;persist();render();toast('Project deleted');break;
-    case 'cancel':S.confirm=null;render();break;
+    case 'cancel':S.confirm=null;S.renaming=null;render();break;
     case 'open-file':$('#fileProject').value='';$('#fileProject').click();break;
-    case 'tab':S.tab=b.dataset.tab;S.confirm=null;render();break;
+    case 'tab':S.tab=b.dataset.tab;S.confirm=null;S.sel=null;render();break;
     case 'export-xlsx':exportXLSX(p);break;
     case 'export-csv':exportCSV(p);break;
     case 'save-file':saveFile(p);break;
-    case 'apply-rows':p.racks.forEach(r=>r.rows=+p.setup.defaultRows||1);touch(p);render();toast('Rows applied to all racks');break;
-    case 'apply-blocked':{const bl=parseRows(p.setup.defaultBlocked);p.racks.forEach(r=>r.blocked=bl.slice());touch(p);render();toast('Blocked rows applied to all racks');break;}
-    case 'rename-all':p.racks.forEach((r,i)=>r.name=rackName(p.setup,i));touch(p);render();toast('Racks renamed');break;
-    case 'rack-add':p.racks.push(makeRack(p,p.racks.length));p.setup.rackCount=p.racks.length;touch(p);render();break;
-    case 'rack-del':if(p.racks.length>1){p.racks=p.racks.filter(r=>r.id!==id);p.setup.rackCount=p.racks.length;touch(p);render();}break;
-    case 'rack-up':case 'rack-down':{const i=p.racks.findIndex(r=>r.id===id);moveIn(p.racks,i,act==='rack-up'?-1:1);touch(p);render();break;}
+    case 'rack-add':{const r=makeRack(p);p.racks.push(r);const last=sortedRows(p).pop();if(last)last.rackIds.push(r.id);deriveNames(p);p.setup.rackCount=p.racks.length;touch(p);render();toast(`Added rack ${r.name}`);break;}
+    case 'rack-del':if(p.racks.length>1){const before=nameSnapshot(p);p.racks=p.racks.filter(r=>r.id!==id);deriveNames(p);markUpdated(p,before);p.setup.rackCount=p.racks.length;p.setup.rowCount=p.layout.rows.length;touch(p);render();}break;
+    case 'rack-up':case 'rack-down':{const before=nameSnapshot(p);const A=rowOf(p,id);if(A)moveIn(A.row.rackIds,A.i,act==='rack-up'?-1:1);markUpdated(p,before);touch(p);render();break;}
     case 'item-del':p.items=p.items.filter(it=>it.id!==id);touch(p);render();break;
     case 'clear':S.confirm='clear';render();break;
     case 'clear-yes':p.items=[];S.confirm=null;touch(p);render();toast('All boxes removed');break;
     case 'pick-sheet':$('#fileSheet').value='';$('#fileSheet').click();break;
     case 'imp-cancel':S.imp=null;render();break;
     case 'imp-run':runImport(p);break;
-    case 'goto-rack':{if(S.tab!=='plan'){S.tab='plan';render();}const el=document.getElementById('rack-'+id);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});break;}
+    case 'goto-rack':gotoRack(id);break;
     case 'baseline-set':{const P=computePlan(p);const positions={};p.items.forEach(it=>{const ps=P.pos[it.id];if(ps)positions[it.id]=Object.assign({},ps,{snap:{feature:it.feature,hole:it.hole,box:it.box,of:it.of}});});p.baseline={takenAt:Date.now(),positions};touch(p);render();toast('Baseline set');break;}
     case 'baseline-clear':S.confirm='baseclear';render();break;
     case 'baseline-clear-yes':p.baseline=null;S.confirm=null;touch(p);render();break;
     case 'feat-up':case 'feat-down':{const order=featureOrder(p);const i=order.indexOf(b.dataset.feat);moveIn(order,i,act==='feat-up'?-1:1);p.options.featureOrder=order;touch(p);render();break;}
     case 'feat-reset':p.options.featureOrder=[];p.options.useCustomOrder=false;touch(p);render();break;
     case 'col-del':S.confirm='col:'+id;render();break;
-    case 'skip-holes':p.stage='done';S.imp=null;S.tab=p.racks.length?'plan':'setup';touch(p);render();window.scrollTo(0,0);break;
+    case 'col-del-yes':p.customCols=p.customCols.filter(c=>c.id!==id);p.items.forEach(it=>{if(it.custom)delete it.custom[id];});S.confirm=null;touch(p);render();break;
+    case 'skip-holes':p.stage='done';S.imp=null;S.tab='edit';S.open={racks:true};touch(p);render();window.scrollTo(0,0);break;
     case 'to-racks':p.stage='racks';S.imp=null;if(p.setup.autoCount===undefined)p.setup.autoCount=true;syncWizardRacks(p);touch(p);S.focusAfter='wz_rows';render();window.scrollTo(0,0);break;
     case 'back-holes':p.stage='holes';touch(p);render();window.scrollTo(0,0);break;
     case 'auto-count':p.setup.autoCount=true;syncWizardRacks(p);touch(p);render();break;
     case 'build-racks':syncWizardRacks(p);if(!p.racks.length)return;p.stage='done';S.tab='plan';touch(p);render();window.scrollTo(0,0);toast('Rack plan built');break;
     case 'fit-racks':{const before=p.racks.length;fitRacks(p);touch(p);render();toast(p.racks.length===before?`${before} rack${before>1?'s':''} already fits every box`:`Now ${p.racks.length} racks (was ${before})`);break;}
     case 'hole-del':{const f=b.dataset.feat,h=b.dataset.hole;p.items=p.items.filter(it=>!((it.feature||'')===f&&(it.hole||'')===h));touch(p);render();break;}
-    case 'col-del-yes':p.customCols=p.customCols.filter(c=>c.id!==id);p.items.forEach(it=>{if(it.custom)delete it.custom[id];});S.confirm=null;touch(p);render();break;
+    case 'lock-rack':{const r=p.racks.find(x=>x.id===id);if(r){setLock(p,[id],!r.locked);touch(p);render();toast(r.locked?`Rack ${r.name} locked`:`Rack ${r.name} unlocked`);}break;}
+    case 'lock-row':{const row=p.layout.rows.find(x=>x.id===id);if(row){const all=row.rackIds.every(rid=>(p.racks.find(r=>r.id===rid)||{}).locked);setLock(p,row.rackIds,!all);touch(p);render();toast(all?`Row ${row.letter} unlocked`:`Row ${row.letter} locked`);}break;}
+    case 'row-add-rack':{const row=p.layout.rows.find(x=>x.id===id);if(row){const r=makeRack(p);p.racks.push(r);row.rackIds.push(r.id);deriveNames(p);p.setup.rackCount=p.racks.length;touch(p);render();}break;}
+    case 'row-del-rack':{const row=p.layout.rows.find(x=>x.id===id);if(row&&p.racks.length>1){const rid=row.rackIds.pop();p.racks=p.racks.filter(r=>r.id!==rid);deriveNames(p);if(!p.layout.rows.includes(row))S.sel=null;p.setup.rackCount=p.racks.length;p.setup.rowCount=p.layout.rows.length;touch(p);render();}break;}
+    case 'map-add-row':{const before=nameSnapshot(p);const rows=sortedRows(p);const last=rows[rows.length-1];const n=last?last.rackIds.length:4;const x=last?Math.max(...rows.map(r=>r.x+rowDims(r).w))+AISLE:2;
+      const row={id:uid(),x,y:last?last.y:2,width:last?last.width:1,rackIds:[]};for(let i=0;i<n;i++){const r=makeRack(p);p.racks.push(r);row.rackIds.push(r.id);}p.layout.rows.push(row);
+      markUpdated(p,before);p.setup.rackCount=p.racks.length;p.setup.rowCount=p.layout.rows.length;S.sel={type:'row',id:row.id};touch(p);render();toast(`Added row ${row.letter} with ${n} racks`);break;}
+    case 'map-add-label':{const B=mapBounds(p);const l={id:uid(),x:1,y:Math.max(1,B.h-2),text:'Door'};p.map.labels.push(l);S.sel={type:'label',id:l.id};S.focusAfter='lb_text';touch(p);render();break;}
+    case 'label-del':p.map.labels=p.map.labels.filter(l=>l.id!==id);S.sel=null;touch(p);render();break;
+    case 'map-auto':{const rows=sortedRows(p);let x=2;rows.forEach(r=>{r.x=x;r.y=2;x+=rowDims(r).w+AISLE;});touch(p);render();toast('Rows lined up');break;}
+    case 'map-png':exportPNG(p);break;
+    case 'modal-close':S.modal=null;render();break;
+    case 'modal-dl':modalDownload();break;
+    case 'clear-updated':S.updated={};render();break;
   }
 });
 
 document.addEventListener('submit',e=>{
   e.preventDefault();const f=e.target;
-  if(f.id==='newForm'){const name=$('#np_name').value.trim();if(!name){$('#np_name').focus();return;}const p=newProject(name,$('#np_site').value.trim());S.projects.push(p);persist();S.currentId=p.id;S.view='project';S.tab='plan';S.imp=null;render();window.scrollTo(0,0);}
+  if(f.id==='newForm'){const name=$('#np_name').value.trim();if(!name){$('#np_name').focus();return;}const p=newProject(name,$('#np_site').value.trim());S.projects.push(p);persist();S.currentId=p.id;S.view='project';S.tab='plan';S.imp=null;S.updated={};render();window.scrollTo(0,0);}
+  else if(f.id==='renameForm'){const p=S.projects.find(x=>x.id===f.dataset.id);if(p){p.name=$('#rn_name').value.trim()||p.name;p.site=$('#rn_site').value.trim();touch(p);}S.renaming=null;render();}
   else if(f.id==='addForm'){const p=cur();const feat=$('#ab_feat').value.trim(),hole=$('#ab_hole').value.trim(),of=$('#ab_of').value.trim();
     if(!hole&&!feat){toast('Enter a Hole ID.');$('#ab_hole').focus();return;}
     const custom={};p.customCols.forEach(c=>{const el=document.getElementById('ab_c_'+c.id);if(el&&el.value.trim())custom[c.id]=el.value.trim();});
@@ -985,10 +1166,10 @@ document.addEventListener('submit',e=>{
     else{const raw=$('#ab_range').value.trim();const boxes=parseRows(raw);
       if(!boxes.length){toast('Enter box numbers like 1-4.');$('#ab_range').focus();return;}
       if(boxes.length>1000){toast('That range is too large. Add up to 1000 boxes at a time.');return;}
-      boxes.forEach(b=>p.items.push({id:uid(),feature:feat,hole,box:String(b),of,from:'',to:'',custom:Object.assign({},custom)}));}
+      boxes.forEach(bx=>p.items.push({id:uid(),feature:feat,hole,box:String(bx),of,from:'',to:'',custom:Object.assign({},custom)}));}
     const added=p.items.length-before;touch(p);render();
     const P=computePlan(p);const ps=P.pos[p.items[before].id];
-    toast(`Added ${added} box${added>1?'es':''} to ${[feat,hole].filter(Boolean).join('-')}`+(p.stage==='done'?(ps?`. First one goes in ${ps.rackName}-${ps.slot}`:'. Not enough space, add racks on the Racks tab'):''));
+    toast(`Added ${added} box${added>1?'es':''} to ${[feat,hole].filter(Boolean).join('-')}`+(p.stage==='done'?(ps?`. First one goes in ${ps.rackName}-${ps.slot}`:'. Not enough space, add racks in Edit'):''));
     if($('#ab_feat')){$('#ab_feat').value=feat;$('#ab_hole').value=hole;$('#ab_of').value=of;const nx=S.addMode==='single'?$('#ab_box'):$('#ab_hole');nx.focus();nx.select();updateAbHint();}}
   else if(f.id==='colForm'){const p=cur();const n=$('#cc_new').value.trim();if(!n)return;p.customCols.push({id:uid(),name:n});touch(p);render();toast('Column added');}
 });
@@ -999,16 +1180,30 @@ document.addEventListener('change',e=>{
     if(S.projects.some(x=>x.id===pr.id))pr.id=uid();pr.updated=Date.now();S.projects.push(pr);persist();openProject(pr.id);toast('Project opened');}catch(err){toast('That file isn’t a Core Rack Planner project.');}});return;}
   if(t.id==='fileSheet'){const file=t.files[0];if(file)readSheetFile(file).catch(()=>toast('Couldn’t read that file. Try saving it as .xlsx or .csv.'));return;}
   if(t.name==='abmode'){S.addMode=t.value;const form=$('#addForm');form.querySelectorAll('[data-mode]').forEach(el=>el.hidden=el.dataset.mode!==S.addMode);$('#ab_submit').textContent=S.addMode==='range'?'Add boxes':'Add box';updateAbHint();return;}
-  const k=t.dataset.k;if(!k)return;const p=cur();if(!p)return;const f=t.dataset.f;
-  if(k==='setup'&&p.stage==='racks'){if(f==='rackCount'){p.setup.rackCount=Math.max(1,Math.min(500,parseInt(t.value,10)||1));p.setup.autoCount=false;}else p.setup[f]=t.value;
-    if(f==='defaultRows'&&!(parseInt(t.value,10)>0))p.setup.defaultRows=t.value===''?'':p.setup.defaultRows;
-    syncWizardRacks(p);touch(p);S.focusAfter=null;render();const el=document.getElementById(t.id);if(el)el.focus();return;}
-  const live=!!t.closest('[data-live]');
-  if(k==='proj'){p[f]=t.value;touch(p);if(f==='name'){const c=$('.crumb strong');if(c)c.textContent=t.value;}return;}
-  if(k==='setup'){if(f==='rackCount'){setRackCount(p,parseInt(t.value,10)||1);}else p.setup[f]=t.value;touch(p);render();const el=document.getElementById(t.id);if(el)el.focus();return;}
+  const k=t.dataset.k;if(!k)return;const p=cur();if(!p&&k!=='ui')return;const f=t.dataset.f;
+  const val=t.type==='checkbox'?t.checked:t.value;
+  if(k==='ui'){if(f==='zoom'){S.zoom=int(val,26);render();}return;}
+  if(k==='setup'&&p.stage==='racks'){
+    if(f==='rackCount'){p.setup.rackCount=clamp(int(val,1),1,500);p.setup.autoCount=false;}
+    else if(f==='rowCount')p.setup.rowCount=clamp(int(val,1),1,50);
+    else p.setup[f]=val;
+    syncWizardRacks(p);touch(p);render();const el=document.getElementById(t.id);if(el)el.focus();return;}
+  if(k==='setup'){const s=p.setup;const before=nameSnapshot(p);
+    if(f==='defaultRows'){s.defaultRows=val;const n=int(val,0);if(n>0)p.racks.forEach(r=>r.rows=n);toast('Slots applied to every rack');}
+    else if(f==='defaultBlocked'){s.defaultBlocked=val;const bl=parseRows(val);p.racks.forEach(r=>r.blocked=bl.slice());toast('Blocked slots applied to every rack');}
+    else if(f==='rackCount')relayout(p,clamp(int(val,1),1,500),p.layout.rows.length||1);
+    else if(f==='rowCount')relayout(p,p.racks.length||1,clamp(int(val,1),1,50));
+    else if(f==='backToBack'){relayout(p,p.racks.length||1,p.layout.rows.length||1,val);markUpdated(p,before);}
+    else{s[f]=val;deriveNames(p);}
+    touch(p);render();const el=document.getElementById(t.id);if(el)el.focus();return;}
   if(k==='rack'){const r=p.racks.find(x=>x.id===t.dataset.id);if(!r)return;
-    if(f==='name')r.name=t.value.trim();else if(f==='rows')r.rows=Math.max(0,Math.min(500,parseInt(t.value,10)||0));else if(f==='blocked'){r.blocked=parseRows(t.value);t.value=fmtRows(r.blocked);}
+    if(f==='locked'){setLock(p,[r.id],val);touch(p);render();return;}
+    if(f==='rows')r.rows=clamp(int(val,0),0,500);else if(f==='blocked'){r.blocked=parseRows(val);t.value=fmtRows(r.blocked);}
     touch(p);S.dirty=true;refreshSummary();return;}
+  if(k==='row'){const row=p.layout.rows.find(x=>x.id===t.dataset.id);if(row&&f==='width'){row.width=val?2:1;touch(p);render();}return;}
+  if(k==='label'){const l=p.map.labels.find(x=>x.id===t.dataset.id);if(l){l.text=val.trim()||l.text;touch(p);render();}return;}
+  if(k==='map'){if(f==='title'){p.map.title=val;touch(p);return;}p.map[f]=Math.max(0,int(val,0));touch(p);render();return;}
+  if(k==='proj'){p[f]=val;touch(p);return;}
   if(k==='item'){const it=p.items.find(x=>x.id===t.dataset.id);if(!it)return;if(t.dataset.c){it.custom=it.custom||{};it.custom[t.dataset.c]=t.value.trim();}else it[f]=t.value.trim();touch(p);S.dirty=true;refreshSummary();return;}
   if(k==='col'){const c=p.customCols.find(x=>x.id===t.dataset.id);if(c){c.name=t.value.trim()||c.name;touch(p);S.dirty=true;}return;}
   if(k==='opt'){if(t.type==='checkbox'){p.options[f]=t.checked;if(f==='useCustomOrder'&&t.checked&&!(p.options.featureOrder||[]).length)p.options.featureOrder=featureOrder(Object.assign({},p,{options:Object.assign({},p.options,{useCustomOrder:false})}));}
@@ -1029,8 +1224,43 @@ document.addEventListener('focusout',e=>{
   if(e.relatedTarget&&box.contains(e.relatedTarget))return;
   setTimeout(()=>{if(!S.dirty)return;const a=document.activeElement;if(a&&a.closest&&a.closest('[data-live]'))return;const y=window.scrollY;render();window.scrollTo(0,y);},0);
 });
+document.addEventListener('toggle',e=>{const t=e.target;if(t.id==='manualDetails')S.manualOpen=t.open;if(t.dataset&&t.dataset.sec)S.open[t.dataset.sec]=t.open;},true);
 
-document.addEventListener('toggle',e=>{if(e.target.id==='manualDetails')S.manualOpen=e.target.open;},true);
+/* shed map dragging */
+let MD=null;
+document.addEventListener('pointerdown',e=>{
+  const svg=e.target.closest&&e.target.closest('#shedmap');if(!svg||e.button>0)return;
+  const rk=e.target.closest('[data-rack]'),rh=e.target.closest('[data-rowh]'),lb=e.target.closest('[data-label]');
+  let type,id,el;
+  if(rk){type='rack';id=rk.dataset.rack;el=rk;}else if(rh){type='row';id=rh.dataset.rowh;el=svg.querySelector(`[data-rowg="${id}"]`);}else if(lb){type='label';id=lb.dataset.label;el=lb;}
+  else{if(S.sel){S.sel=null;render();}return;}
+  e.preventDefault();MD={type,id,el,svg,sx:e.clientX,sy:e.clientY,moved:false,target:null,pid:e.pointerId};
+  try{svg.setPointerCapture(e.pointerId);}catch(_){}
+});
+document.addEventListener('pointermove',e=>{
+  if(!MD||e.pointerId!==MD.pid)return;const dx=e.clientX-MD.sx,dy=e.clientY-MD.sy;
+  if(!MD.moved){if(Math.hypot(dx,dy)<5)return;MD.moved=true;MD.el.classList.add('dragging');MD.el.style.pointerEvents='none';MD.svg.lastElementChild.appendChild(MD.el);}
+  const C=S.zoom;const snap=MD.type==='rack';
+  const tx=snap?dx:Math.round(dx/C)*C,ty=snap?dy:Math.round(dy/C)*C;
+  MD.el.setAttribute('transform',`translate(${tx} ${ty})`);
+  if(MD.type==='rack'){const t=document.elementFromPoint(e.clientX,e.clientY);const tg=t&&t.closest&&t.closest('#shedmap [data-rack]');
+    MD.svg.querySelectorAll('.droptarget').forEach(x=>x.classList.remove('droptarget'));
+    MD.target=tg&&tg.dataset.rack!==MD.id?tg.dataset.rack:null;if(MD.target)tg.classList.add('droptarget');}
+});
+function endDrag(e,cancel){
+  if(!MD||(e&&e.pointerId!==MD.pid))return;const d=MD;MD=null;const p=cur();
+  if(!d.moved){if(!cancel){S.sel={type:d.type,id:d.id};render();}return;}
+  if(cancel){render();return;}
+  const C=S.zoom,dx=Math.round((e.clientX-d.sx)/C),dy=Math.round((e.clientY-d.sy)/C);const before=nameSnapshot(p);
+  if(d.type==='rack'){if(d.target){swapRacks(p,d.id,d.target);}}
+  else if(d.type==='row'){const row=p.layout.rows.find(x=>x.id===d.id);if(row){row.x=Math.max(0,row.x+dx);row.y=Math.max(1,row.y+dy);}S.sel={type:'row',id:d.id};}
+  else if(d.type==='label'){const l=p.map.labels.find(x=>x.id===d.id);if(l){l.x=Math.max(0,l.x+dx);l.y=Math.max(0,l.y+dy);}S.sel={type:'label',id:d.id};}
+  markUpdated(p,before);touch(p);render();
+  if(d.type==='rack'&&d.target){const r=p.racks.find(x=>x.id===d.id);toast(`Swapped. This rack is now ${r.name}; the plan has been updated.`);}
+}
+document.addEventListener('pointerup',e=>endDrag(e,false));
+document.addEventListener('pointercancel',e=>endDrag(e,true));
+
 /* drop a spreadsheet */
 ['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{const z=e.target.closest&&e.target.closest('#dropzone');if(!z||!e.dataTransfer||![...(e.dataTransfer.types||[])].includes('Files'))return;e.preventDefault();z.classList.add('over');}));
 document.addEventListener('dragleave',e=>{const z=e.target.closest&&e.target.closest('#dropzone');if(z&&!z.contains(e.relatedTarget))z.classList.remove('over');});
@@ -1041,6 +1271,7 @@ document.addEventListener('dragover',e=>{const li=e.target.closest&&e.target.clo
 document.addEventListener('drop',e=>{const li=e.target.closest&&e.target.closest('#featlist li');if(!li||S.drag==null)return;e.preventDefault();const p=cur();const order=featureOrder(p);
   const from=order.indexOf(S.drag),to=order.indexOf(li.dataset.feat);if(from>=0&&to>=0&&from!==to){const [x]=order.splice(from,1);order.splice(to,0,x);p.options.featureOrder=order;touch(p);}S.drag=null;render();});
 document.addEventListener('dragend',()=>{S.drag=null;document.querySelectorAll('#featlist li.dragover').forEach(x=>x.classList.remove('dragover'));});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.modal){S.modal=null;render();}});
 
 function runImport(p){
   const imp=S.imp;const data=dataRows(imp);
@@ -1056,6 +1287,7 @@ function runImport(p){
   if(p.stage==='holes'&&added){p.stage='racks';if(p.setup.autoCount===undefined)p.setup.autoCount=true;syncWizardRacks(p);window.scrollTo(0,0);S.focusAfter='wz_rows';}
   touch(p);render();toast(`Imported ${added} box${added===1?'':'es'}${skipped?`, skipped ${skipped} already in the plan`:''}`);
 }
+
 
 load();render();
 })();
