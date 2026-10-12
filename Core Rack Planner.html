@@ -217,7 +217,7 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:16px 0}
 footer.foot{padding-block:28px;color:var(--muted);font-size:.8rem}
 @media (prefers-reduced-motion:no-preference){button,.cell,.tab{transition:border-color .15s,background-color .15s,color .15s}}
 
-/* map, edit sections, locking */
+/* map, edit sections, locking, projects */
 .mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px;align-items:start}
 @media (max-width:920px){.mapwrap{grid-template-columns:1fr}}
 .mapcanvas{overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2);max-height:78vh}
@@ -235,7 +235,10 @@ footer.foot{padding-block:28px;color:var(--muted);font-size:.8rem}
 details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85rem;color:var(--muted);margin-left:10px}
 .lockbtn{font-size:.8rem;padding:4px 10px}
 .lockbtn[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.slotlock{font-size:.72rem;padding:2px 7px;color:var(--muted)}
+.slotlock[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .rack.locked{border-color:var(--ink)}
+.cell.pinned{outline:1.5px solid var(--ink);outline-offset:-1.5px}
 .rowgroup{display:flex;flex-direction:column;gap:8px;padding-right:16px;border-right:1px dashed var(--line);flex:0 0 auto}
 .rowgroup:last-child{border-right:0;padding-right:0}
 .rowgroup>header{display:flex;align-items:center;gap:10px;justify-content:space-between}
@@ -243,8 +246,26 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 .rowgroup .racks{display:flex;gap:10px;align-items:flex-end}
 .pill.upd{background:var(--warn-soft);color:var(--warn)}
 .pill.lock{background:var(--ink);color:var(--surface)}
+.pill.held{background:var(--accent-soft);color:var(--accent)}
+.pill.draft{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.pill.saved{background:var(--ok-soft);color:var(--ok)}
 tr.locked-empty td{color:var(--muted);font-style:italic}
 .preview-map{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:var(--r)}
+.projhead{display:grid;grid-template-columns:1fr auto;gap:10px 16px;align-items:center}
+@media (max-width:640px){.projhead{grid-template-columns:1fr}}
+.projbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.projbox h3{font-size:1.3rem}
+.movelist{border-top:1px solid var(--line);padding-top:10px}
+.movelist>summary{cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:1rem;list-style:none;display:flex;gap:8px;align-items:center}
+.movelist>summary::-webkit-details-marker{display:none}
+.movelist>summary::before{content:"▸";color:var(--muted);transition:transform .15s}
+.movelist[open]>summary::before{transform:rotate(90deg)}
+.moverow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2)}
+@media (max-width:640px){.moverow{grid-template-columns:1fr}}
+.moverow .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.moves{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.crumb .sub{font-family:var(--f-body);font-size:.85rem;color:var(--muted);font-weight:500}
+.readonly-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
 </style>
 
 <div id="app"></div>
@@ -257,7 +278,7 @@ tr.locked-empty td{color:var(--muted);font-style:italic}
 (function(){
 'use strict';
 const KEY='coreRackPlanner.v1';
-const RW=3,RL=4,AISLE=2;
+const RW=3,RL=4,AISLE=2,SNAP=1.6;
 const $=(s,r=document)=>r.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-3);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -268,52 +289,82 @@ const colLetter=i=>{let s='';i=i+1;while(i>0){const r=(i-1)%26;s=String.fromChar
 const letterToIdx=s=>{s=String(s||'').trim().toUpperCase();if(!s)return -1;if(/^\d+$/.test(s))return (+s)-1;if(!/^[A-Z]+$/.test(s))return -2;let n=0;for(const ch of s)n=n*26+(ch.charCodeAt(0)-64);return n-1;};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const int=(v,d)=>{const n=parseInt(v,10);return isNaN(n)?d:n;};
+const clone=o=>JSON.parse(JSON.stringify(o));
+const plural=(n,w,ws)=>`${n} ${n===1?w:(ws||w+'s')}`;
+const fmtDate=t=>t?new Date(t).toLocaleString([], {day:'numeric',month:'short',year:'numeric',hour:'numeric',minute:'2-digit'}):'';
 const LIGHT={bg:'#f5f6f4',grid:'#e1e5e1',frame:'#7b868c',surface:'#ffffff',ink:'#1a2126',muted:'#5a656c',accent:'#0e6a78',warn:'#9a4f08',lockfill:'#e4e7e4',chipS:'58%',chipL:'74%'};
 function pal(){try{const cs=getComputedStyle(document.documentElement);const g=n=>cs.getPropertyValue('--'+n).trim();
   const o={bg:g('surface-2'),grid:g('line'),frame:g('rackframe'),surface:g('surface'),ink:g('ink'),muted:g('muted'),accent:g('accent'),warn:g('warn'),lockfill:g('hatch'),chipS:g('chipS'),chipL:g('chipL')};
   return o.ink?o:LIGHT;}catch(e){return LIGHT;}}
 
-/* ---------- state ---------- */
-const S={projects:[],seeded:false,view:'home',currentId:null,tab:'plan',q:'',confirm:null,imp:null,dirty:false,drag:null,storageOk:true,
-  addMode:'range',manualOpen:false,open:{},sel:null,updated:{},zoom:26,renaming:null,focusAfter:null,modal:null};
+/* ---------- state ----------
+   A project holds the saved shed state (plan). Core moves hold working copies (plan) that are saved back into the project.
+   A plan: {name, stage, setup, racks (bays), map, customCols, options, items}. Bays: {id,name,rows (slots),blocked,x,y,locked,fixed,slotLocks,hold}. */
+const S={projects:[],seeded:false,view:'home',ctx:null,tab:'plan',q:'',confirm:null,imp:null,dirty:false,drag:null,storageOk:true,
+  addMode:'range',manualOpen:false,open:{},sel:null,updated:{},zoom:26,renaming:null,newMoveFor:null,focusAfter:null,modal:null,homeOpen:{}};
 
-function defaults(){return{
-  setup:{rackCount:0,defaultRows:'',defaultBlocked:'',letter:'A',startNum:1,rowCount:1,backToBack:false,autoCount:true},
-  racks:[],layout:{rows:[]},map:{title:'',w:0,h:0,labels:[]},customCols:[],
-  options:{useCustomOrder:false,featureOrder:[],gapAfterHole:0,gapAfterFeature:0,newRackPerFeature:false},
-  items:[],baseline:null};}
-function makeRack(p){return{id:uid(),name:'',rows:int(p.setup.defaultRows,12)||12,blocked:parseRows(p.setup.defaultBlocked),locked:false,lock:{}};}
-function newProject(name,site){
-  return Object.assign({id:uid(),name:name||'Untitled plan',site:site||'',notes:'',stage:'holes',created:Date.now(),updated:Date.now()},defaults());}
-function exampleProject(){
-  const p=newProject('Example: Shed 2 core move','Example data, safe to delete');p.stage='done';
+function defaultsPlan(){return{
+  stage:'done',setup:{rackCount:0,defaultRows:'',defaultBlocked:'',letter:'A',startNum:1,rowCount:1,backToBack:false,autoCount:true},
+  racks:[],map:{title:'',w:0,h:0,labels:[]},customCols:[],
+  options:{useCustomOrder:false,featureOrder:[],gapAfterHole:0,gapAfterFeature:0,newRackPerFeature:false},items:[]};}
+function makeRack(p){return{id:uid(),name:'',rows:int(p.setup.defaultRows,12)||12,blocked:parseRows(p.setup.defaultBlocked),x:0,y:0,locked:false,fixed:{},slotLocks:{},hold:{}};}
+function newPlan(name){const p=defaultsPlan();p.name=name;p.stage='holes';return p;}
+function newProjectRec(name,site){const now=Date.now();return{id:uid(),name:name||'Untitled project',site:site||'',created:now,updated:now,plan:null,moves:[]};}
+function newMoveRec(name,plan){const now=Date.now();return{id:uid(),name:name||'Core move',created:now,updated:now,savedAt:0,plan};}
+
+function examplePlan(name){
+  const p=defaultsPlan();p.name=name;
   p.setup.defaultRows='12';p.setup.defaultBlocked='1-2';p.setup.rowCount=2;p.setup.autoCount=false;
-  p.racks=Array.from({length:6},()=>makeRack(p));p.layout=autoLayout(p.racks,2,false);p.setup.rackCount=6;
+  p.racks=Array.from({length:6},()=>makeRack(p));autoLayout(p.racks,2,false);p.setup.rackCount=6;
   p.map.title='Core shed 2';p.map.labels=[{id:uid(),x:2,y:16,text:'Roller door'}];
   const col={id:uid(),name:'Core size'};p.customCols=[col];
   const holes=[['ZXY','DD101',4,'NQ'],['BMA2','DD109',5,'HQ'],['BMA1','DD101',4,'HQ'],['BMA2','DD105',3,'HQ'],['BMA1','DD100',6,'HQ']];
   holes.forEach(([f,h,n,size],hi)=>{let d=0;for(let b=1;b<=n;b++){const len=4.6+((b*7+hi*3)%9)/10;const from=d;d=+(d+len).toFixed(2);
     p.items.push({id:uid(),feature:f,hole:h,box:String(b),of:String(n),from:from.toFixed(2),to:d.toFixed(2),custom:{[col.id]:size}});}});
   deriveNames(p);return p;}
+function exampleProject(){
+  const pr=newProjectRec('Example: Shed 2','Example data, safe to delete');pr.plan=examplePlan(pr.name);
+  const mv=newMoveRec('Add BMA1-DD102',clone(pr.plan));mv.plan.name=pr.name+' – '+mv.name;
+  const col=mv.plan.customCols[0];for(let b=1;b<=3;b++)mv.plan.items.push({id:uid(),feature:'BMA1',hole:'DD102',box:String(b),of:'3',from:'',to:'',custom:{[col.id]:'HQ'}});
+  pr.moves.push(mv);return pr;}
 
+/* ---------- storage & migration ---------- */
 function load(){
-  try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);if(Array.isArray(d.projects))S.projects=d.projects.map(normalise);S.seeded=!!d.seeded;}}
+  try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);if(Array.isArray(d.projects))S.projects=d.projects.map(migrateRecord).filter(Boolean);S.seeded=!!d.seeded;}}
   catch(e){S.storageOk=false;}
   if(!S.seeded&&!S.projects.length){S.projects=[exampleProject()];S.seeded=true;persist();}
 }
 function persist(){
-  try{localStorage.setItem(KEY,JSON.stringify({projects:S.projects,seeded:true}));S.storageOk=true;}catch(e){S.storageOk=false;}
+  try{localStorage.setItem(KEY,JSON.stringify({version:2,projects:S.projects,seeded:true}));S.storageOk=true;}catch(e){S.storageOk=false;}
   const el=$('#savestate');if(el)el.textContent=saveText();
 }
 function saveText(){return S.storageOk?'Saved in this browser':'Not saved in this browser. Use “Save project file”.';}
-function normalise(p){const d=defaults();p.setup=Object.assign(d.setup,p.setup||{});p.options=Object.assign(d.options,p.options||{});
-  p.racks=(p.racks||[]).map(r=>({id:r.id||uid(),name:r.name||'',rows:+r.rows||0,blocked:Array.isArray(r.blocked)?r.blocked:parseRows(r.blocked),locked:!!r.locked,lock:r.lock||{}}));
-  if(!p.layout||!Array.isArray(p.layout.rows))p.layout={rows:p.racks.length?[{id:uid(),x:2,y:2,width:1,rackIds:p.racks.map(r=>r.id)}]:[]};
+function migrateRecord(r){
+  if(!r)return null;
+  if(Array.isArray(r.moves)){r.plan=r.plan?normalisePlan(r.plan):null;r.moves=r.moves.map(m=>Object.assign({savedAt:0},m,{plan:normalisePlan(m.plan)}));return r;}
+  // old single-plan project
+  const pr={id:r.id||uid(),name:r.name||'Untitled project',site:r.site||'',created:r.created||Date.now(),updated:r.updated||Date.now(),plan:null,moves:[]};
+  const plan=normalisePlan(r);
+  if(plan.stage==='done')pr.plan=plan;else{const m=newMoveRec('Initial setup',plan);pr.moves.push(m);}
+  return pr;
+}
+function normalisePlan(p){const d=defaultsPlan();p.setup=Object.assign(d.setup,p.setup||{});p.options=Object.assign(d.options,p.options||{});
+  const hadXY=(p.racks||[]).every(r=>typeof r.x==='number'&&typeof r.y==='number');
+  p.racks=(p.racks||[]).map(r=>({id:r.id||uid(),name:r.name||'',rows:+r.rows||0,blocked:Array.isArray(r.blocked)?r.blocked:parseRows(r.blocked),x:+r.x||0,y:+r.y||0,
+    locked:!!r.locked,fixed:r.fixed||r.lock||{},slotLocks:r.slotLocks||{},hold:r.hold||{}}));
+  if(!hadXY||p.layout){ // old row-based layout → bay positions
+    const rows=(p.layout&&Array.isArray(p.layout.rows))?p.layout.rows:[{x:2,y:2,width:1,rackIds:p.racks.map(r=>r.id)}];const byId=new Map(p.racks.map(r=>[r.id,r]));
+    rows.forEach(row=>{const n=row.rackIds.length,cols=row.width===2?2:1,len=Math.max(1,Math.ceil(n/cols));row.rackIds.forEach((id,k)=>{const r=byId.get(id);if(!r)return;const col=cols===2&&k>=len?1:0;r.x=row.x+col*RW;r.y=row.y+(col?k-len:k)*RL;});});
+    delete p.layout;}
   p.map=Object.assign({title:'',w:0,h:0,labels:[]},p.map||{});if(!Array.isArray(p.map.labels))p.map.labels=[];
   p.customCols=p.customCols||[];p.items=(p.items||[]).map(it=>Object.assign({id:uid(),feature:'',hole:'',box:'',of:'',from:'',to:'',custom:{}},it));
-  p.baseline=p.baseline||null;p.id=p.id||uid();p.stage=p.stage||'done';deriveNames(p);return p;}
-const cur=()=>S.projects.find(p=>p.id===S.currentId);
-function touch(p){p.updated=Date.now();persist();}
+  delete p.baseline;p.stage=p.stage||'done';deriveNames(p);return p;}
+
+const projRec=()=>S.ctx&&S.projects.find(x=>x.id===S.ctx.pid);
+const moveRec=()=>{const pr=projRec();return pr&&S.ctx.mid?pr.moves.find(m=>m.id===S.ctx.mid):null;};
+const cur=()=>{const pr=projRec();if(!pr)return null;if(S.ctx.mid){const m=moveRec();return m?m.plan:null;}return pr.plan;};
+const isReadOnly=()=>!!(S.ctx&&!S.ctx.mid);
+function touch(p){const pr=projRec();const now=Date.now();if(pr){pr.updated=now;const m=moveRec();if(m)m.updated=now;}persist();}
 
 /* ---------- helpers ---------- */
 function parseRows(str){if(Array.isArray(str))return str;const out=new Set();String(str||'').split(/[,;\s]+/).forEach(t=>{if(!t)return;const m=t.match(/^(\d+)-(\d+)$/);
@@ -334,48 +385,55 @@ const fname=f=>f===''?'(no feature)':f;
 
 const cleanLetter=L=>(String(L||'A').toUpperCase().replace(/[^A-Z]/g,''))||'A';
 
-/* ---------- layout: rows of racks ---------- */
-function rowDims(row){const n=row.rackIds.length;const cols=row.width===2?2:1;const len=Math.max(1,Math.ceil(n/cols));return{w:cols*RW,h:len*RL,len,cols};}
-function rackCell(row,k){const{len,cols}=rowDims(row);const col=cols===2&&k>=len?1:0;const kk=col?k-len:k;return{x:row.x+col*RW,y:row.y+kk*RL};}
-function sortedRows(p){return[...p.layout.rows].sort((a,b)=>a.x-b.x||a.y-b.y);}
+/* ---------- layout: bays placed on a grid; touching bays form a row ---------- */
+const touching=(a,b)=>((a.x+RW===b.x||b.x+RW===a.x)&&a.y<b.y+RL&&b.y<a.y+RL)||((a.y+RL===b.y||b.y+RL===a.y)&&a.x<b.x+RW&&b.x<a.x+RW);
+const overlap=(a,b)=>a.x<b.x+RW&&b.x<a.x+RW&&a.y<b.y+RL&&b.y<a.y+RL;
+function rowGroups(p){
+  const bays=p.racks;const parent=bays.map((_,i)=>i);const find=i=>parent[i]===i?i:(parent[i]=find(parent[i]));
+  for(let i=0;i<bays.length;i++)for(let j=i+1;j<bays.length;j++)if(touching(bays[i],bays[j])){const a=find(i),b=find(j);if(a!==b)parent[a]=b;}
+  const m=new Map();bays.forEach((b,i)=>{const k=find(i);if(!m.has(k))m.set(k,[]);m.get(k).push(b);});
+  const groups=[...m.values()].map(list=>{list.sort((a,b)=>a.x-b.x||a.y-b.y);const minX=Math.min(...list.map(b=>b.x)),minY=Math.min(...list.map(b=>b.y)),maxX=Math.max(...list.map(b=>b.x+RW));return{bays:list,minX,minY,maxX};});
+  groups.sort((a,b)=>a.minX-b.minX||a.minY-b.minY);return groups;}
 function deriveNames(p){
-  if(!p.layout)p.layout={rows:[]};const L=p.layout;const byId=new Map(p.racks.map(r=>[r.id,r]));const seen=new Set();
-  L.rows.forEach(row=>{row.rackIds=(row.rackIds||[]).filter(id=>byId.has(id)&&!seen.has(id)&&!!seen.add(id));});
-  const orphans=p.racks.filter(r=>!seen.has(r.id));
-  if(orphans.length){if(!L.rows.length)L.rows.push({id:uid(),x:2,y:2,width:1,rackIds:[]});const last=sortedRows(p).pop();last.rackIds.push(...orphans.map(r=>r.id));}
-  L.rows=L.rows.filter(r=>r.rackIds.length);
   const first=cleanLetter(p.setup.letter),start=int(p.setup.startNum,1);const ordered=[];
-  sortedRows(p).forEach((row,i)=>{row.letter=letterAdd(first,i);row.rackIds.forEach((id,k)=>{const r=byId.get(id);r.name=row.letter+(start+k);r.rowId=row.id;ordered.push(r);});});
-  p.racks=ordered;
+  const groups=rowGroups(p);
+  groups.forEach((g,i)=>{g.letter=letterAdd(first,i);g.key=g.bays[0].id;g.bays.forEach((r,k)=>{r.name=g.letter+(start+k);r.rowKey=g.key;r.rowLetter=g.letter;ordered.push(r);});});
+  p.racks=ordered;Object.defineProperty(p,'_rows',{value:groups,writable:true,configurable:true,enumerable:false});return groups;
 }
-function autoLayout(racks,R,b2b){
-  R=clamp(R|0,1,Math.max(1,racks.length));const per=Math.ceil(racks.length/R)||1;const rows=[];let x=2;
-  for(let i=0;i<R;i++){const ids=racks.slice(i*per,(i+1)*per).map(r=>r.id);if(!ids.length)break;const row={id:uid(),x,y:2,width:b2b?2:1,rackIds:ids};rows.push(row);x+=rowDims(row).w+AISLE;}
-  return{rows};
+function autoLayout(bays,R,b2b){
+  R=clamp(R|0,1,Math.max(1,bays.length));const per=Math.ceil(bays.length/R)||1;let x=2;
+  for(let i=0;i<R;i++){const list=bays.slice(i*per,(i+1)*per);if(!list.length)break;const cols=b2b&&list.length>1?2:1;const len=Math.ceil(list.length/cols);
+    list.forEach((b,k)=>{const col=cols===2&&k>=len?1:0;b.x=x+col*RW;b.y=2+(col?k-len:k)*RL;});x+=cols*RW+AISLE;}
 }
-function relayout(p,n,R,b2b){
-  deriveNames(p);n=clamp(n|0,1,500);R=clamp(R|0,1,n);
-  let racks=p.racks.slice();while(racks.length<n)racks.push(makeRack(p));if(racks.length>n)racks=racks.slice(0,n);
-  const per=Math.ceil(n/R);const old=sortedRows(p);const rows=[];
-  for(let i=0;i<R;i++){const ids=racks.slice(i*per,(i+1)*per).map(r=>r.id);if(!ids.length)break;const o=old[i];
-    rows.push({id:o?o.id:uid(),x:o?o.x:2,y:o?o.y:2,width:b2b===undefined?(o?o.width:(p.setup.backToBack?2:1)):(b2b?2:1),rackIds:ids,_new:!o});}
-  let x=rows.length?rows[0].x:2;
-  rows.forEach((r,i)=>{if(i>0&&(b2b!==undefined||r._new))r.x=x;x=r.x+rowDims(r).w+AISLE;delete r._new;});
-  if(b2b!==undefined)p.setup.backToBack=b2b;
-  p.racks=racks;p.layout.rows=rows;p.setup.rackCount=n;p.setup.rowCount=rows.length;deriveNames(p);
-}
-function rowOf(p,rackId){for(const row of p.layout.rows){const i=row.rackIds.indexOf(rackId);if(i>=0)return{row,i};}return null;}
-function swapRacks(p,a,b){const A=rowOf(p,a),B=rowOf(p,b);if(!A||!B)return;A.row.rackIds[A.i]=b;B.row.rackIds[B.i]=a;}
+function freeAt(p,x,y,except){const t={x,y};return x>=0&&y>=1&&!p.racks.some(o=>(!except||!except.has(o.id))&&overlap(t,o));}
+function appendBayToRow(p,bay,group){
+  if(!group){const gs=rowGroups(p);const maxX=gs.length?Math.max(...gs.map(g=>g.maxX)):0;bay.x=gs.length?maxX+AISLE:2;bay.y=2;return;}
+  const cols=new Map();group.bays.forEach(b=>{if(!cols.has(b.x))cols.set(b.x,[]);cols.get(b.x).push(b);});
+  const col=[...cols.entries()].sort((a,b)=>a[1].length-b[1].length||a[0]-b[0])[0];
+  let y=Math.max(...col[1].map(b=>b.y))+RL;while(!freeAt(p,col[0],y)&&y<2000)y+=RL;bay.x=col[0];bay.y=y;}
+function swapRacks(p,a,b){const A=p.racks.find(r=>r.id===a),B=p.racks.find(r=>r.id===b);if(!A||!B)return;[A.x,B.x]=[B.x,A.x];[A.y,B.y]=[B.y,A.y];}
+function magnet(p,bay,fx,fy){
+  let best=null,bd=SNAP;
+  p.racks.forEach(o=>{if(o.id===bay.id)return;[[o.x,o.y+RL],[o.x,o.y-RL],[o.x+RW,o.y],[o.x-RW,o.y]].forEach(([cx,cy])=>{const d=Math.hypot(cx-fx,cy-fy);if(d<bd){bd=d;best={x:cx,y:cy};}});});
+  return best||{x:Math.round(fx),y:Math.round(fy)};}
 function nameSnapshot(p){deriveNames(p);return new Map(p.racks.map(r=>[r.id,r.name]));}
 function markUpdated(p,before){deriveNames(p);p.racks.forEach(r=>{const old=before.get(r.id);if(old===undefined||old===r.name)return;
   const orig=S.updated[r.id]!==undefined?S.updated[r.id]:old;if(orig===r.name)delete S.updated[r.id];else S.updated[r.id]=orig;});}
-function mapBounds(p){let w=0,h=0;p.layout.rows.forEach(r=>{const d=rowDims(r);w=Math.max(w,r.x+d.w);h=Math.max(h,r.y+d.h);});
+function mapBounds(p){let w=0,h=0;p.racks.forEach(r=>{w=Math.max(w,r.x+RW);h=Math.max(h,r.y+RL);});
   (p.map.labels||[]).forEach(l=>{w=Math.max(w,l.x+Math.ceil(String(l.text).length*0.4)+2);h=Math.max(h,l.y+1);});
   return{w:Math.max(int(p.map.w,0),w+2,12),h:Math.max(int(p.map.h,0),h+2,10)};}
 
-/* ---------- locking ---------- */
-function setLock(p,ids,on){const P=computePlan(p);ids.forEach(id=>{const r=p.racks.find(x=>x.id===id);if(!r)return;
-  if(on){const R=P.racks.find(x=>x.rack.id===id);r.lock={};if(R)R.cells.forEach(c=>{if(c.item)r.lock[c.slot]=c.item.id;});r.locked=true;}else{r.locked=false;r.lock={};}});}
+/* ---------- locking ----------
+   Locked bay: keeps exactly its boxes (fixed). Locked slot: keeps its box, or stays empty.
+   Unlocking keeps boxes where they are (held) until "Update to best positions" is pressed. */
+function lockBays(p,ids,on){const P=computePlan(p);ids.forEach(id=>{const r=p.racks.find(x=>x.id===id);if(!r)return;
+  if(on){const R=P.racks.find(x=>x.rack.id===id);r.fixed={};if(R)R.cells.forEach(c=>{if(c.item)r.fixed[c.slot]=c.item.id;});r.locked=true;r.hold={};}
+  else{r.hold=Object.assign({},r.fixed);r.fixed={};r.locked=false;}});}
+function lockSlot(p,id,slot){const r=p.racks.find(x=>x.id===id);if(!r)return;const P=computePlan(p);const R=P.racks.find(x=>x.rack.id===id);const c=R&&R.cells[slot-1];
+  if(r.slotLocks[slot]!==undefined){const it=r.slotLocks[slot];delete r.slotLocks[slot];if(it)r.hold[slot]=it;return false;}
+  r.slotLocks[slot]=c&&c.item?c.item.id:'';delete r.hold[slot];return true;}
+const heldCount=p=>p.racks.reduce((n,r)=>n+(r.locked?0:Object.keys(r.hold||{}).length),0);
+function reoptimise(p){p.racks.forEach(r=>{if(!r.locked)r.hold={};});}
 
 /* ---------- planning engine ---------- */
 function computePlan(p){
@@ -385,14 +443,17 @@ function computePlan(p){
   const hue=new Map(feats.map((f,i)=>[f,Math.round((i*137.508+192)%360)]));
   const sorted=[...p.items].sort((a,b)=>(rank.get(a.feature||'')-rank.get(b.feature||''))||nat(a.hole,b.hole)||(numv(a.box)-numv(b.box))||(numv(a.from)-numv(b.from))||(numv(a.to)-numv(b.to))||nat(a.id,b.id));
   const o=p.options;const byId=new Map(p.items.map(i=>[i.id,i]));
-  const racks=p.racks.map(r=>({rack:r,used:0,locked:!!r.locked,cells:Array.from({length:Math.max(0,r.rows|0)},(_,i)=>({slot:i+1,blocked:(r.blocked||[]).includes(i+1),item:null,gap:false,fixed:false}))}));
-  const pos={},lockedIds=new Set();
+  const racks=p.racks.map(r=>({rack:r,used:0,locked:!!r.locked,cells:Array.from({length:Math.max(0,r.rows|0)},(_,i)=>({slot:i+1,blocked:(r.blocked||[]).includes(i+1),item:null,gap:false,closed:false,pin:''}))}));
+  const pos={},pinned=new Set();let held=0;
   const place=(R,c,it)=>{c.item=it;R.used++;pos[it.id]={rackId:R.rack.id,rackName:R.rack.name,slot:c.slot,key:R.rack.id+'|'+c.slot};};
-  racks.forEach(R=>{if(!R.locked)return;Object.entries(R.rack.lock||{}).forEach(([slot,id])=>{const c=R.cells[(+slot)-1];const it=byId.get(id);
-    if(!c||c.blocked||!it||lockedIds.has(id))return;c.fixed=true;place(R,c,it);lockedIds.add(id);});});
-  const pool=sorted.filter(it=>!lockedIds.has(it.id));
+  const pin=(R,slot,id,kind)=>{const c=R.cells[(+slot)-1];if(!c||c.blocked)return false;c.closed=true;c.pin=kind;const it=byId.get(id);if(!it||pinned.has(id)||c.item)return true;place(R,c,it);pinned.add(id);if(kind==='held')held++;return true;};
+  racks.forEach(R=>{const r=R.rack;
+    if(r.locked){R.cells.forEach(c=>{c.closed=true;});Object.entries(r.fixed||{}).forEach(([s,id])=>pin(R,s,id,'bay'));return;}
+    Object.entries(r.slotLocks||{}).forEach(([s,id])=>pin(R,s,id,'slot'));
+    Object.entries(r.hold||{}).forEach(([s,id])=>{const c=R.cells[(+s)-1];if(!c||c.closed||c.blocked||!byId.has(id)||pinned.has(id))return;pin(R,s,id,'held');});});
+  const pool=sorted.filter(it=>!pinned.has(it.id));
   let ri=0,si=0;
-  const next=()=>{while(ri<racks.length){if(racks[ri].locked){ri++;si=0;continue;}const c=racks[ri].cells;while(si<c.length&&c[si].blocked)si++;if(si<c.length)return c[si];ri++;si=0;}return null;};
+  const next=()=>{while(ri<racks.length){if(racks[ri].locked){ri++;si=0;continue;}const c=racks[ri].cells;while(si<c.length&&(c[si].blocked||c[si].closed))si++;if(si<c.length)return c[si];ri++;si=0;}return null;};
   const skip=n=>{for(let k=0;k<n;k++){const c=next();if(!c)return;c.gap=true;si++;}};
   const unplaced=[];let prev=null;
   for(const it of pool){
@@ -404,24 +465,26 @@ function computePlan(p){
     const c=next();if(!c){unplaced.push(it);continue;}
     place(racks[ri],c,it);si++;
   }
-  let usable=0,gaps=0,free=0;racks.forEach(R=>R.cells.forEach(c=>{if(c.blocked)return;usable++;if(c.gap)gaps++;else if(!c.item&&!R.locked)free++;}));
-  const rowList=sortedRows(p).map(row=>({row,racks:row.rackIds.map(id=>racks.find(R=>R.rack.id===id)).filter(Boolean)}));
-  return{sorted,racks,rowList,pos,unplaced,hue,feats,usable,gaps,placed:sorted.length-unplaced.length,free,locked:lockedIds.size};
+  let usable=0,gaps=0,free=0;racks.forEach(R=>R.cells.forEach(c=>{if(c.blocked)return;usable++;if(c.gap)gaps++;else if(!c.item&&!c.closed)free++;}));
+  const rowList=p._rows.map(g=>({row:g,racks:g.bays.map(b=>racks.find(R=>R.rack.id===b.id)).filter(Boolean)}));
+  return{sorted,racks,rowList,pos,unplaced,hue,feats,usable,gaps,placed:sorted.length-unplaced.length,free,pinned:pinned.size,held};
 }
 
+/* moves = differences between this core move and the saved project */
 function computeMoves(p,P){
-  const B=p.baseline;if(!B)return null;
+  if(!S.ctx||!S.ctx.mid)return null;const pr=projRec();if(!pr||!pr.plan)return null;
+  const BP=computePlan(pr.plan);const base=BP.pos;const baseItems=new Map(pr.plan.items.map(i=>[i.id,i]));
   const nm=new Map(p.racks.map(r=>[r.id,r.name]));const fix=b=>b?Object.assign({},b,{rackName:nm.get(b.rackId)||b.rackName}):b;
   const ids=new Set(p.items.map(i=>i.id));
-  const removed=Object.entries(B.positions).filter(([id])=>!ids.has(id)).map(([id,b])=>({kind:'remove',item:b.snap,from:fix(b),to:null}));
-  const pending=[];const noSpace=[];
-  for(const it of P.sorted){const c=P.pos[it.id],b=fix(B.positions[it.id]);
+  const removed=Object.entries(base).filter(([id])=>!ids.has(id)).map(([id,b])=>({kind:'remove',item:baseItems.get(id)||{},from:fix(b),to:null}));
+  const pending=[];const noSpace=[];const basePos={};
+  for(const it of P.sorted){const c=P.pos[it.id],b=fix(base[it.id]);if(b)basePos[it.id]=b;
     if(!c){noSpace.push(it);continue;}
     if(!b)pending.push({kind:'new',item:it,from:null,to:c});
     else if(b.key!==c.key)pending.push({kind:'move',item:it,from:b,to:c});}
   const occ=new Map();
-  for(const it of p.items){const b=B.positions[it.id];if(b)occ.set(b.key,it.id);}
-  const steps=[...removed];const work=pending.slice();let guard=0;
+  for(const [id,b] of Object.entries(base))if(ids.has(id))occ.set(b.key,id);
+  const steps=[...removed];removed.forEach(m=>{});const work=pending.slice();let guard=0;
   while(work.length&&guard++<10000){
     let progressed=false;
     for(let i=0;i<work.length;i++){const m=work[i];const o=occ.get(m.to.key);
@@ -430,7 +493,7 @@ function computeMoves(p,P){
       if(m.from&&m.from.key)occ.delete(m.from.key);m.from={label:'Staging area',key:'__stage_'+m.item.id};m.kind='unstage';}
   }
   const moved=new Set(pending.filter(m=>m.kind!=='new').map(m=>m.item.id));
-  return{steps,noSpace,moved,newIds:new Set(pending.filter(m=>m.kind==='new').map(m=>m.item.id)),count:pending.length,removed:removed.length};
+  return{steps,noSpace,moved,basePos,newIds:new Set(pending.filter(m=>m.kind==='new').map(m=>m.item.id)),count:pending.length,removed:removed.length};
 }
 const loc=x=>!x?'Incoming':x.label?x.label:`${x.rackName}-${x.slot}`;
 const nameOf=(p,id,fallback)=>{const r=p.racks.find(x=>x.id===id);return r?r.name:fallback;};
@@ -438,10 +501,14 @@ const nameOf=(p,id,fallback)=>{const r=p.racks.find(x=>x.id===id);return r?r.nam
 /* ---------- views ---------- */
 function render(){
   const app=$('#app');
-  if(S.view==='project'&&!cur())S.view='home';
+  if(S.view==='work'&&!cur()&&!(projRec()&&!S.ctx.mid))S.view='home';
   const p=cur();
   const mc=$('#mapcanvas');const keep=mc?{l:mc.scrollLeft,t:mc.scrollTop}:null;
-  app.innerHTML=(S.view==='home'?homeView():p.stage==='holes'?holesStep(p):p.stage==='racks'?racksStep(p):projectView())+modalView();
+  let html;
+  if(S.view==='home'||!projRec())html=homeView();
+  else if(isReadOnly())html=projectReadView(projRec());
+  else html=p.stage==='holes'?holesStep(p):p.stage==='racks'?racksStep(p):moveView();
+  app.innerHTML=html+modalView();
   const mc2=$('#mapcanvas');if(mc2&&keep){mc2.scrollLeft=keep.l;mc2.scrollTop=keep.t;}
   if(S.focusAfter){const el=document.getElementById(S.focusAfter);S.focusAfter=null;if(el){el.focus();if(el.select)el.select();}}
   S.dirty=false;
@@ -449,9 +516,15 @@ function render(){
 function modalView(){if(!S.modal)return'';return `<div class="modal" role="dialog" aria-modal="true" aria-label="Shed map image"><div class="box">
   <div class="row" style="justify-content:space-between;align-items:center"><h2>Shed map image</h2><button data-act="modal-close">Close</button></div>
   <p class="muted small">The PNG has been downloaded. If it didn’t download, right-click the image and choose “Save Image As”, or use the button below.</p>
-  <img src="${S.modal.png}" alt="Top-down map of the core shed racks">
+  <img src="${S.modal.png}" alt="Top-down map of the core shed bays">
   <div class="row"><button class="primary" data-act="modal-dl">Download PNG again</button></div></div></div>`;}
 
+/* home */
+function moveStatus(m,pr){
+  if(m.plan.stage!=='done')return '<span class="pill draft">Setup not finished</span>';
+  if(!m.savedAt)return '<span class="pill draft">Draft</span>';
+  if(m.updated>m.savedAt+50)return `<span class="pill upd">Edited since saved</span>`;
+  return `<span class="pill saved">Saved to project ${esc(fmtDate(m.savedAt))}</span>`;}
 function homeView(){
   const list=[...S.projects].sort((a,b)=>b.updated-a.updated);
   return `
@@ -459,57 +532,107 @@ function homeView(){
   <span class="spacer"></span><span id="savestate" class="savestate">${esc(saveText())}</span></div></div>
   <main class="wrap stack">
     <section class="hero">
-      <h1>Plan where drill core goes before it goes on the rack</h1>
-      <p>Add your holes and boxes, set up the racks, and the planner fills slots in order: feature, then hole, then box number, then depth. Add a box you missed and everything after it shifts for you.</p>
+      <h1>Plan core moves before the core moves</h1>
+      <p>Each project holds the saved layout of a core shed. Plan changes in a core move, check the move list, then save the move to the project.</p>
     </section>
     <div class="grid2">
       <section class="panel">
         <header><h2>New project</h2></header>
         <form id="newForm" class="stack" autocomplete="off">
-          <div class="field"><label class="label" for="np_name">Project name</label><input id="np_name" placeholder="e.g. 2026 Spillway drilling, core move" required></div>
+          <div class="field"><label class="label" for="np_name">Project name</label><input id="np_name" placeholder="e.g. Tinaroo Dam" required></div>
           <div class="field"><label class="label" for="np_site">Shed / location</label><input id="np_site" placeholder="e.g. Core shed 2"></div>
+          <p class="muted small">You’ll set it up as the first core move. When that move is finished it becomes the project’s saved layout.</p>
           <div class="row"><button class="primary" type="submit">Create project</button></div>
         </form>
       </section>
       <section class="panel">
         <header><h2>Open a saved project</h2></header>
         <div class="stack">
-          <p class="muted">Projects are kept in this browser automatically. To move a plan to another computer or share it, use <b>Save project file</b> inside the project, then open that file here.</p>
+          <p class="muted">Projects and their core moves are kept in this browser automatically. To move them to another computer or share them, use <b>Save project file</b>, then open that file here.</p>
           <div class="row"><button data-act="open-file">Open project file (.json)</button></div>
         </div>
       </section>
     </div>
     <section class="stack">
       <h2>Projects <span class="muted mono small">${list.length}</span></h2>
-      ${list.length?`<div class="projlist">${list.map(p=>{const P=computePlan(p);return `
-        <article class="projcard">
-          <div class="stack" style="gap:4px;min-width:0">
-            ${S.renaming===p.id?`<form id="renameForm" class="row" data-id="${p.id}" style="align-items:center"><input id="rn_name" value="${esc(p.name)}" aria-label="Project name" style="min-width:min(320px,100%)"><input id="rn_site" value="${esc(p.site)}" placeholder="Shed / location" aria-label="Shed / location"><button class="primary" type="submit">Save</button><button type="button" data-act="cancel">Cancel</button></form>`:`<h3>${esc(p.name)}</h3>`}
-            <div class="meta"><span>${esc(p.site||'No location set')}</span><span class="mono">${p.racks.length} racks</span><span class="mono">${p.items.length} boxes</span>${p.stage!=='done'?'<span>Setup not finished</span>':''}${P.unplaced.length&&p.stage==='done'?`<span style="color:var(--warn)">${P.unplaced.length} don't fit</span>`:''}<span>Updated ${new Date(p.updated).toLocaleString()}</span></div>
-          </div>
-          <div class="acts">${S.confirm==='del:'+p.id?`<span class="small">Delete this project?</span><button class="danger solid" data-act="del-yes" data-id="${p.id}">Delete</button><button data-act="cancel">Keep</button>`:
-          `<button class="primary" data-act="open" data-id="${p.id}">Open</button><button data-act="rename" data-id="${p.id}">Rename</button><button data-act="dup" data-id="${p.id}">Duplicate</button><button class="ghost danger" data-act="del" data-id="${p.id}">Delete</button>`}</div>
-        </article>`;}).join('')}</div>`:`<div class="empty">No projects yet. Create one above.</div>`}
+      ${list.length?list.map(pr=>projectCard(pr)).join(''):`<div class="empty">No projects yet. Create one above.</div>`}
     </section>
     <footer class="foot">Data stays on this computer, in this browser. Clearing browser data removes it, so save a project file for anything you need to keep.</footer>
   </main>`;
 }
+function projectCard(pr){
+  const ready=!!pr.plan;const P=ready?computePlan(pr.plan):null;
+  const moves=[...pr.moves].sort((a,b)=>b.updated-a.updated);const open=S.homeOpen[pr.id]!==false;
+  return `<article class="projbox">
+    <div class="projhead">
+      <div class="stack" style="gap:4px;min-width:0">
+        ${S.renaming==='p:'+pr.id?`<form id="renameForm" class="row" data-kind="p" data-id="${pr.id}" style="align-items:center"><input id="rn_name" value="${esc(pr.name)}" aria-label="Project name" style="min-width:min(300px,100%)"><input id="rn_site" value="${esc(pr.site)}" placeholder="Shed / location" aria-label="Shed / location"><button class="primary" type="submit">Save</button><button type="button" data-act="cancel">Cancel</button></form>`:`<h3>${esc(pr.name)}</h3>`}
+        <div class="meta small muted row" style="gap:4px 16px;align-items:center">${esc(pr.site||'No location set')}${ready?`<span class="mono">${plural(pr.plan.racks.length,'bay')}</span><span class="mono">${plural(pr.plan.items.length,'box','boxes')}</span>`:'<span>Not set up yet: finish the first core move</span>'}<span>Updated ${esc(fmtDate(pr.updated))}</span></div>
+      </div>
+      <div class="acts row" style="gap:6px;justify-content:flex-end">${S.confirm==='del:'+pr.id?`<span class="small">Delete this project and all its moves?</span><button class="danger solid" data-act="del-yes" data-id="${pr.id}">Delete</button><button data-act="cancel">Keep</button>`:
+        `<button class="primary" data-act="open-project" data-id="${pr.id}" ${ready?'':'disabled'}>Open project</button><button data-act="new-move" data-id="${pr.id}" ${ready?'':'disabled'}>+ New core move</button><button class="ghost" data-act="rename" data-id="p:${pr.id}">Rename</button><button class="ghost" data-act="dup" data-id="${pr.id}">Duplicate</button><button class="ghost danger" data-act="del" data-id="${pr.id}">Delete</button>`}</div>
+    </div>
+    ${S.newMoveFor===pr.id?`<form id="newMoveForm" class="row" data-id="${pr.id}" style="align-items:flex-end"><div class="field grow"><label class="label" for="nm_name">Core move name</label><input id="nm_name" value="${esc('Core move '+(pr.moves.length+1))}"></div><button class="primary" type="submit">Create move</button><button type="button" data-act="cancel">Cancel</button></form>`:''}
+    <details class="movelist" data-pid="${pr.id}" ${open?'open':''}><summary>Core moves <span class="muted mono small">${pr.moves.length}</span></summary>
+      <div class="moves">${moves.length?moves.map(m=>`<div class="moverow">
+        <div class="stack" style="gap:3px;min-width:0">${S.renaming==='m:'+m.id?`<form id="renameForm" class="row" data-kind="m" data-pid="${pr.id}" data-id="${m.id}" style="align-items:center"><input id="rn_name" value="${esc(m.name)}" aria-label="Move name"><button class="primary" type="submit">Save</button><button type="button" data-act="cancel">Cancel</button></form>`:`<b>${esc(m.name)}</b>`}
+          <div class="row small muted" style="gap:4px 12px;align-items:center">${moveStatus(m,pr)}<span>Updated ${esc(fmtDate(m.updated))}</span></div></div>
+        <div class="acts">${S.confirm==='save:'+m.id?`<span class="small">Replace the project layout with this move?</span><button class="primary" data-act="save-move-yes" data-pid="${pr.id}" data-id="${m.id}">Save to project</button><button data-act="cancel">Cancel</button>`:
+          S.confirm==='delm:'+m.id?`<span class="small">Delete this move?</span><button class="danger solid" data-act="del-move-yes" data-pid="${pr.id}" data-id="${m.id}">Delete</button><button data-act="cancel">Keep</button>`:
+          `<button data-act="open-move" data-pid="${pr.id}" data-id="${m.id}">Open</button><button class="primary" data-act="save-move" data-id="${m.id}" ${m.plan.stage==='done'?'':'disabled'}>Save move to project</button><button class="ghost" data-act="rename" data-id="m:${m.id}">Rename</button><button class="ghost danger" data-act="del-move" data-id="${m.id}">Delete</button>`}</div>
+      </div>`).join(''):`<p class="muted small">No core moves yet. Use “+ New core move” to plan the next change to this shed.</p>`}</div>
+    </details>
+  </article>`;
+}
 
-function projectView(){
-  const p=cur(),P=computePlan(p),M=computeMoves(p,P);
-  const tabs=[['plan','Rack plan',''],['map','Shed map',''],['moves','Moves',M?M.steps.length:''],['edit','Edit','']];
-  let body='';
-  if(S.tab==='map')body=mapTab(p,P);
-  else if(S.tab==='moves')body=movesTab(p,P,M);
-  else if(S.tab==='edit')body=editTab(p,P);
-  else body=planTab(p,P,M);
+/* read-only project */
+function projectReadView(pr){
+  const p=pr.plan;const P=computePlan(p);const held=P.held;
+  if(S.tab!=='plan'&&S.tab!=='map')S.tab='plan';
+  const tabs=[['plan','Rack plan'],['map','Shed map']];
   return `
   <div class="appbar"><div class="wrap">
     <button class="ghost" data-act="home" aria-label="Back to projects">← Projects</button>
-    <div class="crumb grow"><strong title="${esc(p.name)}">${esc(p.name)}</strong></div>
+    <div class="crumb grow"><strong title="${esc(pr.name)}">${esc(pr.name)}</strong><span class="pill draft">Saved project · view only</span></div>
+    <span id="savestate" class="savestate">${esc(saveText())}</span>
+    <div class="row" style="gap:6px"><button data-act="export-xlsx">Export Excel</button><button data-act="export-csv">Export CSV</button><button data-act="save-file">Save project file</button></div>
+  </div>
+  <div class="wrap"><nav class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-tab="${k}">${l}</button>`).join('')}</nav></div>
+  </div>
+  <main class="wrap">
+    <div id="summary">${summary(p,P)}</div>
+    <div class="stack">
+      <section class="panel readonly-bar">
+        <p class="muted" style="max-width:70ch">This is the saved layout of the shed. To change it, plan the change in a core move and save that move to the project.</p>
+        <div class="row">
+          ${S.confirm==='reorg'?`<span class="small">Move every unlocked box into the best order?</span><button class="primary" data-act="reorg-yes">Reorganise</button><button data-act="cancel">Cancel</button>`:
+          `<button class="primary" data-act="reorg" ${held?'':'disabled'} title="${held?'':'Already in the best order'}">Reorganise shed into best order</button>`}
+          <button data-act="new-move" data-id="${pr.id}">+ New core move</button>
+        </div>
+      </section>
+      ${held?`<div class="msg info">${plural(held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked. Reorganising moves them into the best order. Locked rows, bays and slots don’t change.</div>`:`<p class="muted small">The shed is in the best order. Locked rows, bays and slots are left as they are.</p>`}
+      ${S.tab==='map'?mapTab(p,P,true):planTab(p,P,null,true)}
+    </div>
+    <footer class="foot">IDs read Row, Bay, Slot: A1-3 is Row A, Bay 1, Slot 3. Rows are lettered left to right on the shed map, bays numbered top to bottom, and slot 1 is the top of each bay.</footer>
+  </main>`;
+}
+
+/* core move workspace */
+function moveView(){
+  const pr=projRec(),m=moveRec(),p=m.plan,P=computePlan(p),M=computeMoves(p,P);
+  const tabs=[['plan','Rack plan',''],['map','Shed map',''],['moves','Moves',M?M.steps.length:''],['edit','Edit','']];
+  let body='';
+  if(S.tab==='map')body=mapTab(p,P,false);
+  else if(S.tab==='moves')body=movesTab(p,P,M);
+  else if(S.tab==='edit')body=editTab(p,P);
+  else body=planTab(p,P,M,false);
+  return `
+  <div class="appbar"><div class="wrap">
+    <button class="ghost" data-act="home" aria-label="Back to projects">← Projects</button>
+    <div class="crumb grow" style="flex-direction:column;align-items:flex-start;gap:0"><span class="sub">${esc(pr.name)} · core move</span><strong title="${esc(m.name)}">${esc(m.name)}</strong></div>
     <span id="savestate" class="savestate">${esc(saveText())}</span>
     <div class="row" style="gap:6px">
-      <button data-act="export-xlsx" title="One sheet per rack plus a full list">Export Excel</button>
+      <button data-act="export-xlsx" title="One sheet per bay plus a full list">Export Excel</button>
       <button data-act="export-csv">Export CSV</button>
       <button data-act="save-file">Save project file</button>
     </div>
@@ -518,46 +641,49 @@ function projectView(){
   </div>
   <main class="wrap">
     <div id="summary">${summary(p,P)}</div>
-    <div class="stack">${body}</div>
-    <footer class="foot">Fill order: feature, then hole ID, then box number, then From depth. Rows are lettered left to right on the shed map, racks numbered top to bottom, and slot 1 is the top of each rack.</footer>
+    <div class="stack">
+      ${P.held?`<div class="msg info row" style="align-items:center;justify-content:space-between"><span>${plural(P.held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked, so the rest of the plan isn’t disturbed.</span><button class="primary" data-act="reoptimise">Update unlocked bays to best positions</button></div>`:''}
+      ${body}
+    </div>
+    <footer class="foot">IDs read Row, Bay, Slot: A1-3 is Row A, Bay 1, Slot 3. Fill order: feature, then hole ID, then box number, then From depth. When the move is ready, go back to Projects and press “Save move to project”.</footer>
   </main>`;
 }
 
 function summary(p,P){
   return `<div class="summary">
-    <div class="stat"><span class="label">Rows</span><b>${p.layout.rows.length}</b></div>
-    <div class="stat"><span class="label">Racks</span><b>${p.racks.length}</b></div>
+    <div class="stat"><span class="label">Rows</span><b>${p._rows?p._rows.length:0}</b></div>
+    <div class="stat"><span class="label">Bays</span><b>${p.racks.length}</b></div>
     <div class="stat"><span class="label">Usable slots</span><b>${P.usable}</b></div>
     <div class="stat"><span class="label">Boxes</span><b>${p.items.length}</b></div>
     <div class="stat"><span class="label">Placed</span><b>${P.placed}</b></div>
-    ${P.locked?`<div class="stat"><span class="label">In locked racks</span><b>${P.locked}</b></div>`:''}
+    ${P.pinned?`<div class="stat"><span class="label">Locked or held</span><b>${P.pinned}</b></div>`:''}
     ${P.gaps?`<div class="stat"><span class="label">Spare (reserved)</span><b>${P.gaps}</b></div>`:''}
     <div class="stat"><span class="label">Free slots</span><b>${Math.max(0,P.free)}</b></div>
     ${P.unplaced.length?`<div class="stat warn"><span class="label">Don't fit</span><b>${P.unplaced.length}</b></div>`:''}
   </div>`;
 }
 function refreshSummary(){const p=cur();if(!p)return;const el=$('#summary');if(el)el.innerHTML=summary(p,computePlan(p));}
-const lockBtn=(act,id,on,labelOff)=>`<button class="lockbtn" aria-pressed="${on}" data-act="${act}" data-id="${id}">${on?'Locked':labelOff}</button>`;
+const lockBtn=(act,id,on,labelOff,ro)=>ro?(on?'<span class="pill lock">Locked</span>':''):`<button class="lockbtn" aria-pressed="${on}" data-act="${act}" data-id="${id}">${on?'Locked':labelOff}</button>`;
 
 function rackElev(R,P,M,small){
   const r=R.rack;
-  const cells=R.cells.map(c=>{
-    if(c.blocked)return `<div class="cell blocked" title="${esc(r.name)} slot ${c.slot}: blocked">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
-    if(c.gap)return `<div class="cell gap" title="${esc(r.name)} slot ${c.slot}: spare (reserved)">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
+  const cells=R.cells.map(c=>{const pin=c.pin==='slot'||c.pin==='bay'?' pinned':'';
+    if(c.blocked)return `<div class="cell blocked" title="${esc(r.name)}-${c.slot}: blocked">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
+    if(c.gap)return `<div class="cell gap" title="${esc(r.name)}-${c.slot}: spare (reserved)">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
     if(c.item){const it=c.item;const moved=M&&M.moved.has(it.id);
-      return `<div class="cell filled ${moved?'moved':''}" style="--h:${P.hue.get(it.feature||'')}" title="${esc(r.name)} slot ${c.slot}: ${esc(fname(it.feature))} ${esc(it.hole)} box ${esc(it.box)}${it.of?' of '+esc(it.of):''}">${small?'':`<span class="n">${c.slot}</span><span>${esc(it.hole)}·${esc(it.box)}</span>`}</div>`;}
-    return `<div class="cell" title="${esc(r.name)} slot ${c.slot}: empty">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
+      return `<div class="cell filled${pin} ${moved?'moved':''}" style="--h:${P.hue.get(it.feature||'')}" title="${esc(r.name)}-${c.slot}: ${esc(fname(it.feature))} ${esc(it.hole)} box ${esc(it.box)}${it.of?' of '+esc(it.of):''}${c.pin?` (${c.pin==='held'?'held':'locked'})`:''}">${small?'':`<span class="n">${c.slot}</span><span>${esc(it.hole)}·${esc(it.box)}</span>`}</div>`;}
+    return `<div class="cell${pin}" title="${esc(r.name)}-${c.slot}: empty${c.pin?' (locked)':''}">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
   }).join('');
-  return `<button class="rackcol" data-act="goto-rack" data-id="${r.id}" aria-label="Rack ${esc(r.name)}"><span class="rname">${esc(r.name)}</span><div class="rack ${small?'small':''} ${R.locked?'locked':''}">${cells||'<div class="cell">no slots</div>'}</div>${small?'':`<span class="rmeta">${R.used}/${R.cells.filter(c=>!c.blocked).length}${R.locked?' · locked':''}${S.updated[r.id]?' · moved':''}</span>`}</button>`;
+  return `<button class="rackcol" data-act="goto-rack" data-id="${r.id}" aria-label="Bay ${esc(r.name)}"><span class="rname">${esc(r.name)}</span><div class="rack ${small?'small':''} ${R.locked?'locked':''}">${cells||'<div class="cell">no slots</div>'}</div>${small?'':`<span class="rmeta">${R.used}/${R.cells.filter(c=>!c.blocked).length}${R.locked?' · locked':''}${S.updated[r.id]?' · moved':''}</span>`}</button>`;
 }
 
-/* plan */
-function planTab(p,P,M){
-  if(!p.racks.length)return `<div class="empty">No racks yet. Open <b>Edit</b> and set up the racks under Edit Rack Settings.</div>`;
+/* rack plan */
+function planTab(p,P,M,ro){
+  if(!p.racks.length)return `<div class="empty">No bays yet. Open <b>Edit</b> and set up the bays under Edit Bay Settings.</div>`;
   const counts=new Map();P.sorted.forEach(it=>counts.set(it.feature||'',(counts.get(it.feature||'')||0)+1));
   const cols=p.customCols;
   return `
-  ${P.unplaced.length?`<div class="notice"><strong>${P.unplaced.length} box${P.unplaced.length>1?'es':''} don't fit.</strong> Add racks or slots in Edit, unlock a rack, or reduce spare slots. First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
+  ${P.unplaced.length?`<div class="notice"><strong>${plural(P.unplaced.length,'box','boxes')} don't fit.</strong> ${ro?'Plan more bays in a core move.':'Add bays or slots in Edit, unlock a bay, or reduce spare slots.'} First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
   <section class="panel">
     <header><h2>Shed overview</h2>
       <div class="legend small">${P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span> <span class="muted">${counts.get(f)||0}</span></span>`).join('')}
@@ -565,38 +691,57 @@ function planTab(p,P,M){
       ${P.gaps?`<span><span class="sw" style="border-style:dashed;border-color:var(--muted)"></span>Spare</span>`:''}
       ${M&&M.moved.size?`<span><span class="sw" style="box-shadow:inset 3px 0 0 var(--warn)"></span>Moves</span>`:''}</div>
     </header>
-    ${P.sorted.length?'':`<p class="muted" style="margin-bottom:10px">No boxes yet. Add or import them in <b>Edit</b>, under Holes &amp; boxes.</p>`}
-    <div class="shed">${P.rowList.map(G=>{const all=G.racks.length&&G.racks.every(R=>R.locked);return `<div class="rowgroup"><header><span class="rname">Row ${esc(G.row.letter)}</span>${lockBtn('lock-row',G.row.id,all,'Lock row')}</header><div class="racks">${G.racks.map(R=>rackElev(R,P,M,false)).join('')}</div></div>`;}).join('')}</div>
-    <p class="muted small">Slot 1 is the top of the rack. Click a rack to jump to its table. Locked racks keep their boxes where they are, and everything else is planned around them.</p>
+    ${P.sorted.length?'':`<p class="muted" style="margin-bottom:10px">No boxes yet.${ro?'':' Add or import them in <b>Edit</b>, under Holes &amp; boxes.'}</p>`}
+    <div class="shed">${P.rowList.map(G=>{const all=G.racks.length&&G.racks.every(R=>R.locked);return `<div class="rowgroup"><header><span class="rname">Row ${esc(G.row.letter)}</span>${lockBtn('lock-row',G.row.key,all,'Lock row',ro)}</header><div class="racks">${G.racks.map(R=>rackElev(R,P,M,false)).join('')}</div></div>`;}).join('')}</div>
+    <p class="muted small">Slot 1 is the top of the bay. Click a bay to jump to its table.${ro?'':' Locked bays and slots keep their boxes where they are, and everything else is planned around them.'}</p>
   </section>
   <div class="rackgrid">
   ${P.racks.map(R=>{const r=R.rack;return `
     <section class="racksec" id="rack-${r.id}">
-      <header><div class="row" style="align-items:baseline;gap:8px"><h3>Rack ${esc(r.name)}</h3>${S.updated[r.id]?`<span class="pill upd">updated position, was ${esc(S.updated[r.id])}</span>`:''}</div>
-        <div class="row" style="align-items:center;gap:10px"><span class="muted small mono">${R.used} of ${R.cells.filter(c=>!c.blocked).length} used</span>${lockBtn('lock-rack',r.id,R.locked,'Lock rack')}</div></header>
+      <header><div class="row" style="align-items:baseline;gap:8px"><h3>Bay ${esc(r.name)}</h3>${S.updated[r.id]?`<span class="pill upd">updated position, was ${esc(S.updated[r.id])}</span>`:''}</div>
+        <div class="row" style="align-items:center;gap:10px"><span class="muted small mono">${R.used} of ${R.cells.filter(c=>!c.blocked).length} used</span>${lockBtn('lock-rack',r.id,R.locked,'Lock bay',ro)}</div></header>
       <div class="tablewrap"><table>
-        <thead><tr><th class="num">Slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}${M?'<th>Change</th>':''}</tr></thead>
+        <thead><tr><th class="num">Slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}${M?'<th>Change</th>':''}${ro||R.locked?'':'<th>Slot lock</th>'}</tr></thead>
         <tbody>${R.cells.map(c=>{const span=6+cols.length+(M?1:0);
-          if(c.blocked)return `<tr class="blocked"><td class="num mono">${c.slot}</td><td colspan="${span}">Blocked, not for use</td></tr>`;
-          if(c.gap)return `<tr class="gap"><td class="num mono">${c.slot}</td><td colspan="${span}">Spare, kept free</td></tr>`;
-          if(!c.item)return `<tr class="${R.locked?'locked-empty':'empty-slot'}"><td class="num mono">${c.slot}</td><td colspan="${span}">${R.locked?'Empty (rack locked)':'Empty'}</td></tr>`;
+          const sl=ro||R.locked||c.blocked?'':`<td><button class="slotlock" aria-pressed="${c.pin==='slot'}" data-act="lock-slot" data-id="${r.id}" data-slot="${c.slot}">${c.pin==='slot'?'Locked':'Lock'}</button></td>`;
+          const tag=c.pin==='held'?' <span class="pill held">held</span>':c.pin==='slot'&&ro?' <span class="pill lock">locked</span>':'';
+          if(c.blocked)return `<tr class="blocked"><td class="num mono">${c.slot}</td><td colspan="${span+(ro||R.locked?0:1)}">Blocked, not for use</td></tr>`;
+          if(c.gap)return `<tr class="gap"><td class="num mono">${c.slot}</td><td colspan="${span}">Spare, kept free</td>${sl}</tr>`;
+          if(!c.item)return `<tr class="${c.closed?'locked-empty':'empty-slot'}"><td class="num mono">${c.slot}</td><td colspan="${span}">${R.locked?'Empty (bay locked)':c.closed?'Empty (slot locked)':'Empty'}</td>${sl}</tr>`;
           const it=c.item;let ch='';
-          if(M){if(M.newIds.has(it.id))ch='<span class="pill new">New</span>';else if(M.moved.has(it.id)){const b=p.baseline.positions[it.id];ch=`<span class="pill moved">from ${esc(nameOf(p,b.rackId,b.rackName))}-${b.slot}</span>`;}}
-          return `<tr><td class="num mono">${c.slot}</td><td><span class="chip" style="--h:${P.hue.get(it.feature||'')}">${esc(fname(it.feature))}</span></td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(col=>`<td>${esc((it.custom||{})[col.id])}</td>`).join('')}${M?`<td>${ch}</td>`:''}</tr>`;
-        }).join('')||`<tr><td class="muted">This rack has no slots. Set slots in Edit.</td></tr>`}</tbody>
+          if(M){if(M.newIds.has(it.id))ch='<span class="pill new">New</span>';else if(M.moved.has(it.id)){const b=M.basePos[it.id];ch=`<span class="pill moved">from ${esc(loc(b))}</span>`;}}
+          return `<tr><td class="num mono">${c.slot}</td><td><span class="chip" style="--h:${P.hue.get(it.feature||'')}">${esc(fname(it.feature))}</span></td><td class="mono">${esc(it.hole)}${tag}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(col=>`<td>${esc((it.custom||{})[col.id])}</td>`).join('')}${M?`<td>${ch}</td>`:''}${sl}</tr>`;
+        }).join('')||`<tr><td class="muted">This bay has no slots.</td></tr>`}</tbody>
       </table></div>
     </section>`;}).join('')}
   </div>`;
 }
 
+/* moves tab */
+function movesTab(p,P,M){
+  const pr=projRec();
+  if(!pr.plan)return `<div class="notice info"><strong>This is the first core move for ${esc(pr.name)}.</strong> There’s no saved layout to compare against yet. When you save this move to the project, later moves will list the boxes that need to shift.</div>`;
+  if(!M.steps.length&&!M.noSpace.length)return `<div class="notice info"><strong>No moves needed.</strong> This plan matches the saved project layout.</div>`;
+  return `<section class="stack">
+    <div class="row" style="justify-content:space-between;align-items:baseline"><h2>Move list</h2><span class="muted small">${plural(M.count,'box','boxes')} to place${M.removed?`, ${M.removed} removed`:''}, compared with the saved project</span></div>
+    ${M.steps.some(s=>s.kind==='stage')?`<p class="notice small">Some boxes need to swap places, so a few go to a staging area first and come back later in the list.</p>`:''}
+    ${M.noSpace.length?`<p class="notice small"><strong>${plural(M.noSpace.length,'box has','boxes have')} no slot</strong> in this plan. Add bays or slots in Edit.</p>`:''}
+    <div class="tablewrap"><table>
+      <thead><tr><th class="num">Step</th><th>Action</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th>From</th><th>To</th></tr></thead>
+      <tbody>${M.steps.map((s,i)=>{const it=s.item||{};const lab={move:['moved','Move'],new:['new','Place new'],stage:['stage','To staging'],unstage:['moved','From staging'],remove:['stage','Remove']}[s.kind];
+        return `<tr><td class="num mono">${i+1}</td><td><span class="pill ${lab[0]}">${lab[1]}</span></td><td class="mono">${esc(fname(it.feature||''))}</td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}${it.of?' / '+esc(it.of):''}</td><td class="mono">${esc(loc(s.from))}</td><td class="mono">${s.to?esc(loc(s.to)):'Out of shed'}</td></tr>`;}).join('')}</tbody>
+    </table></div>
+  </section>`;
+}
+
 /* shed map */
-function featBreakdown(R,P){const m=new Map();R.cells.forEach(c=>{if(c.item){const f=c.item.feature||'';m.set(f,(m.get(f)||0)+1);}});return[...m.entries()];}
+function featBreakdown(R){const m=new Map();R.cells.forEach(c=>{if(c.item){const f=c.item.feature||'';m.set(f,(m.get(f)||0)+1);}});return[...m.entries()];}
 function mapSVG(p,P,o){
   const C=o.C,pl=o.pal,B=mapBounds(p),W=B.w*C,H=B.h*C,exp=!!o.export,compact=!!o.compact;
-  const rinfo=new Map(P.racks.map(R=>[R.rack.id,R]));const sel=o.interactive?S.sel:null;
+  const sel=o.interactive?S.sel:null;
   const fc=f=>`hsl(${P.hue.get(f)}, ${pl.chipS}, ${pl.chipL})`;
   let legend='',legH=0;const top=exp?66:0;
-  if(exp){const items=P.feats.map(f=>({c:fc(f),t:fname(f)}));if(p.racks.some(r=>r.locked))items.push({c:pl.lockfill,t:'Locked rack',stroke:pl.ink});
+  if(exp){const items=P.feats.map(f=>({c:fc(f),t:fname(f)}));if(p.racks.some(r=>r.locked))items.push({c:pl.lockfill,t:'Locked bay',stroke:pl.ink});
     let lx=0,ly=0;const maxW=Math.max(W,340);items.forEach(it=>{const w=26+it.t.length*7.4+16;if(lx+w>maxW&&lx>0){lx=0;ly+=22;}
       legend+=`<rect x="${lx}" y="${ly}" width="16" height="11" rx="2" fill="${it.c}" ${it.stroke?`stroke="${it.stroke}"`:''}/><text x="${lx+22}" y="${ly+10}" font-size="12" fill="${pl.ink}">${esc(it.t)}</text>`;lx+=w;});
     legH=items.length?ly+30:0;}
@@ -604,13 +749,13 @@ function mapSVG(p,P,o){
   let s=`<svg xmlns="http://www.w3.org/2000/svg" ${o.interactive?'id="shedmap"':''} width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" ${exp?'font-family="Arial, Helvetica, sans-serif"':'style="font-family:var(--f-mono)"'} role="img" aria-label="Top-down shed map">`;
   const gid='grid'+C+(exp?'x':'');
   s+=`<defs><pattern id="${gid}" width="${C}" height="${C}" patternUnits="userSpaceOnUse"><path d="M ${C} 0 L 0 0 0 ${C}" fill="none" stroke="${pl.grid}" stroke-width="1"/></pattern></defs>`;
-  if(exp)s+=`<rect width="${totalW}" height="${totalH}" fill="#ffffff"/><text x="16" y="32" font-size="21" font-weight="700" fill="${pl.ink}">${esc(p.map.title||p.name)}</text><text x="16" y="52" font-size="12" fill="${pl.muted}">${esc([p.site,`${p.racks.length} racks in ${p.layout.rows.length} row${p.layout.rows.length>1?'s':''}`,new Date().toLocaleDateString()].filter(Boolean).join(' · '))}</text>`;
+  if(exp)s+=`<rect width="${totalW}" height="${totalH}" fill="#ffffff"/><text x="16" y="32" font-size="21" font-weight="700" fill="${pl.ink}">${esc(p.map.title||o.title||'Core shed')}</text><text x="16" y="52" font-size="12" fill="${pl.muted}">${esc([o.subtitle,`${plural(p.racks.length,'bay')} in ${plural(p._rows.length,'row')}`,new Date().toLocaleDateString()].filter(Boolean).join(' · '))}</text>`;
   s+=`<g transform="translate(${ox} ${oy})"><rect width="${W}" height="${H}" fill="${pl.bg}"/><rect width="${W}" height="${H}" fill="url(#${gid})"/><rect x="1" y="1" width="${W-2}" height="${H-2}" fill="none" stroke="${pl.frame}" stroke-width="2"/>`;
-  P.rowList.forEach(G=>{const row=G.row,d=rowDims(row);const all=G.racks.length&&G.racks.every(R=>R.locked);
-    const hx=row.x*C,hy=(row.y-1)*C,hw=d.w*C;const rsel=sel&&sel.type==='row'&&sel.id===row.id;
-    s+=`<g data-rowg="${row.id}">`;
-    s+=`<g ${o.interactive?`data-rowh="${row.id}" style="cursor:move"`:''}><rect x="${hx+1}" y="${hy+3}" width="${hw-2}" height="${C-6}" rx="4" fill="${rsel?pl.accent:pl.ink}"/><text x="${hx+hw/2}" y="${hy+C/2+4}" text-anchor="middle" font-size="${compact?Math.max(9,C*0.6):12}" font-weight="700" fill="${pl.surface}">${compact?esc(row.letter):`Row ${esc(row.letter)}${all?' · locked':''}`}</text></g>`;
-    G.racks.forEach((R,k)=>{const r=R.rack,cell=rackCell(row,k),x=cell.x*C,y=cell.y*C,w=RW*C,h=RL*C;
+  P.rowList.forEach(G=>{const g=G.row;const topY=Math.min(...g.bays.filter(b=>b.x===g.minX).map(b=>b.y));
+    const hx=g.minX*C,hy=(topY-1)*C,hw=(g.maxX-g.minX)*C;const rsel=sel&&sel.type==='row'&&G.racks.some(R=>R.rack.id===sel.id);
+    s+=`<g data-rowg="${g.key}">`;
+    s+=`<g ${o.interactive?`data-rowh="${g.key}" style="cursor:move"`:''}><rect x="${hx+1}" y="${hy+3}" width="${hw-2}" height="${C-6}" rx="4" fill="${rsel?pl.accent:pl.ink}"/><text x="${hx+hw/2}" y="${hy+C/2+4}" text-anchor="middle" font-size="${compact?Math.max(9,C*0.6):12}" font-weight="700" fill="${pl.surface}">${compact?esc(g.letter):`Row ${esc(g.letter)}`}</text></g>`;
+    G.racks.forEach(R=>{const r=R.rack,x=r.x*C,y=r.y*C,w=RW*C,h=RL*C;
       const usable=R.cells.filter(c=>!c.blocked).length;const upd=!!o.interactive&&S.updated[r.id]!==undefined;const isSel=sel&&sel.type==='rack'&&sel.id===r.id;
       const stroke=isSel?pl.accent:upd?pl.warn:R.locked?pl.ink:pl.frame;
       s+=`<g data-rack="${r.id}" ${o.interactive?'style="cursor:grab"':''}><rect x="${x+1.5}" y="${y+1.5}" width="${w-3}" height="${h-3}" rx="3" fill="${R.locked?pl.lockfill:pl.surface}" stroke="${stroke}" stroke-width="${isSel||R.locked?2.5:1.5}" ${upd&&!isSel?'stroke-dasharray="5 3"':''}/>`;
@@ -621,7 +766,7 @@ function mapSVG(p,P,o){
         if(R.locked)s+=`<text x="${x+w/2}" y="${y+h-C*0.85}" text-anchor="middle" font-size="${Math.max(8,C*0.34)}" font-weight="700" letter-spacing="1" fill="${pl.ink}">LOCKED</text>`;}
       const bx=x+C*0.3,bw=w-C*0.6,by=y+h-C*0.55,bh=Math.max(4,C*0.28);
       s+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="1.5" fill="${pl.grid}"/>`;
-      let cx=bx;featBreakdown(R,P).forEach(([f,n])=>{const ww=usable?bw*n/usable:0;s+=`<rect x="${cx}" y="${by}" width="${ww}" height="${bh}" fill="${fc(f)}"/>`;cx+=ww;});
+      let cx=bx;featBreakdown(R).forEach(([f,n])=>{const ww=usable?bw*n/usable:0;s+=`<rect x="${cx}" y="${by}" width="${ww}" height="${bh}" fill="${fc(f)}"/>`;cx+=ww;});
       s+=`</g>`;});
     s+=`</g>`;});
   (p.map.labels||[]).forEach(l=>{const lsel=sel&&sel.type==='label'&&sel.id===l.id;const tw=String(l.text).length*C*0.36+C*0.8;
@@ -632,46 +777,47 @@ function mapSVG(p,P,o){
 }
 function holesInRack(R){const out=[];R.cells.forEach(c=>{if(!c.item)return;const it=c.item;const k=(it.feature||'')+'-'+(it.hole||'');const last=out[out.length-1];
   if(last&&last.k===k)last.items.push(it);else out.push({k,feature:it.feature,hole:it.hole,items:[it]});});return out;}
-function mapSide(p,P){
+function groupOfBay(p,id){return (p._rows||deriveNames(p)).find(g=>g.bays.some(b=>b.id===id));}
+function mapSide(p,P,ro){
   const sel=S.sel;
-  if(sel&&sel.type==='rack'){const R=P.racks.find(x=>x.rack.id===sel.id);if(R){const r=R.rack;const row=p.layout.rows.find(x=>x.id===r.rowId);const hs=holesInRack(R);
-    return `<div><span class="label">Rack</span><h2>${esc(r.name)}</h2></div>
+  if(sel&&sel.type==='rack'){const R=P.racks.find(x=>x.rack.id===sel.id);if(R){const r=R.rack;const hs=holesInRack(R);
+    return `<div><span class="label">Bay</span><h2>${esc(r.name)}</h2></div>
       ${S.updated[r.id]!==undefined?`<span class="pill upd" style="align-self:flex-start">updated position, was ${esc(S.updated[r.id])}</span>`:''}
-      <p class="muted small">Row ${esc(row?row.letter:'')} · ${R.used} of ${R.cells.filter(c=>!c.blocked).length} slots used</p>
-      ${hs.length?`<ul class="small">${hs.map(h=>`<li><span class="mono">${esc([h.feature,h.hole].filter(Boolean).join('-'))}</span> <span class="muted">box ${esc(boxSummary(h.items))}</span></li>`).join('')}</ul>`:'<p class="muted small">Empty in the current plan.</p>'}
-      <div class="row">${lockBtn('lock-rack',r.id,R.locked,'Lock rack')}<button data-act="goto-rack" data-id="${r.id}">Show in rack plan</button></div>
-      <p class="muted small">${R.locked?'Locked: its boxes stay where they are and the rest of the plan works around it.':'Drag this rack onto another rack to swap them. The rack takes the ID of its new position and the plan updates.'}</p>`;}}
-  if(sel&&sel.type==='row'){const row=p.layout.rows.find(x=>x.id===sel.id);if(row){const all=row.rackIds.every(id=>(p.racks.find(r=>r.id===id)||{}).locked);
-    return `<div><span class="label">Row</span><h2>Row ${esc(row.letter)}</h2></div>
-      <div class="row" style="align-items:center"><span>${row.rackIds.length} rack${row.rackIds.length>1?'s':''}</span><span class="spacer"></span><button class="icon" data-act="row-del-rack" data-id="${row.id}" aria-label="Remove last rack from row" ${p.racks.length<=1?'disabled':''}>−</button><button class="icon" data-act="row-add-rack" data-id="${row.id}" aria-label="Add rack to row">+</button></div>
-      <label class="check"><input type="checkbox" id="row_b2b_${row.id}" data-k="row" data-id="${row.id}" data-f="width" ${row.width===2?'checked':''}> Back to back (2 racks wide)</label>
-      <div class="row">${lockBtn('lock-row',row.id,all,'Lock row')}</div>
-      <p class="muted small">Drag the row’s dark header to move the whole row. Rows are lettered left to right, so moving a row past another changes its letter.</p>`;}}
-  if(sel&&sel.type==='label'){const l=p.map.labels.find(x=>x.id===sel.id);if(l)return `<div><span class="label">Label</span><h2>Map label</h2></div>
+      <p class="muted small">Row ${esc(r.rowLetter||'')} · ${R.used} of ${R.cells.filter(c=>!c.blocked).length} slots used</p>
+      ${hs.length?`<ul class="small">${hs.map(h=>`<li><span class="mono">${esc([h.feature,h.hole].filter(Boolean).join('-'))}</span> <span class="muted">box ${esc(boxSummary(h.items))}</span></li>`).join('')}</ul>`:'<p class="muted small">Empty in this plan.</p>'}
+      <div class="row">${lockBtn('lock-rack',r.id,R.locked,'Lock bay',ro)}<button data-act="goto-rack" data-id="${r.id}">Show in rack plan</button></div>
+      ${ro?'':`<p class="muted small">${R.locked?'Locked: its boxes stay where they are and the rest of the plan works around it.':'Drag this bay anywhere. Drop it next to another bay and it snaps on. Drop it on top of another bay to swap the two.'}</p>`}`;}}
+  if(sel&&sel.type==='row'){const g=groupOfBay(p,sel.id);if(g){const all=g.bays.every(b=>b.locked);
+    return `<div><span class="label">Row</span><h2>Row ${esc(g.letter)}</h2></div>
+      <div class="row" style="align-items:center"><span>${plural(g.bays.length,'bay')}</span>${ro?'':`<span class="spacer"></span><button class="icon" data-act="row-del-rack" data-id="${g.key}" aria-label="Remove last bay from row" ${p.racks.length<=1?'disabled':''}>−</button><button class="icon" data-act="row-add-rack" data-id="${g.key}" aria-label="Add bay to row">+</button>`}</div>
+      <div class="row">${lockBtn('lock-row',g.key,all,'Lock row',ro)}</div>
+      ${ro?'':`<p class="muted small">Drag the row’s dark header to move the whole row. Bays that touch form a row; rows are lettered left to right.</p>`}`;}}
+  if(sel&&sel.type==='label'&&!ro){const l=p.map.labels.find(x=>x.id===sel.id);if(l)return `<div><span class="label">Label</span><h2>Map label</h2></div>
       <div class="field"><label class="label" for="lb_text">Text</label><input id="lb_text" data-k="label" data-id="${l.id}" data-f="text" value="${esc(l.text)}"></div>
       <div class="row"><button class="ghost danger" data-act="label-del" data-id="${l.id}">Delete label</button></div>`;}
-  return `<div><span class="label">How it works</span><h2>Shed map</h2></div>
-    <ul class="small"><li>Drag a rack onto another rack to swap them.</li><li>Drag a row’s dark header to move the whole row. It snaps to the grid.</li><li>Rows are lettered left to right. Racks are numbered top to bottom.</li><li>Click a rack, row or label to see its options.</li></ul>
+  return `<div><span class="label">${ro?'Saved layout':'How it works'}</span><h2>Shed map</h2></div>
+    ${ro?`<p class="muted small">Click a bay or row header to see what’s in it. To rearrange the shed, open a core move.</p>`:`<ul class="small"><li>Drag a bay anywhere on the grid. Near another bay, it snaps on.</li><li>Drop a bay on top of another to swap them.</li><li>Bays that touch form a row. Rows are lettered left to right, bays numbered top to bottom.</li><li>Drag a row’s dark header to move the whole row.</li></ul>`}
     <div class="legend small">${P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span></span>`).join('')}</div>`;
 }
-function mapTab(p,P){
+function mapTab(p,P,ro){
   const B=mapBounds(p);const upd=Object.entries(S.updated).filter(([id])=>p.racks.some(r=>r.id===id));
   return `<section class="panel"><div class="toolbar">
-      <div class="field grow" style="width:auto;min-width:min(220px,100%)"><label class="label" for="mp_title">Map title</label><input id="mp_title" data-k="map" data-f="title" value="${esc(p.map.title)}" placeholder="${esc(p.name)}"></div>
+      ${ro?`<div class="grow"><span class="label">Map title</span><h3>${esc(p.map.title||projRec().name)}</h3></div>`:`<div class="field grow" style="width:auto;min-width:min(220px,100%)"><label class="label" for="mp_title">Map title</label><input id="mp_title" data-k="map" data-f="title" value="${esc(p.map.title)}" placeholder="${esc(projRec().name)}"></div>
       <div class="field"><label class="label" for="mp_w">Shed width</label><input id="mp_w" type="number" min="1" data-k="map" data-f="w" value="${B.w}"></div>
-      <div class="field"><label class="label" for="mp_h">Shed length</label><input id="mp_h" type="number" min="1" data-k="map" data-f="h" value="${B.h}"></div>
+      <div class="field"><label class="label" for="mp_h">Shed length</label><input id="mp_h" type="number" min="1" data-k="map" data-f="h" value="${B.h}"></div>`}
       <div class="field"><label class="label" for="mp_zoom">Zoom</label><select id="mp_zoom" data-k="ui" data-f="zoom">${[[18,'Small'],[26,'Medium'],[34,'Large']].map(([v,l])=>`<option value="${v}" ${S.zoom===v?'selected':''}>${l}</option>`).join('')}</select></div>
-      <div class="row"><button data-act="map-add-row">+ Row</button><button data-act="map-add-label">+ Label</button><button data-act="map-auto">Tidy layout</button><button class="primary" data-act="map-png">Save as PNG</button></div>
-    </div><p class="muted small" style="margin-top:8px">Sizes are in grid squares. One rack is ${RW} × ${RL} squares.</p></section>
-    ${upd.length?`<div class="msg warn row" style="align-items:center;justify-content:space-between"><span>${upd.length} rack${upd.length>1?'s have':' has'} a new ID from the map: ${upd.map(([id,old])=>`<b class="mono">${esc(nameOf(p,id,''))}</b> (was ${esc(old)})`).join(', ')}. The rack plan has been updated to match.</span><button class="ghost" data-act="clear-updated">Clear notes</button></div>`:''}
-    <div class="mapwrap"><div class="mapcanvas" id="mapcanvas">${mapSVG(p,P,{C:S.zoom,pal:pal(),interactive:true})}</div><aside class="panel side">${mapSide(p,P)}</aside></div>`;
+      <div class="row">${ro?'':`<button data-act="map-add-row">+ Row</button><button data-act="map-add-label">+ Label</button><button data-act="map-auto">Tidy layout</button>`}<button class="primary" data-act="map-png">Save as PNG</button></div>
+    </div>${ro?'':`<p class="muted small" style="margin-top:8px">Sizes are in grid squares. One bay is ${RW} × ${RL} squares.</p>`}</section>
+    ${upd.length&&!ro?`<div class="msg warn row" style="align-items:center;justify-content:space-between"><span>${plural(upd.length,'bay has','bays have')} a new ID from the map: ${upd.map(([id,old])=>`<b class="mono">${esc(nameOf(p,id,''))}</b> (was ${esc(old)})`).join(', ')}. The rack plan has been updated to match.</span><button class="ghost" data-act="clear-updated">Clear notes</button></div>`:''}
+    <div class="mapwrap"><div class="mapcanvas" id="mapcanvas">${mapSVG(p,P,{C:S.zoom,pal:pal(),interactive:true})}</div><aside class="panel side">${mapSide(p,P,ro)}</aside></div>`;
 }
 function exportPNG(p){
-  const P=computePlan(p);const svg=mapSVG(p,P,{C:26,pal:LIGHT,export:true});
+  const pr=projRec();const P=computePlan(p);const m=moveRec();
+  const svg=mapSVG(p,P,{C:26,pal:LIGHT,export:true,title:pr.name,subtitle:[pr.site,m?`Core move: ${m.name}`:'Saved project layout'].filter(Boolean).join(' · ')});
   const img=new Image();
   img.onload=()=>{const sc=2;const cv=document.createElement('canvas');cv.width=img.width*sc;cv.height=img.height*sc;const ctx=cv.getContext('2d');ctx.scale(sc,sc);ctx.drawImage(img,0,0);
     let url;try{url=cv.toDataURL('image/png');}catch(e){toast('Couldn’t create the image in this browser.');return;}
-    S.modal={png:url,name:safeName(p.map.title||p.name)+' - shed map.png'};render();modalDownload();};
+    S.modal={png:url,name:safeName((p.map.title||pr.name)+(m?' - '+m.name:''))+' - shed map.png'};render();modalDownload();};
   img.onerror=()=>toast('Couldn’t create the image.');
   img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
@@ -681,8 +827,8 @@ function modalDownload(){if(!S.modal)return;const a=document.createElement('a');
 function editTab(p,P){
   const sec=(key,title,cap,body)=>`<details class="manual sec" data-sec="${key}" ${S.open[key]?'open':''}><summary><span>${title}<span class="cap">${cap}</span></span></summary><div class="body stack">${body}</div></details>`;
   const holes=new Set(p.items.map(i=>(i.feature||'')+'|'+(i.hole||''))).size;
-  return sec('holes','Holes &amp; boxes',`${holes} hole${holes===1?'':'s'} · ${p.items.length} box${p.items.length===1?'':'es'}`,holesBody(p,P))
-    +sec('racks','Edit Rack Settings',`${p.racks.length} rack${p.racks.length===1?'':'s'} in ${p.layout.rows.length} row${p.layout.rows.length===1?'':'s'}`,rackSettings(p,P))
+  return sec('holes','Holes &amp; boxes',`${plural(holes,'hole')} · ${plural(p.items.length,'box','boxes')}`,holesBody(p,P))
+    +sec('racks','Edit Bay Settings',`${plural(p.racks.length,'bay')} in ${plural(p._rows.length,'row')}`,rackSettings(p,P))
     +sec('adv','Advanced','Feature order, spacing and custom columns',advancedTab(p,P));
 }
 function holesBody(p,P){
@@ -698,30 +844,33 @@ function holesBody(p,P){
       ${p.items.length?(S.confirm==='clear'?`<span class="small">Remove all ${p.items.length} boxes?</span><button class="danger solid" data-act="clear-yes">Remove all</button><button data-act="cancel">Cancel</button>`:`<button class="ghost danger" data-act="clear">Remove all</button>`):''}
     </div>
   </div>
-  <p class="muted small">Listed in fill order. Edit any cell. The order and rack locations update when you leave the table.</p>
+  <p class="muted small">Listed in fill order. Edit any cell. The order and bay locations update when you leave the table.</p>
   ${p.items.length?`<div class="tablewrap" data-live><table class="edit">
     <thead><tr><th>Planned slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}<th></th></tr></thead>
     <tbody id="coreBody">${coreRows(p,P)}</tbody></table></div>`:`<div class="empty">No boxes yet. Import a spreadsheet or add a hole above.</div>`}`;
 }
 function rackSettings(p,P){
-  const s=p.setup;const rows=p.layout.rows;const allB2B=rows.length>0&&rows.every(r=>r.width===2);
-  const slotsShown=s.defaultRows||(p.racks[0]?p.racks[0].rows:'');
-  const need=racksNeeded(p);
+  const s=p.setup;const slotsShown=s.defaultRows||(p.racks[0]?p.racks[0].rows:'');const need=racksNeeded(p);
   return `<div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr))">
-      <div class="field"><label class="label" for="st_rows">Slots per rack</label><input id="st_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="${esc(slotsShown)}"><span class="hint">Applies to every rack</span></div>
+      <div class="field"><label class="label" for="st_rows">Slots per bay</label><input id="st_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="${esc(slotsShown)}"><span class="hint">Applies to every bay</span></div>
       <div class="field"><label class="label" for="st_block">Blocked slots</label><input id="st_block" data-k="setup" data-f="defaultBlocked" value="${esc(s.defaultBlocked)}" placeholder="e.g. 1-2"><span class="hint">Shown on the plan, never filled</span></div>
-      <div class="field"><label class="label" for="st_count">Number of racks</label><input id="st_count" type="number" min="1" max="500" data-k="setup" data-f="rackCount" value="${p.racks.length}"><span class="hint">${need?`${need} needed for all boxes`:'&nbsp;'}</span></div>
-      <div class="field"><label class="label" for="st_rowsct">Rows of racks</label><input id="st_rowsct" type="number" min="1" max="50" data-k="setup" data-f="rowCount" value="${rows.length||1}"><span class="hint">Racks are split evenly</span></div>
+      <div class="field"><label class="label" for="st_count">Number of bays</label><input id="st_count" type="number" min="1" max="500" data-k="setup" data-f="rackCount" value="${p.racks.length}"><span class="hint">${need?`${need} needed for all boxes`:'&nbsp;'}</span></div>
       <div class="field"><label class="label" for="st_letter">First row letter</label><input id="st_letter" maxlength="3" data-k="setup" data-f="letter" value="${esc(s.letter)}"></div>
-      <div class="field"><label class="label" for="st_start">First rack number</label><input id="st_start" type="number" min="0" data-k="setup" data-f="startNum" value="${esc(s.startNum)}"></div>
+      <div class="field"><label class="label" for="st_start">First bay number</label><input id="st_start" type="number" min="0" data-k="setup" data-f="startNum" value="${esc(s.startNum)}"></div>
     </div>
-    <label class="check"><input type="checkbox" id="st_b2b" data-k="setup" data-f="backToBack" ${allB2B?'checked':''}> Racks in each row are back to back (rows are 2 racks wide)</label>
-    <div class="row"><button data-act="fit-racks">Fit number of racks to boxes</button><button data-act="rack-add">+ Add rack</button></div>
-    <p class="muted small">Rack IDs come from the shed map: the row letter (A is furthest left) and the rack’s position from the top. To move individual racks or rows, use the Shed map tab.</p>
+    <div class="row"><button data-act="fit-racks">Fit number of bays to boxes</button><button data-act="rack-add">+ Add bay</button></div>
+    <div class="panel" style="padding:14px">
+      <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr))">
+        <div class="field"><label class="label" for="st_rowsct">Rows</label><input id="st_rowsct" type="number" min="1" max="50" value="${p._rows.length||1}"><span class="hint">Bays are split evenly</span></div>
+      </div>
+      <label class="check" style="margin-top:8px"><input type="checkbox" id="st_b2b" ${s.backToBack?'checked':''}> Bays in each row are back to back (rows are 2 bays wide)</label>
+      <div class="row" style="margin-top:10px;align-items:center"><button data-act="rebuild-rows">Rebuild shed map with these rows</button><span class="muted small">Replaces the current bay positions on the shed map.</span></div>
+    </div>
+    <p class="muted small">Bay IDs come from the shed map: the row letter (A is furthest left) and the bay’s position from the top. To move single bays or rows, use the Shed map tab.</p>
     <div class="tablewrap" data-live>
       <table class="edit">
-        <thead><tr><th>Rack ID</th><th>Row</th><th class="num">Slots</th><th>Blocked slots</th><th class="num">Usable</th><th class="num">Planned</th><th>Locked</th><th></th></tr></thead>
-        <tbody>${P.rowList.map(G=>G.racks.map((R,i)=>{const r=R.rack;const usable=R.cells.filter(c=>!c.blocked).length;return `
+        <thead><tr><th>Bay ID</th><th>Row</th><th class="num">Slots</th><th>Blocked slots</th><th class="num">Usable</th><th class="num">Planned</th><th>Locked</th><th></th></tr></thead>
+        <tbody>${P.rowList.map(G=>G.racks.map(R=>{const r=R.rack;const usable=R.cells.filter(c=>!c.blocked).length;return `
           <tr>
             <td class="mono" style="padding-left:10px"><b>${esc(r.name)}</b>${S.updated[r.id]!==undefined?` <span class="pill upd">was ${esc(S.updated[r.id])}</span>`:''}</td>
             <td class="mono muted">${esc(G.row.letter)}</td>
@@ -729,8 +878,8 @@ function rackSettings(p,P){
             <td class="w-m"><input id="rk_b_${r.id}" data-k="rack" data-id="${r.id}" data-f="blocked" value="${esc(fmtRows(r.blocked))}" placeholder="none" aria-label="Blocked slots"></td>
             <td class="num mono">${usable}</td>
             <td class="num mono">${R.used}</td>
-            <td style="padding-left:10px"><input type="checkbox" id="rk_l_${r.id}" data-k="rack" data-id="${r.id}" data-f="locked" ${R.locked?'checked':''} aria-label="Lock rack ${esc(r.name)}"></td>
-            <td style="text-align:right"><button class="icon ghost" data-act="rack-up" data-id="${r.id}" ${i===0?'disabled':''} aria-label="Move up in row">↑</button><button class="icon ghost" data-act="rack-down" data-id="${r.id}" ${i===G.racks.length-1?'disabled':''} aria-label="Move down in row">↓</button><button class="icon ghost danger" data-act="rack-del" data-id="${r.id}" ${p.racks.length<=1?'disabled':''} aria-label="Remove rack">✕</button></td>
+            <td style="padding-left:10px"><input type="checkbox" id="rk_l_${r.id}" data-k="rack" data-id="${r.id}" data-f="locked" ${R.locked?'checked':''} aria-label="Lock bay ${esc(r.name)}"></td>
+            <td style="text-align:right"><button class="icon ghost danger" data-act="rack-del" data-id="${r.id}" ${p.racks.length<=1?'disabled':''} aria-label="Remove bay">✕</button></td>
           </tr>`;}).join('')).join('')}</tbody>
       </table>
     </div>`;
@@ -790,7 +939,7 @@ function wizBar(p,step){
   return `<div class="appbar"><div class="wrap">
     <button class="ghost" data-act="home" aria-label="Back to projects">← Projects</button>
     <div class="crumb grow"><strong title="${esc(p.name)}">${esc(p.name)}</strong></div>
-    <div class="stepper">${st(1,'Hole info')}<span class="sep"></span>${st(2,'Racks')}<span class="sep"></span>${st(3,'Rack plan')}</div>
+    <div class="stepper">${st(1,'Hole info')}<span class="sep"></span>${st(2,'Bays')}<span class="sep"></span>${st(3,'Rack plan')}</div>
   </div></div>`;
 }
 function groupHoles(P){const out=[],idx=new Map();P.sorted.forEach(it=>{const k=(it.feature||'')+'\u0000'+(it.hole||'');if(!idx.has(k)){idx.set(k,out.length);out.push({feature:it.feature||'',hole:it.hole||'',items:[]});}out[idx.get(k)].items.push(it);});return out;}
@@ -811,54 +960,56 @@ function holesStep(p){
       </tbody></table></div></section>`:''}
     <div class="wizfoot">
       <button class="ghost" data-act="skip-holes">Import hole information later</button>
-      ${p.items.length?`<button class="primary" data-act="to-racks">Continue to rack setup →</button>`:''}
+      ${p.items.length?`<button class="primary" data-act="to-racks">Continue to bay setup →</button>`:''}
     </div>
   </div></main>`;
 }
 
 function genRacks(p,n){return Array.from({length:n},()=>makeRack(p));}
 function rackDims(p){const rows=parseInt(p.setup.defaultRows,10);if(!(rows>0))return{valid:false,rows:0,usable:0};const usable=rows-parseRows(p.setup.defaultBlocked).filter(b=>b<=rows).length;return{valid:usable>0,rows,usable};}
-function racksNeeded(p){const d=rackDims(p);const usable=d.valid?d.usable:(p.racks[0]?p.racks[0].rows-(p.racks[0].blocked||[]).length:0);if(!(usable>0))return 0;if(!p.items.length)return 1;
-    for(let n=Math.max(1,Math.ceil(p.items.length/usable));n<=500;n++){const t=Object.assign({},p,{racks:Array.from({length:n},()=>({id:uid(),name:'',rows:d.valid?d.rows:p.racks[0].rows,blocked:d.valid?parseRows(p.setup.defaultBlocked):p.racks[0].blocked.slice(),locked:false,lock:{}})),layout:{rows:[]}});
-    if(!computePlan(t).unplaced.length)return n;}return 500;}
-function syncWizardRacks(p){const d=rackDims(p);if(!d.valid){p.racks=[];p.layout={rows:[]};return;}
+function racksNeeded(p){const d=rackDims(p);const r0=p.racks[0];const rows=d.valid?d.rows:(r0?r0.rows:0);const bl=d.valid?parseRows(p.setup.defaultBlocked):(r0?r0.blocked.slice():[]);
+  const usable=rows-bl.filter(b=>b<=rows).length;if(!(usable>0))return 0;if(!p.items.length)return 1;
+  for(let n=Math.max(1,Math.ceil(p.items.length/usable));n<=500;n++){const racks=Array.from({length:n},(_,i)=>({id:'t'+i,name:'',rows,blocked:bl,x:2,y:2+i*RL,locked:false,fixed:{},slotLocks:{},hold:{}}));
+    const t=Object.assign({},p,{racks});if(!computePlan(t).unplaced.length)return n;}return 500;}
+function syncWizardRacks(p){const d=rackDims(p);if(!d.valid){p.racks=[];deriveNames(p);return;}
   const n=p.setup.autoCount!==false?racksNeeded(p):clamp(int(p.setup.rackCount,1),1,500);p.setup.rackCount=n;
-  p.racks=genRacks(p,n);const R=clamp(int(p.setup.rowCount,1),1,n);p.setup.rowCount=R;p.layout=autoLayout(p.racks,R,!!p.setup.backToBack);deriveNames(p);}
+  p.racks=genRacks(p,n);const R=clamp(int(p.setup.rowCount,1),1,n);p.setup.rowCount=R;autoLayout(p.racks,R,!!p.setup.backToBack);deriveNames(p);}
+function setBayCount(p,n){n=clamp(n|0,1,500);deriveNames(p);
+  while(p.racks.length<n){const g=rowGroups(p);const b=makeRack(p);appendBayToRow(p,b,g[g.length-1]);p.racks.push(b);deriveNames(p);}
+  while(p.racks.length>n){p.racks.pop();deriveNames(p);}
+  p.setup.rackCount=p.racks.length;}
 function fitRacks(p){
-  let guard=0;const lastRow=()=>sortedRows(p).pop();
-  if(!p.racks.length){p.racks.push(makeRack(p));deriveNames(p);}
-  while(computePlan(p).unplaced.length&&p.racks.length<500&&guard++<500){const r=makeRack(p);p.racks.push(r);lastRow().rackIds.push(r.id);}
-  while(p.racks.length>1){const P=computePlan(p);const row=lastRow();const id=row.rackIds[row.rackIds.length-1];const R=P.racks.find(x=>x.rack.id===id);
-    if(!R||R.used>0||R.locked)break;row.rackIds.pop();p.racks=p.racks.filter(r=>r.id!==id);deriveNames(p);
-    if(computePlan(p).unplaced.length){const r=makeRack(p);p.racks.push(r);lastRow().rackIds.push(r.id);deriveNames(p);break;}}
-  p.setup.rackCount=p.racks.length;p.setup.rowCount=p.layout.rows.length;deriveNames(p);}
-function rowRanges(p){return sortedRows(p).map(row=>{const ids=row.rackIds;const f=p.racks.find(r=>r.id===ids[0]),l=p.racks.find(r=>r.id===ids[ids.length-1]);return ids.length>1?`${f.name}–${l.name}`:f.name;});}
+  let guard=0;if(!p.racks.length)setBayCount(p,1);
+  while(computePlan(p).unplaced.length&&p.racks.length<500&&guard++<500)setBayCount(p,p.racks.length+1);
+  while(p.racks.length>1){const P=computePlan(p);const R=P.racks[P.racks.length-1];if(R.used>0||R.locked)break;const t=p.racks.pop();deriveNames(p);if(computePlan(p).unplaced.length){p.racks.push(t);deriveNames(p);break;}}
+  p.setup.rackCount=p.racks.length;}
+function rowRanges(p){return (p._rows||deriveNames(p)).map(g=>g.bays.length>1?`${g.bays[0].name}–${g.bays[g.bays.length-1].name}`:g.bays[0].name);}
 function racksStep(p){
   const s=p.setup,d=rackDims(p),auto=s.autoCount!==false,need=racksNeeded(p);
   const P=computePlan(p);const cap=d.usable*p.racks.length;const ranges=rowRanges(p);
   return `${wizBar(p,2)}
   <main class="wrap"><div class="wizard">
-    <div class="intro"><span class="label">Step 2 of 2</span><h1>Set up the racks</h1>
-      <p>Enter how many slots each rack has. The number of racks is worked out from your ${p.items.length} box${p.items.length===1?'':'es'}.</p></div>
+    <div class="intro"><span class="label">Step 2 of 2</span><h1>Set up the bays</h1>
+      <p>Enter how many slots each bay has. The number of bays is worked out from your ${plural(p.items.length,'box','boxes')}. IDs read Row, Bay, Slot: A1-3 is Row A, Bay 1, Slot 3.</p></div>
     <section class="panel">
       <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr))">
-        <div class="field"><label class="label" for="wz_rows">Slots per rack</label><input id="wz_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="${esc(s.defaultRows)}" placeholder="e.g. 12"><span class="hint">All slots on a rack, including blocked ones</span></div>
+        <div class="field"><label class="label" for="wz_rows">Slots per bay</label><input id="wz_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="${esc(s.defaultRows)}" placeholder="e.g. 18"><span class="hint">All shelves in a bay, including blocked ones</span></div>
         <div class="field"><label class="label" for="wz_block">Blocked slots</label><input id="wz_block" data-k="setup" data-f="defaultBlocked" value="${esc(s.defaultBlocked)}" placeholder="e.g. 1-2"><span class="hint">Shown on the plan, never filled. Slot 1 is the top.</span></div>
-        <div class="field"><label class="label" for="wz_count">Number of racks</label><input id="wz_count" type="number" min="1" max="500" data-k="setup" data-f="rackCount" value="${d.valid?p.racks.length:''}" ${d.valid?'':'disabled'} placeholder="Enter slots first">
-          <span class="hint">${!d.valid?'Calculated once slots per rack is entered':auto?`Calculated from ${p.items.length} boxes`:`You set this. ${need} needed for all boxes. <button type="button" class="ghost icon" data-act="auto-count" style="padding:0 4px;color:var(--accent)">Use ${need}</button>`}</span></div>
+        <div class="field"><label class="label" for="wz_count">Number of bays</label><input id="wz_count" type="number" min="1" max="500" data-k="setup" data-f="rackCount" value="${d.valid?p.racks.length:''}" ${d.valid?'':'disabled'} placeholder="Enter slots first">
+          <span class="hint">${!d.valid?'Calculated once slots per bay is entered':auto?`Calculated from ${plural(p.items.length,'box','boxes')}`:`You set this. ${need} needed for all boxes. <button type="button" class="ghost icon" data-act="auto-count" style="padding:0 4px;color:var(--accent)">Use ${need}</button>`}</span></div>
       </div>
       <hr class="sep">
       <h3 style="margin-bottom:10px">Rows</h3>
       <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr))">
-        <div class="field"><label class="label" for="wz_rowct">Rows of racks</label><input id="wz_rowct" type="number" min="1" max="50" data-k="setup" data-f="rowCount" value="${esc(s.rowCount||1)}" ${d.valid?'':'disabled'}><span class="hint">Separate lines of racks in the shed. Each row gets its own letter.</span></div>
+        <div class="field"><label class="label" for="wz_rowct">Rows</label><input id="wz_rowct" type="number" min="1" max="50" data-k="setup" data-f="rowCount" value="${esc(s.rowCount||1)}" ${d.valid?'':'disabled'}><span class="hint">Separate lines of bays in the shed. Each row gets its own letter.</span></div>
       </div>
-      <label class="check" style="margin-top:10px"><input type="checkbox" id="wz_b2b" data-k="setup" data-f="backToBack" ${s.backToBack?'checked':''} ${d.valid?'':'disabled'}> Racks in each row are back to back (rows are 2 racks wide)</label>
-      ${d.valid&&ranges.length?`<p class="small" style="margin-top:10px">${ranges.length} row${ranges.length>1?'s':''}: <span class="mono">${ranges.map(esc).join(' · ')}</span></p>`:''}
+      <label class="check" style="margin-top:10px"><input type="checkbox" id="wz_b2b" data-k="setup" data-f="backToBack" ${s.backToBack?'checked':''} ${d.valid?'':'disabled'}> Bays in each row are back to back (rows are 2 bays wide)</label>
+      ${d.valid&&ranges.length?`<p class="small" style="margin-top:10px">${plural(ranges.length,'row')}: <span class="mono">${ranges.map(esc).join(' · ')}</span></p>`:''}
     </section>
-    ${!s.defaultRows?`<div class="msg info">Enter slots per rack to work out how many racks you need.</div>`:
+    ${!s.defaultRows?`<div class="msg info">Enter slots per bay to work out how many bays you need.</div>`:
       !d.valid?`<div class="msg err">Every slot is blocked, so nothing can be placed. Reduce the blocked slots.</div>`:
-      `<section class="panel"><header><h2>Preview</h2><span class="calcline"><span class="mono">${p.racks.length}</span> rack${p.racks.length>1?'s':''} × <span class="mono">${d.usable}</span> usable slots = <span class="mono">${cap}</span> slots for <span class="mono">${p.items.length}</span> boxes</span></header>
-        ${P.unplaced.length?`<div class="msg warn" style="margin-bottom:12px">${P.unplaced.length} box${P.unplaced.length>1?'es':''} won’t fit with ${p.racks.length} rack${p.racks.length>1?'s':''}. Add racks or slots.</div>`:`<p class="muted small" style="margin-bottom:10px">${Math.max(0,P.free)} slot${P.free===1?'':'s'} spare after all boxes are placed. Top-down view; you can rearrange it on the Shed map later.</p>`}
+      `<section class="panel"><header><h2>Preview</h2><span class="calcline"><span class="mono">${p.racks.length}</span> bay${p.racks.length>1?'s':''} × <span class="mono">${d.usable}</span> usable slots = <span class="mono">${cap}</span> slots for <span class="mono">${p.items.length}</span> boxes</span></header>
+        ${P.unplaced.length?`<div class="msg warn" style="margin-bottom:12px">${plural(P.unplaced.length,'box','boxes')} won’t fit with ${plural(p.racks.length,'bay')}. Add bays or slots.</div>`:`<p class="muted small" style="margin-bottom:10px">${plural(Math.max(0,P.free),'slot')} spare after all boxes are placed. Top-down view; you can rearrange it on the Shed map later.</p>`}
         <div class="preview-map">${mapSVG(p,P,{C:16,pal:pal(),compact:true})}</div></section>`}
     <div class="wizfoot">
       <button class="ghost" data-act="back-holes">← Back to hole info</button>
@@ -983,35 +1134,6 @@ function parseCSV(text){
   return rows;}
 
 
-/* moves */
-function movesTab(p,P,M){
-  const B=p.baseline;
-  return `
-  <section class="panel">
-    <header><h2>Baseline</h2>${B?`<span class="muted small">Set ${new Date(B.takenAt).toLocaleString()}</span>`:''}</header>
-    <div class="stack">
-      <p class="muted" style="max-width:70ch">A baseline records where every box sits right now. After you add boxes or change racks, this tab lists the moves needed to get from the baseline to the new plan, in an order where each slot is free before a box goes into it.</p>
-      <div class="row">
-        <button class="primary" data-act="baseline-set">${B?'Update baseline to current plan':'Set current plan as baseline'}</button>
-        ${B?(S.confirm==='baseclear'?`<button class="danger solid" data-act="baseline-clear-yes">Clear baseline</button><button data-act="cancel">Cancel</button>`:`<button class="ghost danger" data-act="baseline-clear">Clear baseline</button>`):''}
-      </div>
-    </div>
-  </section>
-  ${!B?`<div class="empty">No baseline yet. Set one when the plan matches what is physically in the shed.</div>`:
-  !M.steps.length&&!M.noSpace.length?`<div class="notice info"><strong>No moves needed.</strong> The plan matches the baseline.</div>`:`
-  <section class="stack">
-    <div class="row" style="justify-content:space-between;align-items:baseline"><h2>Move list</h2><span class="muted small">${M.count} box${M.count===1?'':'es'} to place${M.removed?`, ${M.removed} removed`:''}</span></div>
-    ${M.steps.some(s=>s.kind==='stage')?`<p class="notice small">Some boxes need to swap places, so a few go to a staging area first and come back later in the list.</p>`:''}
-    ${M.noSpace.length?`<p class="notice small"><strong>${M.noSpace.length} box${M.noSpace.length>1?'es have':' has'} no slot</strong> in the new plan. Add racks or slots in Edit.</p>`:''}
-    <div class="tablewrap"><table>
-      <thead><tr><th class="num">Step</th><th>Action</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th>From</th><th>To</th></tr></thead>
-      <tbody>${M.steps.map((s,i)=>{const it=s.item||{};const lab={move:['moved','Move'],new:['new','Place new'],stage:['stage','To staging'],unstage:['moved','From staging'],remove:['stage','Remove']}[s.kind];
-        return `<tr><td class="num mono">${i+1}</td><td><span class="pill ${lab[0]}">${lab[1]}</span></td><td class="mono">${esc(fname(it.feature||''))}</td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}${it.of?' / '+esc(it.of):''}</td><td class="mono">${esc(loc(s.from))}</td><td class="mono">${s.to?esc(loc(s.to)):'Out of plan'}</td></tr>`;}).join('')}</tbody>
-    </table></div>
-  </section>`}`;
-}
-
-
 /* advanced */
 function advancedTab(p,P){
   const o=p.options;const order=P.feats;
@@ -1020,7 +1142,7 @@ function advancedTab(p,P){
   <section class="panel">
     <header><h2>Feature order</h2></header>
     <div class="stack">
-      <p class="muted small">By default features sort A to Z, with numbers in numeric order (BMA1, BMA2, BMA10). Turn on your own order to drag features into place. The rack tables update straight away.</p>
+      <p class="muted small">By default features sort A to Z, with numbers in numeric order (BMA1, BMA2, BMA10). Turn on your own order to drag features into place. The bay tables update straight away.</p>
       <label class="check"><input type="checkbox" id="opt_custom" data-k="opt" data-f="useCustomOrder" ${o.useCustomOrder?'checked':''}> Use my own feature order</label>
       ${order.length?`<ul class="featlist" id="featlist">${order.map((f,i)=>`<li ${o.useCustomOrder?`draggable="true"`:''} data-feat="${esc(f)}">
         ${o.useCustomOrder?'<span class="handle" aria-hidden="true">⋮⋮</span>':''}<span class="pos">${i+1}</span><span class="chip" style="--h:${P.hue.get(f)}">${esc(fname(f))}</span>
@@ -1039,13 +1161,13 @@ function advancedTab(p,P){
         <div class="field"><label class="label" for="opt_gh">Spare slots after each hole</label><input id="opt_gh" type="number" min="0" max="50" data-k="opt" data-f="gapAfterHole" value="${+o.gapAfterHole||0}"></div>
         <div class="field"><label class="label" for="opt_gf">Spare slots after each feature</label><input id="opt_gf" type="number" min="0" max="50" data-k="opt" data-f="gapAfterFeature" value="${+o.gapAfterFeature||0}"></div>
       </div>
-      <label class="check"><input type="checkbox" id="opt_nr" data-k="opt" data-f="newRackPerFeature" ${o.newRackPerFeature?'checked':''}> Start each feature in a new rack</label>
+      <label class="check"><input type="checkbox" id="opt_nr" data-k="opt" data-f="newRackPerFeature" ${o.newRackPerFeature?'checked':''}> Start each feature in a new bay</label>
     </div>
   </section>
   <section class="panel">
     <header><h2>Custom columns</h2></header>
     <div class="stack">
-      <p class="muted small">Extra columns appear after To (m) in every rack table, the box list and exports. Examples: core size, logged by, photo taken.</p>
+      <p class="muted small">Extra columns appear after To (m) in every bay table, the box list and exports. Examples: core size, logged by, photo taken.</p>
       ${p.customCols.length?`<div class="stack" style="gap:8px" data-live>${p.customCols.map(c=>`<div class="row" style="align-items:center;flex-wrap:nowrap">
         <input id="cc_${c.id}" class="grow" data-k="col" data-id="${c.id}" data-f="name" value="${esc(c.name)}" aria-label="Column name">
         ${S.confirm==='col:'+c.id?`<button class="danger solid" data-act="col-del-yes" data-id="${c.id}">Delete</button><button data-act="cancel">Keep</button>`:`<button class="ghost danger" data-act="col-del" data-id="${c.id}">Delete</button>`}</div>`).join('')}</div>`:''}
@@ -1062,7 +1184,7 @@ function advancedTab(p,P){
 
 /* ---------- export ---------- */
 function planRowsAll(p,P){
-  const head=['Rack','Slot','Feature','Hole ID','Box','Of','From (m)','To (m)',...p.customCols.map(c=>c.name),'Status'];
+  const head=['Bay','Slot','Feature','Hole ID','Box','Of','From (m)','To (m)',...p.customCols.map(c=>c.name),'Status'];
   const rows=[];
   P.racks.forEach(R=>R.cells.forEach(c=>{const it=c.item;
     rows.push([R.rack.name,c.slot,it?it.feature:'',it?it.hole:'',it?numOr(it.box):'',it?numOr(it.of):'',it?numOr(it.from):'',it?numOr(it.to):'',...p.customCols.map(col=>it?((it.custom||{})[col.id]||''):''),c.blocked?'Blocked':c.gap?'Spare':it?'':'Empty']);}));
@@ -1073,90 +1195,109 @@ const safeName=s=>String(s||'plan').replace(/[\\/:*?"<>|]+/g,'_').trim()||'plan'
 function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);}
 function exportCSV(p){const P=computePlan(p);const{head,rows}=planRowsAll(p,P);
   const csv=[head,...rows].map(r=>r.map(v=>{const s=String(v??'');return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(',')).join('\r\n');
-  download(safeName(p.name)+' - rack plan.csv',new Blob(['﻿'+csv],{type:'text/csv'}));toast('CSV exported');}
+  download(safeName(p.name)+' - bay plan.csv',new Blob(['﻿'+csv],{type:'text/csv'}));toast('CSV exported');}
 function exportXLSX(p){
   if(!window.XLSX){toast('Excel export needs an internet connection the first time. Exported CSV instead.');return exportCSV(p);}
   const P=computePlan(p),M=computeMoves(p,P);const wb=XLSX.utils.book_new();const{head,rows}=planRowsAll(p,P);
   const used=new Set();const sname=s=>{let n=String(s).replace(/[\[\]:*?\/\\]/g,'_').slice(0,31)||'Sheet';let b=n,k=2;while(used.has(n.toLowerCase())){n=(b.slice(0,28)+'_'+k++);}used.add(n.toLowerCase());return n;};
   const all=XLSX.utils.aoa_to_sheet([[p.name+(p.site?' · '+p.site:'')],[],head,...rows]);all['!cols']=head.map((h,i)=>({wch:i<2?7:Math.max(10,h.length+2)}));
-  XLSX.utils.book_append_sheet(wb,all,sname('All racks'));
+  XLSX.utils.book_append_sheet(wb,all,sname('All bays'));
   const rh=head.slice(1,-1).concat(['Status']);
-  P.racks.forEach(R=>{const aoa=[['Rack ID',R.rack.name],[],rh];R.cells.forEach(c=>{const it=c.item;aoa.push([c.slot,it?it.feature:'',it?it.hole:'',it?numOr(it.box):'',it?numOr(it.of):'',it?numOr(it.from):'',it?numOr(it.to):'',...p.customCols.map(col=>it?((it.custom||{})[col.id]||''):''),c.blocked?'Blocked':c.gap?'Spare':it?'':'Empty']);});
-    const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=rh.map((h,i)=>({wch:i===0?6:Math.max(10,h.length+2)}));XLSX.utils.book_append_sheet(wb,ws,sname('Rack '+R.rack.name));});
+  P.racks.forEach(R=>{const aoa=[['Bay ID',R.rack.name],[],rh];R.cells.forEach(c=>{const it=c.item;aoa.push([c.slot,it?it.feature:'',it?it.hole:'',it?numOr(it.box):'',it?numOr(it.of):'',it?numOr(it.from):'',it?numOr(it.to):'',...p.customCols.map(col=>it?((it.custom||{})[col.id]||''):''),c.blocked?'Blocked':c.gap?'Spare':it?'':'Empty']);});
+    const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=rh.map((h,i)=>({wch:i===0?6:Math.max(10,h.length+2)}));XLSX.utils.book_append_sheet(wb,ws,sname('Bay '+R.rack.name));});
   if(M&&M.steps.length){const aoa=[['Step','Action','Feature','Hole ID','Box','Of','From','To']];M.steps.forEach((s,i)=>{const it=s.item||{};aoa.push([i+1,{move:'Move',new:'Place new',stage:'To staging',unstage:'From staging',remove:'Remove'}[s.kind],it.feature||'',it.hole||'',numOr(it.box),numOr(it.of),loc(s.from),s.to?loc(s.to):'Out of plan']);});
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),sname('Moves'));}
-  XLSX.writeFile(wb,safeName(p.name)+' - rack plan.xlsx');toast('Excel file exported');}
+  XLSX.writeFile(wb,safeName(p.name)+' - bay plan.xlsx');toast('Excel file exported');}
 function saveFile(p){download(safeName(p.name)+'.coreplan.json',new Blob([JSON.stringify({app:'core-rack-planner',version:1,project:p},null,2)],{type:'application/json'}));toast('Project file saved');}
 
 
 /* ---------- actions ---------- */
-function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true;},3000);}
-function openProject(id){S.currentId=id;S.view='project';S.tab='plan';S.q='';S.imp=null;S.confirm=null;S.sel=null;S.updated={};render();window.scrollTo(0,0);}
-function moveIn(arr,i,d){const j=i+d;if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];}
+function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true;},3200);}
+function openCtx(pid,mid){S.ctx={pid,mid:mid||null};S.view='work';S.tab='plan';S.q='';S.imp=null;S.confirm=null;S.sel=null;S.updated={};S.renaming=null;S.newMoveFor=null;
+  const p=cur();if(p){const pr=projRec();p.name=mid?pr.name+' – '+moveRec().name:pr.name;}render();window.scrollTo(0,0);}
 function gotoRack(id){S.tab='plan';render();const el=document.getElementById('rack-'+id);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
+function saveMoveToProject(pr,m,quiet){pr.plan=clone(m.plan);pr.plan.name=pr.name;pr.plan.stage='done';deriveNames(pr.plan);const now=Date.now();m.savedAt=now;m.updated=Math.min(m.updated,now);pr.updated=now;persist();if(!quiet)toast(`Saved “${m.name}” to ${pr.name}`);}
 
 document.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;
   const act=b.dataset.act,id=b.dataset.id,p=cur();
-  if(act!=='cancel'&&!/^(del|clear|baseline-clear|col-del)/.test(act))S.confirm=null;
+  if(act!=='cancel'&&!/^(del|clear|save-move|reorg)/.test(act))S.confirm=null;
+  const editable=p&&!isReadOnly();
   switch(act){
-    case 'home':S.view='home';S.imp=null;render();window.scrollTo(0,0);break;
-    case 'open':openProject(id);break;
+    case 'home':S.view='home';S.imp=null;S.ctx=null;render();window.scrollTo(0,0);break;
+    case 'open-project':openCtx(id,null);break;
+    case 'open-move':openCtx(b.dataset.pid,id);break;
+    case 'new-move':S.view='home';S.ctx=null;S.newMoveFor=id;S.homeOpen[id]=true;S.focusAfter='nm_name';render();break;
     case 'rename':S.renaming=id;S.focusAfter='rn_name';render();break;
-    case 'dup':{const src=S.projects.find(x=>x.id===id);const cp=normalise(JSON.parse(JSON.stringify(src)));cp.id=uid();cp.name=src.name+' (copy)';cp.created=cp.updated=Date.now();S.projects.push(cp);persist();render();toast('Project duplicated');break;}
+    case 'dup':{const src=S.projects.find(x=>x.id===id);const cp=migrateRecord(clone(src));cp.id=uid();cp.name=src.name+' (copy)';cp.created=cp.updated=Date.now();cp.moves.forEach(m=>m.id=uid());S.projects.push(cp);persist();render();toast('Project duplicated');break;}
     case 'del':S.confirm='del:'+id;render();break;
     case 'del-yes':S.projects=S.projects.filter(x=>x.id!==id);S.confirm=null;persist();render();toast('Project deleted');break;
-    case 'cancel':S.confirm=null;S.renaming=null;render();break;
+    case 'del-move':S.confirm='delm:'+id;render();break;
+    case 'del-move-yes':{const pr=S.projects.find(x=>x.id===b.dataset.pid);pr.moves=pr.moves.filter(m=>m.id!==id);S.confirm=null;persist();render();toast('Core move deleted');break;}
+    case 'save-move':S.confirm='save:'+id;render();break;
+    case 'save-move-yes':{const pr=S.projects.find(x=>x.id===b.dataset.pid);const m=pr.moves.find(x=>x.id===id);S.confirm=null;saveMoveToProject(pr,m);render();break;}
+    case 'cancel':S.confirm=null;S.renaming=null;S.newMoveFor=null;render();break;
     case 'open-file':$('#fileProject').value='';$('#fileProject').click();break;
     case 'tab':S.tab=b.dataset.tab;S.confirm=null;S.sel=null;render();break;
     case 'export-xlsx':exportXLSX(p);break;
     case 'export-csv':exportCSV(p);break;
-    case 'save-file':saveFile(p);break;
-    case 'rack-add':{const r=makeRack(p);p.racks.push(r);const last=sortedRows(p).pop();if(last)last.rackIds.push(r.id);deriveNames(p);p.setup.rackCount=p.racks.length;touch(p);render();toast(`Added rack ${r.name}`);break;}
-    case 'rack-del':if(p.racks.length>1){const before=nameSnapshot(p);p.racks=p.racks.filter(r=>r.id!==id);deriveNames(p);markUpdated(p,before);p.setup.rackCount=p.racks.length;p.setup.rowCount=p.layout.rows.length;touch(p);render();}break;
-    case 'rack-up':case 'rack-down':{const before=nameSnapshot(p);const A=rowOf(p,id);if(A)moveIn(A.row.rackIds,A.i,act==='rack-up'?-1:1);markUpdated(p,before);touch(p);render();break;}
+    case 'save-file':saveFile(projRec());break;
+    case 'map-png':exportPNG(p);break;
+    case 'modal-close':S.modal=null;render();break;
+    case 'modal-dl':modalDownload();break;
+    case 'goto-rack':gotoRack(id);break;
+    case 'reorg':S.confirm='reorg';render();break;
+    case 'reorg-yes':{const pr=projRec();reoptimise(pr.plan);pr.updated=Date.now();persist();S.confirm=null;render();toast('Shed reorganised into the best order');break;}
+  }
+  if(!editable)return;
+  switch(act){
+    case 'rack-add':{const before=p.racks.length;setBayCount(p,before+1);touch(p);render();toast(`Added bay ${p.racks[p.racks.length-1].name}`);break;}
+    case 'rack-del':if(p.racks.length>1){const before=nameSnapshot(p);p.racks=p.racks.filter(r=>r.id!==id);markUpdated(p,before);p.setup.rackCount=p.racks.length;touch(p);render();}break;
+    case 'rebuild-rows':{const R=clamp(int($('#st_rowsct').value,1),1,50);const b2b=$('#st_b2b').checked;p.setup.rowCount=R;p.setup.backToBack=b2b;autoLayout(p.racks,R,b2b);S.updated={};deriveNames(p);touch(p);render();toast(`Shed map rebuilt with ${plural(p._rows.length,'row')}`);break;}
     case 'item-del':p.items=p.items.filter(it=>it.id!==id);touch(p);render();break;
     case 'clear':S.confirm='clear';render();break;
     case 'clear-yes':p.items=[];S.confirm=null;touch(p);render();toast('All boxes removed');break;
     case 'pick-sheet':$('#fileSheet').value='';$('#fileSheet').click();break;
     case 'imp-cancel':S.imp=null;render();break;
     case 'imp-run':runImport(p);break;
-    case 'goto-rack':gotoRack(id);break;
-    case 'baseline-set':{const P=computePlan(p);const positions={};p.items.forEach(it=>{const ps=P.pos[it.id];if(ps)positions[it.id]=Object.assign({},ps,{snap:{feature:it.feature,hole:it.hole,box:it.box,of:it.of}});});p.baseline={takenAt:Date.now(),positions};touch(p);render();toast('Baseline set');break;}
-    case 'baseline-clear':S.confirm='baseclear';render();break;
-    case 'baseline-clear-yes':p.baseline=null;S.confirm=null;touch(p);render();break;
-    case 'feat-up':case 'feat-down':{const order=featureOrder(p);const i=order.indexOf(b.dataset.feat);moveIn(order,i,act==='feat-up'?-1:1);p.options.featureOrder=order;touch(p);render();break;}
+    case 'feat-up':case 'feat-down':{const order=featureOrder(p);const i=order.indexOf(b.dataset.feat);const j=i+(act==='feat-up'?-1:1);if(j>=0&&j<order.length)[order[i],order[j]]=[order[j],order[i]];p.options.featureOrder=order;touch(p);render();break;}
     case 'feat-reset':p.options.featureOrder=[];p.options.useCustomOrder=false;touch(p);render();break;
     case 'col-del':S.confirm='col:'+id;render();break;
     case 'col-del-yes':p.customCols=p.customCols.filter(c=>c.id!==id);p.items.forEach(it=>{if(it.custom)delete it.custom[id];});S.confirm=null;touch(p);render();break;
-    case 'skip-holes':p.stage='done';S.imp=null;S.tab='edit';S.open={racks:true};touch(p);render();window.scrollTo(0,0);break;
+    case 'skip-holes':p.stage='done';S.imp=null;S.tab='edit';S.open={racks:true};if(!p.racks.length){p.setup.defaultRows=p.setup.defaultRows||'12';setBayCount(p,4);}finishFirstMove();touch(p);render();window.scrollTo(0,0);break;
     case 'to-racks':p.stage='racks';S.imp=null;if(p.setup.autoCount===undefined)p.setup.autoCount=true;syncWizardRacks(p);touch(p);S.focusAfter='wz_rows';render();window.scrollTo(0,0);break;
     case 'back-holes':p.stage='holes';touch(p);render();window.scrollTo(0,0);break;
     case 'auto-count':p.setup.autoCount=true;syncWizardRacks(p);touch(p);render();break;
-    case 'build-racks':syncWizardRacks(p);if(!p.racks.length)return;p.stage='done';S.tab='plan';touch(p);render();window.scrollTo(0,0);toast('Rack plan built');break;
-    case 'fit-racks':{const before=p.racks.length;fitRacks(p);touch(p);render();toast(p.racks.length===before?`${before} rack${before>1?'s':''} already fits every box`:`Now ${p.racks.length} racks (was ${before})`);break;}
+    case 'build-racks':syncWizardRacks(p);if(!p.racks.length)return;p.stage='done';S.tab='plan';touch(p);const first=finishFirstMove();render();window.scrollTo(0,0);toast(first?'Rack plan built and saved as the project’s starting layout':'Rack plan built');break;
+    case 'fit-racks':{const before=p.racks.length;fitRacks(p);touch(p);render();toast(p.racks.length===before?`${plural(before,'bay')} already fits every box`:`Now ${plural(p.racks.length,'bay')} (was ${before})`);break;}
     case 'hole-del':{const f=b.dataset.feat,h=b.dataset.hole;p.items=p.items.filter(it=>!((it.feature||'')===f&&(it.hole||'')===h));touch(p);render();break;}
-    case 'lock-rack':{const r=p.racks.find(x=>x.id===id);if(r){setLock(p,[id],!r.locked);touch(p);render();toast(r.locked?`Rack ${r.name} locked`:`Rack ${r.name} unlocked`);}break;}
-    case 'lock-row':{const row=p.layout.rows.find(x=>x.id===id);if(row){const all=row.rackIds.every(rid=>(p.racks.find(r=>r.id===rid)||{}).locked);setLock(p,row.rackIds,!all);touch(p);render();toast(all?`Row ${row.letter} unlocked`:`Row ${row.letter} locked`);}break;}
-    case 'row-add-rack':{const row=p.layout.rows.find(x=>x.id===id);if(row){const r=makeRack(p);p.racks.push(r);row.rackIds.push(r.id);deriveNames(p);p.setup.rackCount=p.racks.length;touch(p);render();}break;}
-    case 'row-del-rack':{const row=p.layout.rows.find(x=>x.id===id);if(row&&p.racks.length>1){const rid=row.rackIds.pop();p.racks=p.racks.filter(r=>r.id!==rid);deriveNames(p);if(!p.layout.rows.includes(row))S.sel=null;p.setup.rackCount=p.racks.length;p.setup.rowCount=p.layout.rows.length;touch(p);render();}break;}
-    case 'map-add-row':{const before=nameSnapshot(p);const rows=sortedRows(p);const last=rows[rows.length-1];const n=last?last.rackIds.length:4;const x=last?Math.max(...rows.map(r=>r.x+rowDims(r).w))+AISLE:2;
-      const row={id:uid(),x,y:last?last.y:2,width:last?last.width:1,rackIds:[]};for(let i=0;i<n;i++){const r=makeRack(p);p.racks.push(r);row.rackIds.push(r.id);}p.layout.rows.push(row);
-      markUpdated(p,before);p.setup.rackCount=p.racks.length;p.setup.rowCount=p.layout.rows.length;S.sel={type:'row',id:row.id};touch(p);render();toast(`Added row ${row.letter} with ${n} racks`);break;}
+    case 'lock-rack':{const r=p.racks.find(x=>x.id===id);if(r){const was=r.locked;lockBays(p,[id],!was);touch(p);render();toast(was?`Bay ${r.name} unlocked. Its boxes stay put until you update to best positions.`:`Bay ${r.name} locked`);}break;}
+    case 'lock-row':{const g=groupOfBay(p,id);if(g){const all=g.bays.every(x=>x.locked);lockBays(p,g.bays.map(x=>x.id),!all);touch(p);render();toast(all?`Row ${g.letter} unlocked. Its boxes stay put until you update to best positions.`:`Row ${g.letter} locked`);}break;}
+    case 'lock-slot':{const r=p.racks.find(x=>x.id===id);const sl=+b.dataset.slot;const on=lockSlot(p,id,sl);touch(p);render();toast(on?`Slot ${r.name}-${sl} locked`:`Slot ${r.name}-${sl} unlocked. Its box stays put until you update to best positions.`);break;}
+    case 'reoptimise':{const n=heldCount(p);reoptimise(p);touch(p);render();toast(`${plural(n,'held box','held boxes')} moved into the best order`);break;}
+    case 'row-add-rack':{const g=groupOfBay(p,id);if(g){const r=makeRack(p);appendBayToRow(p,r,g);p.racks.push(r);deriveNames(p);p.setup.rackCount=p.racks.length;touch(p);render();}break;}
+    case 'row-del-rack':{const g=groupOfBay(p,id);if(g&&p.racks.length>1){const last=g.bays[g.bays.length-1];p.racks=p.racks.filter(r=>r.id!==last.id);deriveNames(p);if(!groupOfBay(p,S.sel&&S.sel.id))S.sel=null;p.setup.rackCount=p.racks.length;touch(p);render();}break;}
+    case 'map-add-row':{const gs=p._rows||deriveNames(p);const last=gs[gs.length-1];const n=last?last.bays.length:4;const cols=last?new Set(last.bays.map(b=>b.x)).size:1;
+      const x=last?Math.max(...gs.map(g=>g.maxX))+AISLE:2;const list=[];for(let i=0;i<n;i++){const r=makeRack(p);list.push(r);}
+      const len=Math.ceil(n/cols);list.forEach((r,k)=>{const col=cols===2&&k>=len?1:0;r.x=x+col*RW;r.y=2+(col?k-len:k)*RL;});p.racks.push(...list);deriveNames(p);
+      p.setup.rackCount=p.racks.length;S.sel={type:'row',id:list[0].id};touch(p);render();toast(`Added row ${list[0].rowLetter} with ${plural(n,'bay')}`);break;}
     case 'map-add-label':{const B=mapBounds(p);const l={id:uid(),x:1,y:Math.max(1,B.h-2),text:'Door'};p.map.labels.push(l);S.sel={type:'label',id:l.id};S.focusAfter='lb_text';touch(p);render();break;}
     case 'label-del':p.map.labels=p.map.labels.filter(l=>l.id!==id);S.sel=null;touch(p);render();break;
-    case 'map-auto':{const rows=sortedRows(p);let x=2;rows.forEach(r=>{r.x=x;r.y=2;x+=rowDims(r).w+AISLE;});touch(p);render();toast('Rows lined up');break;}
-    case 'map-png':exportPNG(p);break;
-    case 'modal-close':S.modal=null;render();break;
-    case 'modal-dl':modalDownload();break;
+    case 'map-auto':{const gs=rowGroups(p);let x=2;gs.forEach(g=>{const dx=x-g.minX,dy=2-g.minY;g.bays.forEach(b=>{b.x+=dx;b.y+=dy;});x+=(g.maxX-g.minX)+AISLE;});deriveNames(p);touch(p);render();toast('Rows lined up');break;}
     case 'clear-updated':S.updated={};render();break;
   }
 });
+function finishFirstMove(){const pr=projRec(),m=moveRec();if(pr&&m&&!pr.plan&&m.plan.stage==='done'){saveMoveToProject(pr,m,true);return true;}return false;}
 
 document.addEventListener('submit',e=>{
   e.preventDefault();const f=e.target;
-  if(f.id==='newForm'){const name=$('#np_name').value.trim();if(!name){$('#np_name').focus();return;}const p=newProject(name,$('#np_site').value.trim());S.projects.push(p);persist();S.currentId=p.id;S.view='project';S.tab='plan';S.imp=null;S.updated={};render();window.scrollTo(0,0);}
-  else if(f.id==='renameForm'){const p=S.projects.find(x=>x.id===f.dataset.id);if(p){p.name=$('#rn_name').value.trim()||p.name;p.site=$('#rn_site').value.trim();touch(p);}S.renaming=null;render();}
+  if(f.id==='newForm'){const name=$('#np_name').value.trim();if(!name){$('#np_name').focus();return;}
+    const pr=newProjectRec(name,$('#np_site').value.trim());const m=newMoveRec('Initial setup',newPlan(name+' – Initial setup'));pr.moves.push(m);S.projects.push(pr);persist();openCtx(pr.id,m.id);}
+  else if(f.id==='newMoveForm'){const pr=S.projects.find(x=>x.id===f.dataset.id);if(!pr||!pr.plan)return;const name=$('#nm_name').value.trim()||('Core move '+(pr.moves.length+1));
+    const plan=clone(pr.plan);plan.stage='done';const m=newMoveRec(name,normalisePlan(plan));pr.moves.push(m);pr.updated=Date.now();S.newMoveFor=null;persist();openCtx(pr.id,m.id);toast('Core move created from the saved project');}
+  else if(f.id==='renameForm'){const kind=f.dataset.kind;if(kind==='p'){const pr=S.projects.find(x=>x.id===f.dataset.id);if(pr){pr.name=$('#rn_name').value.trim()||pr.name;pr.site=$('#rn_site').value.trim();pr.updated=Date.now();}}
+    else{const pr=S.projects.find(x=>x.id===f.dataset.pid);const m=pr&&pr.moves.find(x=>x.id===f.dataset.id);if(m)m.name=$('#rn_name').value.trim()||m.name;}
+    S.renaming=null;persist();render();}
   else if(f.id==='addForm'){const p=cur();const feat=$('#ab_feat').value.trim(),hole=$('#ab_hole').value.trim(),of=$('#ab_of').value.trim();
     if(!hole&&!feat){toast('Enter a Hole ID.');$('#ab_hole').focus();return;}
     const custom={};p.customCols.forEach(c=>{const el=document.getElementById('ab_c_'+c.id);if(el&&el.value.trim())custom[c.id]=el.value.trim();});
@@ -1169,41 +1310,38 @@ document.addEventListener('submit',e=>{
       boxes.forEach(bx=>p.items.push({id:uid(),feature:feat,hole,box:String(bx),of,from:'',to:'',custom:Object.assign({},custom)}));}
     const added=p.items.length-before;touch(p);render();
     const P=computePlan(p);const ps=P.pos[p.items[before].id];
-    toast(`Added ${added} box${added>1?'es':''} to ${[feat,hole].filter(Boolean).join('-')}`+(p.stage==='done'?(ps?`. First one goes in ${ps.rackName}-${ps.slot}`:'. Not enough space, add racks in Edit'):''));
+    toast(`Added ${plural(added,'box','boxes')} to ${[feat,hole].filter(Boolean).join('-')}`+(p.stage==='done'?(ps?`. First one goes in ${ps.rackName}-${ps.slot}`:'. Not enough space, add bays in Edit'):''));
     if($('#ab_feat')){$('#ab_feat').value=feat;$('#ab_hole').value=hole;$('#ab_of').value=of;const nx=S.addMode==='single'?$('#ab_box'):$('#ab_hole');nx.focus();nx.select();updateAbHint();}}
   else if(f.id==='colForm'){const p=cur();const n=$('#cc_new').value.trim();if(!n)return;p.customCols.push({id:uid(),name:n});touch(p);render();toast('Column added');}
 });
 
 document.addEventListener('change',e=>{
   const t=e.target;
-  if(t.id==='fileProject'){const file=t.files[0];if(file)file.text().then(txt=>{try{const d=JSON.parse(txt);const pr=normalise(d.project||d);if(!Array.isArray(pr.racks))throw 0;
-    if(S.projects.some(x=>x.id===pr.id))pr.id=uid();pr.updated=Date.now();S.projects.push(pr);persist();openProject(pr.id);toast('Project opened');}catch(err){toast('That file isn’t a Core Rack Planner project.');}});return;}
+  if(t.id==='fileProject'){const file=t.files[0];if(file)file.text().then(txt=>{try{const d=JSON.parse(txt);const rec=migrateRecord(d.projectRecord||d.project||d);if(!rec)throw 0;
+    if(S.projects.some(x=>x.id===rec.id))rec.id=uid();rec.updated=Date.now();S.projects.push(rec);persist();S.view='home';S.ctx=null;render();toast(`Opened ${rec.name}`);}catch(err){toast('That file isn’t a Core Rack Planner project.');}});return;}
   if(t.id==='fileSheet'){const file=t.files[0];if(file)readSheetFile(file).catch(()=>toast('Couldn’t read that file. Try saving it as .xlsx or .csv.'));return;}
   if(t.name==='abmode'){S.addMode=t.value;const form=$('#addForm');form.querySelectorAll('[data-mode]').forEach(el=>el.hidden=el.dataset.mode!==S.addMode);$('#ab_submit').textContent=S.addMode==='range'?'Add boxes':'Add box';updateAbHint();return;}
-  const k=t.dataset.k;if(!k)return;const p=cur();if(!p&&k!=='ui')return;const f=t.dataset.f;
+  const k=t.dataset.k;if(!k)return;const p=cur();const f=t.dataset.f;
   const val=t.type==='checkbox'?t.checked:t.value;
   if(k==='ui'){if(f==='zoom'){S.zoom=int(val,26);render();}return;}
+  if(!p||isReadOnly())return;
   if(k==='setup'&&p.stage==='racks'){
     if(f==='rackCount'){p.setup.rackCount=clamp(int(val,1),1,500);p.setup.autoCount=false;}
     else if(f==='rowCount')p.setup.rowCount=clamp(int(val,1),1,50);
     else p.setup[f]=val;
     syncWizardRacks(p);touch(p);render();const el=document.getElementById(t.id);if(el)el.focus();return;}
-  if(k==='setup'){const s=p.setup;const before=nameSnapshot(p);
-    if(f==='defaultRows'){s.defaultRows=val;const n=int(val,0);if(n>0)p.racks.forEach(r=>r.rows=n);toast('Slots applied to every rack');}
-    else if(f==='defaultBlocked'){s.defaultBlocked=val;const bl=parseRows(val);p.racks.forEach(r=>r.blocked=bl.slice());toast('Blocked slots applied to every rack');}
-    else if(f==='rackCount')relayout(p,clamp(int(val,1),1,500),p.layout.rows.length||1);
-    else if(f==='rowCount')relayout(p,p.racks.length||1,clamp(int(val,1),1,50));
-    else if(f==='backToBack'){relayout(p,p.racks.length||1,p.layout.rows.length||1,val);markUpdated(p,before);}
+  if(k==='setup'){const s=p.setup;
+    if(f==='defaultRows'){s.defaultRows=val;const n=int(val,0);if(n>0)p.racks.forEach(r=>r.rows=n);toast('Slots applied to every bay');}
+    else if(f==='defaultBlocked'){s.defaultBlocked=val;const bl=parseRows(val);p.racks.forEach(r=>r.blocked=bl.slice());toast('Blocked slots applied to every bay');}
+    else if(f==='rackCount')setBayCount(p,clamp(int(val,1),1,500));
     else{s[f]=val;deriveNames(p);}
     touch(p);render();const el=document.getElementById(t.id);if(el)el.focus();return;}
   if(k==='rack'){const r=p.racks.find(x=>x.id===t.dataset.id);if(!r)return;
-    if(f==='locked'){setLock(p,[r.id],val);touch(p);render();return;}
+    if(f==='locked'){lockBays(p,[r.id],val);touch(p);render();return;}
     if(f==='rows')r.rows=clamp(int(val,0),0,500);else if(f==='blocked'){r.blocked=parseRows(val);t.value=fmtRows(r.blocked);}
     touch(p);S.dirty=true;refreshSummary();return;}
-  if(k==='row'){const row=p.layout.rows.find(x=>x.id===t.dataset.id);if(row&&f==='width'){row.width=val?2:1;touch(p);render();}return;}
   if(k==='label'){const l=p.map.labels.find(x=>x.id===t.dataset.id);if(l){l.text=val.trim()||l.text;touch(p);render();}return;}
   if(k==='map'){if(f==='title'){p.map.title=val;touch(p);return;}p.map[f]=Math.max(0,int(val,0));touch(p);render();return;}
-  if(k==='proj'){p[f]=val;touch(p);return;}
   if(k==='item'){const it=p.items.find(x=>x.id===t.dataset.id);if(!it)return;if(t.dataset.c){it.custom=it.custom||{};it.custom[t.dataset.c]=t.value.trim();}else it[f]=t.value.trim();touch(p);S.dirty=true;refreshSummary();return;}
   if(k==='col'){const c=p.customCols.find(x=>x.id===t.dataset.id);if(c){c.name=t.value.trim()||c.name;touch(p);S.dirty=true;}return;}
   if(k==='opt'){if(t.type==='checkbox'){p.options[f]=t.checked;if(f==='useCustomOrder'&&t.checked&&!(p.options.featureOrder||[]).length)p.options.featureOrder=featureOrder(Object.assign({},p,{options:Object.assign({},p.options,{useCustomOrder:false})}));}
@@ -1224,7 +1362,7 @@ document.addEventListener('focusout',e=>{
   if(e.relatedTarget&&box.contains(e.relatedTarget))return;
   setTimeout(()=>{if(!S.dirty)return;const a=document.activeElement;if(a&&a.closest&&a.closest('[data-live]'))return;const y=window.scrollY;render();window.scrollTo(0,y);},0);
 });
-document.addEventListener('toggle',e=>{const t=e.target;if(t.id==='manualDetails')S.manualOpen=t.open;if(t.dataset&&t.dataset.sec)S.open[t.dataset.sec]=t.open;},true);
+document.addEventListener('toggle',e=>{const t=e.target;if(t.id==='manualDetails')S.manualOpen=t.open;if(t.dataset&&t.dataset.sec)S.open[t.dataset.sec]=t.open;if(t.dataset&&t.dataset.pid)S.homeOpen[t.dataset.pid]=t.open;},true);
 
 /* shed map dragging */
 let MD=null;
@@ -1234,14 +1372,14 @@ document.addEventListener('pointerdown',e=>{
   let type,id,el;
   if(rk){type='rack';id=rk.dataset.rack;el=rk;}else if(rh){type='row';id=rh.dataset.rowh;el=svg.querySelector(`[data-rowg="${id}"]`);}else if(lb){type='label';id=lb.dataset.label;el=lb;}
   else{if(S.sel){S.sel=null;render();}return;}
-  e.preventDefault();MD={type,id,el,svg,sx:e.clientX,sy:e.clientY,moved:false,target:null,pid:e.pointerId};
-  try{svg.setPointerCapture(e.pointerId);}catch(_){}
+  e.preventDefault();MD={type,id,el,svg,sx:e.clientX,sy:e.clientY,moved:false,target:null,pid:e.pointerId,ro:isReadOnly()};
+  if(!MD.ro)try{svg.setPointerCapture(e.pointerId);}catch(_){}
 });
 document.addEventListener('pointermove',e=>{
-  if(!MD||e.pointerId!==MD.pid)return;const dx=e.clientX-MD.sx,dy=e.clientY-MD.sy;
+  if(!MD||e.pointerId!==MD.pid||MD.ro)return;const dx=e.clientX-MD.sx,dy=e.clientY-MD.sy;
   if(!MD.moved){if(Math.hypot(dx,dy)<5)return;MD.moved=true;MD.el.classList.add('dragging');MD.el.style.pointerEvents='none';MD.svg.lastElementChild.appendChild(MD.el);}
-  const C=S.zoom;const snap=MD.type==='rack';
-  const tx=snap?dx:Math.round(dx/C)*C,ty=snap?dy:Math.round(dy/C)*C;
+  const C=S.zoom;const free=MD.type==='rack';
+  const tx=free?dx:Math.round(dx/C)*C,ty=free?dy:Math.round(dy/C)*C;
   MD.el.setAttribute('transform',`translate(${tx} ${ty})`);
   if(MD.type==='rack'){const t=document.elementFromPoint(e.clientX,e.clientY);const tg=t&&t.closest&&t.closest('#shedmap [data-rack]');
     MD.svg.querySelectorAll('.droptarget').forEach(x=>x.classList.remove('droptarget'));
@@ -1249,14 +1387,22 @@ document.addEventListener('pointermove',e=>{
 });
 function endDrag(e,cancel){
   if(!MD||(e&&e.pointerId!==MD.pid))return;const d=MD;MD=null;const p=cur();
-  if(!d.moved){if(!cancel){S.sel={type:d.type,id:d.id};render();}return;}
+  if(!d.moved||d.ro){if(!cancel){S.sel={type:d.type,id:d.type==='row'?d.id:d.id};render();}return;}
   if(cancel){render();return;}
-  const C=S.zoom,dx=Math.round((e.clientX-d.sx)/C),dy=Math.round((e.clientY-d.sy)/C);const before=nameSnapshot(p);
-  if(d.type==='rack'){if(d.target){swapRacks(p,d.id,d.target);}}
-  else if(d.type==='row'){const row=p.layout.rows.find(x=>x.id===d.id);if(row){row.x=Math.max(0,row.x+dx);row.y=Math.max(1,row.y+dy);}S.sel={type:'row',id:d.id};}
-  else if(d.type==='label'){const l=p.map.labels.find(x=>x.id===d.id);if(l){l.x=Math.max(0,l.x+dx);l.y=Math.max(0,l.y+dy);}S.sel={type:'label',id:d.id};}
+  const C=S.zoom,fdx=(e.clientX-d.sx)/C,fdy=(e.clientY-d.sy)/C;const before=nameSnapshot(p);let msg='';
+  if(d.type==='rack'){const bay=p.racks.find(r=>r.id===d.id);
+    if(d.target){swapRacks(p,d.id,d.target);msg='swap';}
+    else if(bay){const spot=magnet(p,bay,bay.x+fdx,bay.y+fdy);const ox=bay.x,oy=bay.y;bay.x=Math.max(0,spot.x);bay.y=Math.max(1,spot.y);
+      if(p.racks.some(o=>o.id!==bay.id&&overlap(o,bay))){bay.x=ox;bay.y=oy;msg='overlap';}else msg='moved';}
+    S.sel={type:'rack',id:d.id};}
+  else if(d.type==='row'){const g=groupOfBay(p,d.id);if(g){const dx=Math.round(fdx),dy=Math.round(fdy);const ids=new Set(g.bays.map(b=>b.id));
+      const ok=g.bays.every(b=>b.x+dx>=0&&b.y+dy>=1&&!p.racks.some(o=>!ids.has(o.id)&&overlap(o,{x:b.x+dx,y:b.y+dy})));
+      if(ok)g.bays.forEach(b=>{b.x+=dx;b.y+=dy;});else msg='overlap';}S.sel={type:'row',id:d.id};}
+  else if(d.type==='label'){const l=p.map.labels.find(x=>x.id===d.id);if(l){l.x=Math.max(0,l.x+Math.round(fdx));l.y=Math.max(0,l.y+Math.round(fdy));}S.sel={type:'label',id:d.id};}
   markUpdated(p,before);touch(p);render();
-  if(d.type==='rack'&&d.target){const r=p.racks.find(x=>x.id===d.id);toast(`Swapped. This rack is now ${r.name}; the plan has been updated.`);}
+  const r=d.type==='rack'&&p.racks.find(x=>x.id===d.id);
+  if(msg==='overlap')toast('That spot overlaps another bay. Drop it on top of a bay to swap, or next to one to join it.');
+  else if(r&&before.get(r.id)!==r.name)toast(`This bay is now ${r.name}; the rack plan has been updated.`);
 }
 document.addEventListener('pointerup',e=>endDrag(e,false));
 document.addEventListener('pointercancel',e=>endDrag(e,true));
