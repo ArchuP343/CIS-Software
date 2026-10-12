@@ -284,6 +284,7 @@ tr.locked-empty td{color:var(--muted);font-style:italic}
 .menu-pop{position:absolute;right:0;top:calc(100% + 6px);z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 10px 30px rgba(6,33,48,.16);padding:6px;display:flex;flex-direction:column;min-width:210px}
 .menu-pop button{border:0;justify-content:flex-start;width:100%;padding:9px 10px;border-radius:6px;background:transparent}
 .menu-pop button:hover{background:var(--surface-2)}
+.menu-pop button.danger{color:var(--bad)}
 .menu-pop .hint{font-size:.75rem;color:var(--muted);font-weight:400;margin-left:auto}
 .lockicon{border:0;background:none;padding:2px;margin-right:5px;color:var(--muted);opacity:.3;cursor:pointer;vertical-align:-2px;display:inline-flex}
 tr:hover .lockicon,.lockicon:focus-visible{opacity:1}
@@ -449,6 +450,15 @@ function fsResolve(id,which){const c=FS.conflicts[id];if(!c)return;delete FS.con
   if(which==='theirs'){try{const d=JSON.parse(c.theirs);const rec=migrateRecord(d.projectRecord||d.project||d);const i=S.projects.findIndex(p=>p.id===id);if(i>=0)S.projects[i]=rec;FS.written[id]=JSON.stringify(rec);FS.mtime[id]=Date.now();}catch(e){}render();toast('Loaded the latest saved version');}
   else{FS.mtime[id]=Date.now()+1e9;FS.written[id]='';fsFlush().then(()=>{render();toast('Your version was saved');});}}
 async function fsDisconnect(){clearInterval(FS.poll);await idbDel('dir');FS.status=fsSupported()?'off':'unsupported';FS.handle=null;FS.files={};FS.written={};FS.mtime={};FS.conflicts={};S.projects=[];S.ctx=null;S.view='home';load();render();toast('Disconnected. Showing projects saved in this browser.');}
+function stamp(){const d=new Date(),z=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}`;}
+async function backupProject(pr){
+  const name=fileNameFor(pr).replace(/__[a-z0-9]+\.json$/,'')+'__backup_'+stamp()+'.json';
+  const body=JSON.stringify({app:'core-rack-planner',version:2,backupOf:pr.id,backedUpAt:new Date().toISOString(),projectRecord:pr},null,1);
+  if(FS.status==='connected'){
+    try{const dir=await FS.handle.getDirectoryHandle('Backups',{create:true});const fh=await dir.getFileHandle(name,{create:true});const w=await fh.createWritable();await w.write(body);await w.close();
+      toast(`Backed up to Backups\\${name}`);}catch(e){toast('Couldn’t write to the Backups folder. Check the shared drive is available.');}
+  }else{download(name,new Blob([body],{type:'application/json'}));toast('Backup downloaded. Connect a shared folder to save backups there instead.');}
+}
 function fsCopyLocal(){const n=FS.localOnly.length;FS.localOnly.forEach(p=>{if(!S.projects.some(x=>x.id===p.id))S.projects.push(p);});FS.localOnly=[];fsQueue();render();toast(`Copied ${plural(n,'project')} into the shared folder`);}
 function updateSaveState(){const el=$('#savestate');if(el)el.textContent=saveText();}
 function storagePanel(){
@@ -711,7 +721,11 @@ function projectCard(pr){
         <div class="meta small muted row" style="gap:4px 16px;align-items:center">${esc(pr.site||'No location set')}${ready?`<span class="mono">${plural(pr.plan.racks.length,'bay')}</span><span class="mono">${plural(pr.plan.items.length,'box','boxes')}</span>`:'<span>Not set up yet: finish the first core move</span>'}<span>Updated ${esc(fmtDate(pr.updated))}</span></div>
       </div>
       <div class="acts row" style="gap:6px;justify-content:flex-end">${S.confirm==='del:'+pr.id?`<span class="small">Delete this project and all its moves?</span><button class="danger solid" data-act="del-yes" data-id="${pr.id}">Delete</button><button data-act="cancel">Keep</button>`:
-        `<button class="primary" data-act="open-project" data-id="${pr.id}" ${ready?'':'disabled'}>Open project</button><button data-act="new-move" data-id="${pr.id}" ${ready?'':'disabled'}>+ New core move</button><button class="ghost" data-act="rename" data-id="p:${pr.id}">Rename</button><button class="ghost" data-act="dup" data-id="${pr.id}">Duplicate</button><button class="ghost danger" data-act="del" data-id="${pr.id}">Delete</button>`}</div>
+        `<button class="primary" data-act="open-project" data-id="${pr.id}" ${ready?'':'disabled'}>Open project</button><button data-act="new-move" data-id="${pr.id}" ${ready?'':'disabled'}>+ New core move</button><details class="menu"><summary class="btn">Manage</summary><div class="menu-pop" role="menu">
+          <button role="menuitem" data-act="rename" data-id="p:${pr.id}">Rename</button>
+          <button role="menuitem" data-act="dup" data-id="${pr.id}">Duplicate</button>
+          <button role="menuitem" data-act="backup" data-id="${pr.id}">Backup <span class="hint">${FS.status==='connected'?'to Backups folder':'download'}</span></button>
+          <button role="menuitem" class="danger" data-act="del" data-id="${pr.id}">Delete</button></div></details>`}</div>
     </div>
     ${S.newMoveFor===pr.id?`<form id="newMoveForm" class="row" data-id="${pr.id}" style="align-items:flex-end"><div class="field grow"><label class="label" for="nm_name">Core move name</label><input id="nm_name" value="${esc('Core move '+(pr.moves.length+1))}"></div><button class="primary" type="submit">Create move</button><button type="button" data-act="cancel">Cancel</button></form>`:''}
     <details class="movelist" data-pid="${pr.id}" ${open?'open':''}><summary>Core moves <span class="muted mono small">${pr.moves.length}</span></summary>
@@ -1452,6 +1466,7 @@ document.addEventListener('click',e=>{
     case 'modal-dl':modalDownload();break;
     case 'goto-rack':gotoRack(id);break;
     case 'held-ignore':{const pl=cur();if(pl){pl.heldIgnore=computePlan(pl).held;persist();render();}break;}
+    case 'backup':{const pr=S.projects.find(x=>x.id===id);if(pr)backupProject(pr);break;}
     case 'fs-connect':fsConnect();break;
     case 'fs-reconnect':fsReconnect();break;
     case 'fs-refresh':fsRefresh(true);break;

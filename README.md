@@ -4,26 +4,39 @@ Plans where drill core boxes go in the core shed racks: rows, bays and slots, th
 
 It's a single file, `Core Rack Planner.html`. There's nothing to install.
 
-## Setting it up for the team
+## Setting it up on the shared drive
 
-1. Put `Core Rack Planner.html` in the shared team folder, for example `S:\Core Shed\Core Rack Planner\`.
-2. Make a folder next to it for the data, for example `S:\Core Shed\Core Rack Planner\Data`.
-3. Open `Core Rack Planner.html` in **Microsoft Edge** or **Google Chrome**. Other browsers can't save to a shared folder.
-4. On the home page, under **Where projects are saved**, click **Connect shared folder…** and choose the `Data` folder.
+Make this layout on the shared drive. You only create the two folders; the planner creates everything inside `Data` itself.
 
-Everyone on the team does steps 3 and 4 once. After that:
+```
+S:\...\Software\Core Rack Planner\
+    Core Rack Planner.html      ← the planner (from this GitHub repo)
+    Data\                       ← connect the planner to this folder
+        projects\               ← created by the planner: one file per project
+        Backups\                ← created by the planner: dated backups
+```
+
+Then each team member, once:
+
+1. Opens `Core Rack Planner.html` in **Microsoft Edge** or **Google Chrome**. Other browsers can't save to a shared folder.
+2. On the home page, under **Where projects are saved**, clicks **Connect shared folder…** and chooses the `Data` folder.
+
+After that:
 
 - The browser remembers the folder. Each time you open the planner it asks you to click **Reconnect**, which is a browser security rule.
-- Each project is saved as one file in `Data\projects\`, with all its core moves and saved filters.
+- Each project is one file in `Data\projects\`, holding the saved layout, all its core moves and saved filters.
 - Changes made by others load automatically every 30 seconds, or straight away with **Refresh now**.
 - If two people edit the same project at the same moment, the second person to save gets a warning. They can then choose **Load their version** or **Keep mine**.
+- Deleting a project in the planner deletes its file from `Data\projects\`. Take a backup first if you might want it back.
 
 Tip: make a desktop shortcut to `Core Rack Planner.html`.
 
-## Updating the planner
-
-Download the latest `Core Rack Planner.html` from this GitHub repository and replace the copy in the shared folder. Project data in the `Data` folder isn't affected.
-
 ## Backups
 
-The `Data\projects` folder holds everything. Back it up like any other shared folder. You can also export a single project from inside the planner with **Export → Project file**.
+On the home page, open a project's **Manage** menu and choose **Backup**. This saves a dated copy, such as `tinaroo-dam__backup_2026-10-12_1842.json`, into `Data\Backups\`.
+
+To restore one, click **Open project file (.json)** on the home page and choose the backup file. It opens as a project alongside the current one, so nothing is overwritten.
+
+## Updating the planner
+
+Download the latest `Core Rack Planner.html` from this GitHub repository and replace the copy in the shared folder. The `Data` folder isn't affected.
