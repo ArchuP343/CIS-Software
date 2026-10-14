@@ -131,7 +131,7 @@ table.edit td.w-m input{min-width:90px}
 .pill.stage{background:var(--bad-soft);color:var(--bad)}
 
 /* rack elevation */
-.shed{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 10px;align-items:flex-end}
+.shed{display:flex;gap:14px;overflow-x:auto;padding:4px 2px 10px;align-items:stretch}
 .rackcol{display:flex;flex-direction:column;align-items:center;gap:6px;flex:0 0 auto;cursor:pointer;background:none;border:0;padding:0;color:inherit}
 .rackcol:hover .rack{border-color:var(--accent)}
 .rackcol .rname{font-family:var(--f-display);font-weight:700;font-size:1rem}
@@ -223,7 +223,9 @@ footer.foot{padding-block:28px;color:var(--muted);font-size:.8rem}
 /* map, edit sections, locking, projects */
 .mapwrap{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px;align-items:start}
 @media (max-width:920px){.mapwrap{grid-template-columns:1fr}}
-.mapcanvas{overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2);max-height:78vh}
+.mapcanvas{overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2);height:78vh;cursor:grab;overscroll-behavior:contain}
+.mapcanvas.panning{cursor:grabbing}
+.zoombar{display:flex;gap:4px;align-items:center;height:36px}.zoombar #mp_zpct{min-width:44px;text-align:center}
 #shedmap{display:block;user-select:none;-webkit-user-select:none}
 #shedmap [data-rack],#shedmap [data-rowh],#shedmap [data-label]{touch-action:none}
 #shedmap [data-rack].droptarget > rect:first-child{stroke:var(--accent);stroke-width:4}
@@ -244,9 +246,19 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 .cell.pinned{outline:1.5px solid var(--ink);outline-offset:-1.5px}
 .rowgroup{display:flex;flex-direction:column;gap:8px;padding-right:16px;border-right:1px dashed var(--line);flex:0 0 auto}
 .rowgroup:last-child{border-right:0;padding-right:0}
+.hsbar{position:sticky;bottom:0;z-index:6;display:flex;align-items:center;gap:6px;padding:6px 8px;margin-top:-1px;background:var(--surface);border:1px solid var(--line);border-radius:0 0 var(--r) var(--r);box-shadow:0 -4px 12px rgba(10,31,46,.08)}
+.hsbar[hidden]{display:none}
+.hstrack{flex:1;overflow-x:auto;overflow-y:hidden;height:18px;scrollbar-width:auto}
+.hsinner{height:1px}
+table.edit td.lead,table.edit th.lead{width:64px;white-space:nowrap;padding-left:4px;position:sticky;left:0;background:var(--surface);z-index:1}
+.draghandle{display:inline-block;cursor:grab;padding:4px 6px;color:var(--muted);font-size:1rem;user-select:none;vertical-align:middle}
+.draghandle:hover{color:var(--accent)}
+#coreBody tr.dragsrc{opacity:.4}
+#coreBody tr.drop-before td{box-shadow:inset 0 3px 0 var(--accent)}
+#coreBody tr.drop-after td{box-shadow:inset 0 -3px 0 var(--accent)}
 .rowgroup>header{display:flex;align-items:center;gap:10px;justify-content:space-between}
 .rowgroup>header .rname{font-family:var(--f-display);font-weight:700;font-size:1.05rem}
-.rowgroup .racks{display:flex;gap:10px;align-items:flex-end}
+.rowgroup .racks{display:flex;gap:10px;align-items:flex-end;flex:1}
 .pill.upd{background:var(--warn-soft);color:var(--warn)}
 .pill.lock{background:var(--ink);color:var(--surface)}
 .pill.held{background:var(--accent-soft);color:var(--accent)}
@@ -344,7 +356,10 @@ tr.hit td{background:var(--accent-soft)}
 (function(){
 'use strict';
 const KEY='coreRackPlanner.v1';
-const RW=3,RL=4,AISLE=2,SNAP=1.6;
+const RW=3,RL=4,HW=4,HL=2,AISLE=2,SNAP=1.6,MAPC=26;
+const isH=b=>!!b&&b.orient==='h';const dw=b=>isH(b)?HW:RW,dh=b=>isH(b)?HL:RL;
+/* order of bays inside a row: sequential runs along a line first; sideways rows swap the axes */
+const bayCmp=(horiz,across)=>((horiz?!across:across)?(a,b)=>a.y-b.y||a.x-b.x:(a,b)=>a.x-b.x||a.y-b.y);
 const $=(s,r=document)=>r.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-3);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -367,7 +382,7 @@ function pal(){try{const cs=getComputedStyle(document.documentElement);const g=n
    A project holds the saved shed state (plan). Core moves hold working copies (plan) that are saved back into the project.
    A plan: {name, stage, setup, racks (bays), map, customCols, options, items}. Bays: {id,name,rows (slots),blocked,x,y,locked,fixed,slotLocks,hold}. */
 const S={projects:[],seeded:false,view:'home',ctx:null,tab:'plan',q:'',confirm:null,imp:null,dirty:false,drag:null,storageOk:true,
-  addMode:'range',manualOpen:false,open:{},sel:null,updated:{},zoom:26,renaming:null,newMoveFor:null,focusAfter:null,modal:null,homeOpen:{},filter:{q:'',conds:[],onlyMatches:true},filterOpen:false,match:null,pngLegend:true,expPrompt:null,psearch:'',pfilter:'',shedTab:{},prefill:''};
+  addMode:'range',manualOpen:false,open:{},sel:null,updated:{},zoom:26,mapScale:1,renaming:null,newMoveFor:null,focusAfter:null,modal:null,homeOpen:{},filter:{q:'',conds:[],onlyMatches:true},filterOpen:false,match:null,pngLegend:true,expPrompt:null,psearch:'',pfilter:'',shedTab:{},prefill:''};
 
 function defaultsPlan(){return{
   stage:'done',setup:{rackCount:0,defaultRows:'',defaultBlocked:'',letter:'A',startNum:1,rowCount:1,backToBack:false,autoCount:true,numbering:'down'},
@@ -527,7 +542,7 @@ function migrateRecord(r){
 function normalisePlan(p){const d=defaultsPlan();p.setup=Object.assign(d.setup,p.setup||{});p.options=Object.assign(d.options,p.options||{});
   const hadXY=(p.racks||[]).every(r=>typeof r.x==='number'&&typeof r.y==='number');
   p.racks=(p.racks||[]).map(r=>({id:r.id||uid(),name:r.name||'',rows:+r.rows||0,blocked:Array.isArray(r.blocked)?r.blocked:parseRows(r.blocked),x:+r.x||0,y:+r.y||0,
-    locked:!!r.locked,fixed:r.fixed||r.lock||{},slotLocks:r.slotLocks||{},hold:r.hold||{},...(r.letterFix?{letterFix:r.letterFix}:{}),...(r.numMode?{numMode:r.numMode}:{})}));
+    locked:!!r.locked,fixed:r.fixed||r.lock||{},slotLocks:r.slotLocks||{},hold:r.hold||{},...(r.letterFix?{letterFix:r.letterFix}:{}),...(r.numMode?{numMode:r.numMode}:{}),...(r.orient==='h'?{orient:'h'}:{})}));
   if(!hadXY||p.layout){ // old row-based layout → bay positions
     const rows=(p.layout&&Array.isArray(p.layout.rows))?p.layout.rows:[{x:2,y:2,width:1,rackIds:p.racks.map(r=>r.id)}];const byId=new Map(p.racks.map(r=>[r.id,r]));
     rows.forEach(row=>{const n=row.rackIds.length,cols=row.width===2?2:1,len=Math.max(1,Math.ceil(n/cols));row.rackIds.forEach((id,k)=>{const r=byId.get(id);if(!r)return;const col=cols===2&&k>=len?1:0;r.x=row.x+col*RW;r.y=row.y+(col?k-len:k)*RL;});});
@@ -562,14 +577,14 @@ const fname=f=>f===''?'(no feature)':f;
 const cleanLetter=L=>(String(L||'A').toUpperCase().replace(/[^A-Z]/g,''))||'A';
 
 /* ---------- layout: bays placed on a grid; touching bays form a row ---------- */
-const touching=(a,b)=>((a.x+RW===b.x||b.x+RW===a.x)&&a.y<b.y+RL&&b.y<a.y+RL)||((a.y+RL===b.y||b.y+RL===a.y)&&a.x<b.x+RW&&b.x<a.x+RW);
-const overlap=(a,b)=>a.x<b.x+RW&&b.x<a.x+RW&&a.y<b.y+RL&&b.y<a.y+RL;
+const touching=(a,b)=>isH(a)===isH(b)&&(((a.x+dw(a)===b.x||b.x+dw(b)===a.x)&&a.y<b.y+dh(b)&&b.y<a.y+dh(a))||((a.y+dh(a)===b.y||b.y+dh(b)===a.y)&&a.x<b.x+dw(b)&&b.x<a.x+dw(a)));
+const overlap=(a,b)=>a.x<b.x+dw(b)&&b.x<a.x+dw(a)&&a.y<b.y+dh(b)&&b.y<a.y+dh(a);
 function rowGroups(p){
   const bays=p.racks;const parent=bays.map((_,i)=>i);const find=i=>parent[i]===i?i:(parent[i]=find(parent[i]));
   for(let i=0;i<bays.length;i++)for(let j=i+1;j<bays.length;j++)if(touching(bays[i],bays[j])){const a=find(i),b=find(j);if(a!==b)parent[a]=b;}
   const m=new Map();bays.forEach((b,i)=>{const k=find(i);if(!m.has(k))m.set(k,[]);m.get(k).push(b);});
   const across=p.setup&&p.setup.numbering==='across';
-  const groups=[...m.values()].map(list=>{list.sort(across?(a,b)=>a.y-b.y||a.x-b.x:(a,b)=>a.x-b.x||a.y-b.y);const minX=Math.min(...list.map(b=>b.x)),minY=Math.min(...list.map(b=>b.y)),maxX=Math.max(...list.map(b=>b.x+RW));return{bays:list,minX,minY,maxX};});
+  const groups=[...m.values()].map(list=>{const horiz=isH(list[0]);list.sort(bayCmp(horiz,across));const minX=Math.min(...list.map(b=>b.x)),minY=Math.min(...list.map(b=>b.y)),maxX=Math.max(...list.map(b=>b.x+dw(b))),maxY=Math.max(...list.map(b=>b.y+dh(b)));return{bays:list,minX,minY,maxX,maxY,horiz};});
   groups.sort((a,b)=>a.minX-b.minX||a.minY-b.minY);return groups;}
 function deriveNames(p){
   const first=cleanLetter(p.setup.letter),start=int(p.setup.startNum,1);
@@ -579,37 +594,54 @@ function deriveNames(p){
   let i=0;
   groups.forEach(g=>{let L=g.ov;if(!L){do{L=letterAdd(first,i++);}while(used.has(L));used.add(L);}g.letter=L;
     g.bays.forEach(b=>{if(g.ov)b.letterFix=g.ov;else delete b.letterFix;if(g.mode)b.numMode=g.mode;});
-    const across=(g.mode||p.setup.numbering)==='across';g.bays.sort(across?(a,b)=>a.y-b.y||a.x-b.x:(a,b)=>a.x-b.x||a.y-b.y);
+    const across=(g.mode||p.setup.numbering)==='across';g.bays.sort(bayCmp(g.horiz,across));
     g.key=g.bays[0].id;g.bays.forEach((r,k)=>{r.name=L+(start+k);r.rowKey=g.key;r.rowLetter=L;});});
   groups.sort((a,b)=>letterNum(a.letter)-letterNum(b.letter)||a.minX-b.minX);
   p.racks=groups.flatMap(g=>g.bays);Object.defineProperty(p,'_rows',{value:groups,writable:true,configurable:true,enumerable:false});return groups;
 }
 const letterNum=l=>{let n=0;for(const ch of String(l))n=n*26+(ch.charCodeAt(0)-64);return n;};
-function autoLayout(bays,R,b2b){
-  R=clamp(R|0,1,Math.max(1,bays.length));const per=Math.ceil(bays.length/R)||1;let x=2;
-  for(let i=0;i<R;i++){const list=bays.slice(i*per,(i+1)*per);if(!list.length)break;const cols=b2b&&list.length>1?2:1;const len=Math.ceil(list.length/cols);
-    list.forEach((b,k)=>{const col=cols===2&&k>=len?1:0;b.x=x+col*RW;b.y=2+(col?k-len:k)*RL;});x+=cols*RW+AISLE;}
+/* where bay k of n sits in a row: line (0 or 1 when back to back) and position along the line */
+function rowSpot(k,n,lines,across){if(lines<2)return{line:0,pos:k};if(across)return{line:k%2,pos:Math.floor(k/2)};const len=Math.ceil(n/2);return k>=len?{line:1,pos:k-len}:{line:0,pos:k};}
+function placeRow(list,ax,ay,horiz,lines,across){list.forEach((b,k)=>{const q=rowSpot(k,list.length,lines,across);if(horiz){b.orient='h';b.x=ax+q.pos*HW;b.y=ay+q.line*HL;}else{delete b.orient;b.x=ax+q.line*RW;b.y=ay+q.pos*RL;}});}
+function autoLayout(bays,R,b2b,orient,across){
+  R=clamp(R|0,1,Math.max(1,bays.length));const per=Math.ceil(bays.length/R)||1;const horiz=orient==='h';let x=2,y=2;
+  for(let i=0;i<R;i++){const list=bays.slice(i*per,(i+1)*per);if(!list.length)break;const cols=b2b&&list.length>1?2:1;
+    if(horiz){placeRow(list,2,y,true,cols,across);y+=cols*HL+AISLE;}else{placeRow(list,x,2,false,cols,across);x+=cols*RW+AISLE;}}
 }
-function freeAt(p,x,y,except){const t={x,y};return x>=0&&y>=1&&!p.racks.some(o=>(!except||!except.has(o.id))&&overlap(t,o));}
+function freeAt(p,x,y,except,orient){const t={x,y,orient};return x>=0&&y>=1&&!p.racks.some(o=>(!except||!except.has(o.id))&&overlap(t,o));}
 function appendBayToRow(p,bay,group){
   if(!group){const gs=rowGroups(p);const maxX=gs.length?Math.max(...gs.map(g=>g.maxX)):0;bay.x=gs.length?maxX+AISLE:2;bay.y=2;return;}
+  if(group.horiz){bay.orient='h';const lines=new Map();group.bays.forEach(b=>{if(!lines.has(b.y))lines.set(b.y,[]);lines.get(b.y).push(b);});
+    const ln=[...lines.entries()].sort((a,b)=>a[1].length-b[1].length||a[0]-b[0])[0];
+    let x=Math.max(...ln[1].map(b=>b.x))+HW;while(!freeAt(p,x,ln[0],null,'h')&&x<2000)x+=HW;bay.x=x;bay.y=ln[0];return;}
+  delete bay.orient;
   const cols=new Map();group.bays.forEach(b=>{if(!cols.has(b.x))cols.set(b.x,[]);cols.get(b.x).push(b);});
   const col=[...cols.entries()].sort((a,b)=>a[1].length-b[1].length||a[0]-b[0])[0];
   let y=Math.max(...col[1].map(b=>b.y))+RL;while(!freeAt(p,col[0],y)&&y<2000)y+=RL;bay.x=col[0];bay.y=y;}
 function swapRacks(p,a,b){const A=p.racks.find(r=>r.id===a),B=p.racks.find(r=>r.id===b);if(!A||!B)return;[A.x,B.x]=[B.x,A.x];[A.y,B.y]=[B.y,A.y];}
 function magnet(p,bay,fx,fy){
   let best=null,bd=SNAP;
-  p.racks.forEach(o=>{if(o.id===bay.id)return;[[o.x,o.y+RL],[o.x,o.y-RL],[o.x+RW,o.y],[o.x-RW,o.y]].forEach(([cx,cy])=>{const d=Math.hypot(cx-fx,cy-fy);if(d<bd){bd=d;best={x:cx,y:cy};}});});
+  p.racks.forEach(o=>{if(o.id===bay.id||isH(o)!==isH(bay))return;[[o.x,o.y+dh(o)],[o.x,o.y-dh(bay)],[o.x+dw(o),o.y],[o.x-dw(bay),o.y]].forEach(([cx,cy])=>{const d=Math.hypot(cx-fx,cy-fy);if(d<bd){bd=d;best={x:cx,y:cy};}});});
   return best||{x:Math.round(fx),y:Math.round(fy)};}
+function flipRow(p,g){
+  const horiz=!g.horiz;const across=(g.mode||p.setup.numbering)==='across';
+  const lines=Math.min(2,new Set(g.bays.map(b=>g.horiz?b.y:b.x)).size);const ids=new Set(g.bays.map(b=>b.id));
+  const list=g.bays.slice();const save=list.map(b=>({x:b.x,y:b.y,o:b.orient}));
+  const fits=()=>list.every(b=>b.x>=0&&b.y>=1&&!p.racks.some(o=>!ids.has(o.id)&&overlap(o,b)));
+  placeRow(list,g.minX,g.minY,horiz,lines,across);if(fits())return 'ok';
+  if(g.minY>2){placeRow(list,g.minX,2,horiz,lines,across);if(fits())return 'ok';}
+  const others=p.racks.filter(o=>!ids.has(o.id));const bottom=others.length?Math.max(...others.map(o=>o.y+dh(o))):1;
+  placeRow(list,Math.max(1,g.minX),bottom+AISLE,horiz,lines,across);if(fits())return 'moved';
+  list.forEach((b,i)=>{b.x=save[i].x;b.y=save[i].y;if(save[i].o)b.orient=save[i].o;else delete b.orient;});return 'fail';}
 function nameSnapshot(p){deriveNames(p);return new Map(p.racks.map(r=>[r.id,r.name]));}
 function markUpdated(p,before){deriveNames(p);p.racks.forEach(r=>{const old=before.get(r.id);if(old===undefined||old===r.name)return;
   const orig=S.updated[r.id]!==undefined?S.updated[r.id]:old;if(orig===r.name)delete S.updated[r.id];else S.updated[r.id]=orig;});}
 function labelW(l){return +l.w>0?+l.w:Math.max(2,Math.ceil(String(l.text).length*0.42*(+l.size||1))+1);}
 function inkOn(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return '#0f2433';const n=parseInt(m[1],16),r=n>>16&255,g=n>>8&255,b=n&255;const L=(0.2126*r+0.7152*g+0.0722*b)/255;return L>0.6?'#0f2433':'#ffffff';}
 const LABEL_COLOURS=[['','None'],['#0a1f2e','Navy'],['#00b0c9','Sunwater cyan'],['#bfeaf1','Light cyan'],['#ffd166','Amber'],['#f4a3a3','Red'],['#b7e4c7','Green'],['#d9dee2','Grey']];
-function mapBounds(p){let w=0,h=0;p.racks.forEach(r=>{w=Math.max(w,r.x+RW);h=Math.max(h,r.y+RL);});
+function mapBounds(p){let w=0,h=0;p.racks.forEach(r=>{w=Math.max(w,r.x+dw(r));h=Math.max(h,r.y+dh(r));});
   (p.map.labels||[]).forEach(l=>{w=Math.max(w,l.x+labelW(l)+1);h=Math.max(h,l.y+(+l.h||1)+1);});
-  return{w:Math.max(int(p.map.w,0),w+2,12),h:Math.max(int(p.map.h,0),h+2,10)};}
+  return{w:Math.max(w+2,12),h:Math.max(h+2,10)};}
 
 /* ---------- locking ----------
    Locked bay: keeps exactly its boxes (fixed). Locked slot: keeps its box, or stays empty.
@@ -632,6 +664,10 @@ function computePlan(p){
   const rank=new Map(feats.map((f,i)=>[f,i]));
   const hue=new Map(feats.map((f,i)=>[f,Math.round((i*137.508+192)%360)]));
   const sorted=[...p.items].sort((a,b)=>(rank.get(a.feature||'')-rank.get(b.feature||''))||nat(a.hole,b.hole)||(numv(a.box)-numv(b.box))||(numv(a.from)-numv(b.from))||(numv(a.to)-numv(b.to))||nat(a.id,b.id));
+  if(Array.isArray(p.manualOrder)&&p.manualOrder.length){/* custom order from dragging in the edit table; new boxes slot in after their automatic neighbour */
+    const have=new Set(p.items.map(i=>i.id));const out=p.manualOrder.filter(id=>have.has(id));const inM=new Set(out);let prevId=null;
+    sorted.forEach(it=>{if(inM.has(it.id)){prevId=it.id;return;}const k=prevId?out.indexOf(prevId)+1:0;out.splice(k,0,it.id);inM.add(it.id);prevId=it.id;});
+    const pos0=new Map(out.map((id,i)=>[id,i]));sorted.sort((a,b)=>pos0.get(a.id)-pos0.get(b.id));}
   const o=p.options;const byId=new Map(p.items.map(i=>[i.id,i]));
   const racks=p.racks.map(r=>({rack:r,used:0,locked:!!r.locked,cells:Array.from({length:Math.max(0,r.rows|0)},(_,i)=>({slot:i+1,blocked:(r.blocked||[]).includes(i+1),item:null,gap:false,closed:false,pin:''}))}));
   const pos={},pinned=new Set();let held=0;
@@ -704,7 +740,7 @@ function render(){
   app.innerHTML=html+modalView()+exportModal();
   const mc2=$('#mapcanvas');if(mc2&&keep){mc2.scrollLeft=keep.l;mc2.scrollTop=keep.t;}
   if(S.focusAfter){const el=document.getElementById(S.focusAfter);S.focusAfter=null;if(el){el.focus();if(el.select)el.select();}}
-  S.dirty=false;
+  S.dirty=false;syncHS();
 }
 function modalView(){if(!S.modal)return'';return `<div class="modal" role="dialog" aria-modal="true" aria-label="Shed map image"><div class="box">
   <div class="row" style="justify-content:space-between;align-items:center"><h2>Shed map image</h2><button data-act="modal-close">Close</button></div>
@@ -924,13 +960,19 @@ function condOk(c,it,P,type){const raw=fieldVal(it,c.field,P);
 function matchInfo(p,P){if(!filterActive())return null;
   const terms=S.filter.q.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);const conds=activeConds();const types=new Map(filterFields(p).map(f=>[f[0],f[2]]));
   const ids=new Set(),byBay=new Map(),list=[];
+  const bays=new Set(P.racks.map(R=>String(R.rack.name).toLowerCase())),rowsL=new Set(P.rowList.map(G=>String(G.row.letter).toLowerCase()));
+  /* a term that names a real row, bay or slot is a location search; anything else searches feature and hole IDs */
+  const locT=terms.map(t=>{const c=t.replace(/\s+/g,'');let m=/^row([a-z]{1,3})$/.exec(c);if(m&&rowsL.has(m[1]))return{row:m[1]};
+    m=/^([a-z]{1,3}\d+)(?:-(\d+))?$/.exec(c);if(m&&bays.has(m[1]))return{bay:m[1],slot:m[2]?+m[2]:0};return null;});
   P.sorted.forEach(it=>{
-    if(terms.length){const hay=[it.feature,it.hole,(it.feature||'')+'-'+(it.hole||'')].map(x=>String(x||'').toLowerCase());if(!terms.some(t=>hay.some(h=>h.includes(t))))return;}
+    if(terms.length){const hay=[it.feature,it.hole,(it.feature||'')+'-'+(it.hole||'')].map(x=>String(x||'').toLowerCase());const ps=P.pos[it.id];
+      const bay=ps?String(ps.rackName).toLowerCase():'',row=bay.replace(/\d+$/,'');
+      if(!terms.some((t,i)=>{const L=locT[i];if(L){if(!ps)return false;if(L.row)return row===L.row;return bay===L.bay&&(!L.slot||ps.slot===L.slot);}return hay.some(h=>h.includes(t));}))return;}
     if(!conds.every(c=>condOk(c,it,P,types.get(c.field)||'t')))return;
     ids.add(it.id);list.push(it);const ps=P.pos[it.id];if(ps)byBay.set(ps.rackId,(byBay.get(ps.rackId)||0)+1);});
   return{ids,byBay,list};}
 function searchBar(){const n=activeConds().length;
-  return `<div class="searchbox" role="search"><input id="gsearch" type="search" placeholder="Search holes, e.g. DD100" value="${esc(S.filter.q)}" aria-label="Search for boreholes" autocomplete="off">
+  return `<div class="searchbox" role="search"><input id="gsearch" type="search" placeholder="Search holes or locations, e.g. DD100, A1-3" value="${esc(S.filter.q)}" aria-label="Search for holes, rows, bays or slots" title="Search hole or feature IDs, or a location: Row A, A1 or A1-3. Separate several with commas." autocomplete="off">
     <button data-act="filters-toggle" aria-pressed="${!!S.filterOpen}" class="${n?'primary':''}">Filters${n?` (${n})`:''}</button></div>`;}
 function condRow(p,c,i){const fs=filterFields(p);const f=fs.find(x=>x[0]===c.field)||fs[1];const ops=FOPS[f[2]];
   return `<div class="condrow"><select id="cf_f_${i}" data-k="cond" data-i="${i}" data-f="field" aria-label="Field">${fs.map(x=>`<option value="${x[0]}" ${x[0]===f[0]?'selected':''}>${esc(x[1])}</option>`).join('')}</select>
@@ -1026,7 +1068,7 @@ function movesTab(p,P,M){
 function featBreakdown(R){const m=new Map();R.cells.forEach(c=>slotBoxes(c).forEach(it=>{const f=it.feature||'';m.set(f,(m.get(f)||0)+1);}));return[...m.entries()];}
 function mapSVG(p,P,o){
   const C=o.C,pl=o.pal,B=mapBounds(p),W=B.w*C,H=B.h*C,exp=!!o.export,compact=!!o.compact;
-  const sel=o.interactive?S.sel:null;
+  const sel=o.interactive?S.sel:null;const sc=o.interactive?mapScale():1;const hs=Math.round(Math.min(36,Math.max(10,13/sc)));
   const fc=f=>`hsl(${P.hue.get(f)}, ${pl.chipS}, ${pl.chipL})`;
   let legend='',legH=0;const top=exp?66:0;
   if(exp&&o.legend!==false){const items=P.feats.map(f=>({c:fc(f),t:fname(f)}));if(p.racks.some(r=>r.locked))items.push({c:pl.lockfill,t:'Locked bay',stroke:pl.ink});
@@ -1034,33 +1076,41 @@ function mapSVG(p,P,o){
       legend+=`<rect x="${lx}" y="${ly}" width="16" height="11" rx="2" fill="${it.c}" ${it.stroke?`stroke="${it.stroke}"`:''}/><text x="${lx+22}" y="${ly+10}" font-size="12" fill="${pl.ink}">${esc(it.t)}</text>`;lx+=w;});
     legH=items.length?ly+30:0;}
   const ox=exp?16:0,oy=top;const totalW=exp?Math.max(W+32,372):W,totalH=exp?top+H+16+legH+8:H;
-  let s=`<svg xmlns="http://www.w3.org/2000/svg" ${o.interactive?'id="shedmap"':''} width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}" ${exp?'font-family="Arial, Helvetica, sans-serif"':'style="font-family:var(--f-mono)"'} role="img" aria-label="Top-down shed map">`;
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" ${o.interactive?'id="shedmap"':''} width="${Math.round(totalW*sc)}" height="${Math.round(totalH*sc)}" data-w="${totalW}" data-h="${totalH}" viewBox="0 0 ${totalW} ${totalH}" ${exp?'font-family="Arial, Helvetica, sans-serif"':'style="font-family:var(--f-mono)"'} role="img" aria-label="Top-down shed map">`;
   const gid='grid'+C+(exp?'x':'');
   s+=`<defs><pattern id="${gid}" width="${C}" height="${C}" patternUnits="userSpaceOnUse"><path d="M ${C} 0 L 0 0 0 ${C}" fill="none" stroke="${pl.grid}" stroke-width="1"/></pattern></defs>`;
   if(exp)s+=`<rect width="${totalW}" height="${totalH}" fill="#ffffff"/><text x="16" y="32" font-size="21" font-weight="700" fill="${pl.ink}">${esc(p.map.title||o.title||'Core shed')}</text><text x="16" y="52" font-size="12" fill="${pl.muted}">${esc([o.subtitle,`${plural(p.racks.length,'bay')} in ${plural(p._rows.length,'row')}`,new Date().toLocaleDateString()].filter(Boolean).join(' · '))}</text>`;
   s+=`<g transform="translate(${ox} ${oy})"><rect width="${W}" height="${H}" fill="${pl.bg}"/><rect width="${W}" height="${H}" fill="url(#${gid})"/><rect x="1" y="1" width="${W-2}" height="${H-2}" fill="none" stroke="${pl.frame}" stroke-width="2"/>`;
-  P.rowList.forEach(G=>{const g=G.row;const topY=Math.min(...g.bays.filter(b=>b.x===g.minX).map(b=>b.y));
-    const hx=g.minX*C,hy=(topY-1)*C,hw=(g.maxX-g.minX)*C;const rsel=sel&&sel.type==='row'&&G.racks.some(R=>R.rack.id===sel.id);
-    s+=`<g data-rowg="${g.key}">`;
-    s+=`<g ${o.interactive?`data-rowh="${g.key}" style="cursor:move"`:''}><rect x="${hx+1}" y="${hy+3}" width="${hw-2}" height="${C-6}" rx="4" fill="${rsel?pl.accent:pl.ink}"/><text x="${hx+hw/2}" y="${hy+C/2+4}" text-anchor="middle" font-size="${compact?Math.max(9,C*0.6):12}" font-weight="700" fill="${pl.surface}">${compact?esc(g.letter):`Row ${esc(g.letter)}`}</text></g>`;
-    G.racks.forEach(R=>{const r=R.rack,x=r.x*C,y=r.y*C,w=RW*C,h=RL*C;
+  P.rowList.forEach(G=>{const g=G.row;const rsel=sel&&sel.type==='row'&&G.racks.some(R=>R.rack.id===sel.id);
+    s+=`<g data-rowg="${g.key}">`;const hfill=rsel?pl.accent:pl.ink,hatt=o.interactive?`data-rowh="${g.key}" style="cursor:move"`:'';
+    if(g.horiz){/* sideways row: header runs down its left-hand end */
+      const leftX=Math.min(...g.bays.map(b=>b.x));const topY=Math.min(...g.bays.filter(b=>b.x===leftX).map(b=>b.y));const botY=Math.max(...g.bays.filter(b=>b.x===leftX).map(b=>b.y+HL));
+      const hx=(leftX-1)*C,hy=topY*C,hh=(botY-topY)*C;const long=!compact&&hh>=60;const tx=hx+C/2,ty=hy+hh/2;
+      s+=`<g ${hatt}><rect x="${hx+3}" y="${hy+1}" width="${C-6}" height="${hh-2}" rx="4" fill="${hfill}"/><text x="${tx}" y="${ty}" ${long?`transform="rotate(-90 ${tx} ${ty})"`:''} text-anchor="middle" dominant-baseline="central" font-size="${compact?Math.max(9,C*0.6):12}" font-weight="700" fill="${pl.surface}">${long?`Row ${esc(g.letter)}`:esc(g.letter)}</text></g>`;}
+    else{const topY=Math.min(...g.bays.filter(b=>b.x===g.minX).map(b=>b.y));const hx=g.minX*C,hy=(topY-1)*C,hw=(g.maxX-g.minX)*C;
+      s+=`<g ${hatt}><rect x="${hx+1}" y="${hy+3}" width="${hw-2}" height="${C-6}" rx="4" fill="${hfill}"/><text x="${hx+hw/2}" y="${hy+C/2+4}" text-anchor="middle" font-size="${compact?Math.max(9,C*0.6):12}" font-weight="700" fill="${pl.surface}">${compact?esc(g.letter):`Row ${esc(g.letter)}`}</text></g>`;}
+    G.racks.forEach(R=>{const r=R.rack,x=r.x*C,y=r.y*C,w=dw(r)*C,h=dh(r)*C,hz=isH(r);
       const usable=R.cells.filter(c=>!c.blocked).length;const upd=!!o.interactive&&S.updated[r.id]!==undefined;const isSel=sel&&sel.type==='rack'&&sel.id===r.id;
       const hits=o.interactive&&S.match?(S.match.byBay.get(r.id)||0):-1;
       const stroke=isSel||hits>0?pl.accent:upd?pl.warn:R.locked?pl.ink:pl.frame;
       s+=`<g data-rack="${r.id}" ${o.interactive?'style="cursor:grab"':''} ${hits===0?'opacity="0.3"':''}><rect x="${x+1.5}" y="${y+1.5}" width="${w-3}" height="${h-3}" rx="3" fill="${R.locked?pl.lockfill:pl.surface}" stroke="${stroke}" stroke-width="${isSel||R.locked||hits>0?2.5:1.5}" ${upd&&!isSel?'stroke-dasharray="5 3"':''}/>`;
-      if(compact){s+=`<text x="${x+w/2}" y="${y+h/2}" text-anchor="middle" font-size="${Math.max(8,C*0.62)}" font-weight="700" fill="${pl.ink}">${esc(r.name)}</text>`;}
+      if(compact){s+=`<text x="${x+w/2}" y="${y+h/2+(hz?Math.max(8,C*0.62)*0.3:0)}" text-anchor="middle" font-size="${Math.max(8,C*0.62)}" font-weight="700" fill="${pl.ink}">${esc(r.name)}</text>`;}
+      else if(hz){/* sideways bays are half height: name and count on one line */
+        s+=`<text x="${x+C*0.3}" y="${y+C*0.85}" font-size="${Math.round(C*0.56)}" font-weight="700" fill="${upd?pl.warn:pl.ink}">${esc(r.name)}${upd?'*':''}</text>`;
+        s+=`<text x="${x+w-C*0.3}" y="${y+C*0.85}" text-anchor="end" font-size="${Math.max(8,C*0.36)}" fill="${pl.muted}">${R.locked?'🔒 ':''}${R.used}/${usable}</text>`;
+        if(hits>0)s+=`<circle cx="${x+w-C*0.3}" cy="${y+C*0.05}" r="${C*0.3}" fill="${pl.accent}"/><text x="${x+w-C*0.3}" y="${y+C*0.05+C*0.12}" text-anchor="middle" font-size="${Math.max(8,C*0.32)}" font-weight="700" fill="${pl.surface}">${hits}</text>`;}
       else{s+=`<text x="${x+w/2}" y="${y+C*0.9}" text-anchor="middle" font-size="${Math.round(C*0.62)}" font-weight="700" fill="${pl.ink}">${esc(r.name)}</text>`;
         s+=`<text x="${x+w/2}" y="${y+C*1.5}" text-anchor="middle" font-size="${Math.max(9,C*0.38)}" fill="${pl.muted}">${R.used}/${usable}</text>`;
         if(hits>0)s+=`<circle cx="${x+w-C*0.42}" cy="${y+C*0.42}" r="${C*0.34}" fill="${pl.accent}"/><text x="${x+w-C*0.42}" y="${y+C*0.42+C*0.13}" text-anchor="middle" font-size="${Math.max(8,C*0.36)}" font-weight="700" fill="${pl.surface}">${hits}</text>`;
         if(upd)s+=`<text x="${x+w/2}" y="${y+C*2.1}" text-anchor="middle" font-size="${Math.max(8,C*0.36)}" font-weight="700" fill="${pl.warn}">(updated</text><text x="${x+w/2}" y="${y+C*2.55}" text-anchor="middle" font-size="${Math.max(8,C*0.36)}" font-weight="700" fill="${pl.warn}">position)</text>`;
         if(R.locked)s+=`<text x="${x+w/2}" y="${y+h-C*0.85}" text-anchor="middle" font-size="${Math.max(8,C*0.34)}" font-weight="700" letter-spacing="1" fill="${pl.ink}">LOCKED</text>`;}
-      const bx=x+C*0.3,bw=w-C*0.6,by=y+h-C*0.55,bh=Math.max(4,C*0.28);
+      const bx=x+C*0.3,bw=w-C*0.6,by=y+h-C*(hz?0.5:0.55),bh=Math.max(4,C*(hz?0.22:0.28));
       s+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="1.5" fill="${pl.grid}"/>`;
       let cx=bx;featBreakdown(R).forEach(([f,n])=>{const ww=usable?bw*n/usable:0;s+=`<rect x="${cx}" y="${by}" width="${ww}" height="${bh}" fill="${fc(f)}"/>`;cx+=ww;});
       s+=`</g>`;});
     s+=`</g>`;});
   (p.map.labels||[]).forEach(l=>{const lsel=sel&&sel.type==='label'&&sel.id===l.id;const lw=labelW(l)*C,lh=(+l.h||1)*C,fill=l.color||pl.surface,tc=l.color?inkOn(l.color):pl.ink;const fs=Math.max(9,Math.min(lh*0.5,C*0.46*(+l.size||1)));
-    s+=`<g data-label="${l.id}" ${o.interactive?'style="cursor:move"':''}><rect x="${l.x*C+1}" y="${l.y*C+2}" width="${lw-2}" height="${lh-4}" rx="4" fill="${fill}" stroke="${lsel?pl.accent:l.color?'none':pl.frame}" stroke-width="${lsel?2.5:1}" stroke-dasharray="${lsel||l.color?'':'4 3'}"/><text x="${l.x*C+lw/2}" y="${l.y*C+lh/2+fs*0.36}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${tc}">${esc(l.text)}</text></g>`;});
+    s+=`<g data-label="${l.id}" ${o.interactive?'style="cursor:move"':''}><rect x="${l.x*C+1}" y="${l.y*C+2}" width="${lw-2}" height="${lh-4}" rx="4" fill="${fill}" stroke="${lsel?pl.accent:l.color?'none':pl.frame}" stroke-width="${lsel?2.5:1}" stroke-dasharray="${lsel||l.color?'':'4 3'}"/><text x="${l.x*C+lw/2}" y="${l.y*C+lh/2+fs*0.36}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${tc}">${esc(l.text)}</text>${lsel&&!isReadOnly()?`<rect data-lresize="${l.id}" x="${l.x*C+lw-hs}" y="${l.y*C+lh-hs-1}" width="${hs}" height="${hs}" rx="2" fill="${pl.accent}" stroke="${pl.surface}" stroke-width="1.5" style="cursor:nwse-resize"><title>Drag to resize</title></rect>`:''}</g>`;});
   s+=`</g>`;
   if(exp&&legend)s+=`<g transform="translate(16 ${top+H+18})">${legend}</g>`;
   return s+`</svg>`;
@@ -1084,7 +1134,8 @@ function mapSide(p,P,ro){
         <div class="field"><label class="label" for="rw_l">Row letter</label><input id="rw_l" data-k="rowcfg" data-id="${g.key}" data-f="letter" value="${esc(g.ov||'')}" placeholder="Auto (${esc(g.letter)})" maxlength="3" style="text-transform:uppercase"></div>
         <div class="field"><label class="label" for="rw_n">Numbering</label><select id="rw_n" data-k="rowcfg" data-id="${g.key}" data-f="numMode"><option value="" ${!g.mode?'selected':''}>Same as the shed</option><option value="down" ${g.mode==='down'?'selected':''}>Sequential</option><option value="across" ${g.mode==='across'?'selected':''}>Alternating</option></select></div>
       </div><p class="muted small" style="margin-top:-4px">Leave the letter blank to letter rows automatically from left to right. Numbering only matters when the row is two bays wide.</p>`}
-      <div class="row">${lockBtn('lock-row',g.key,all,'Lock row',ro)}</div>
+      <div class="row">${lockBtn('lock-row',g.key,all,'Lock row',ro)}${ro?'':`<button data-act="row-orient" data-id="${g.key}" title="${g.horiz?'Bays run top to bottom':'Bays run left to right, at half height'}">${g.horiz?'↕ Turn row upright':'↔ Turn row sideways'}</button>`}</div>
+      <p class="muted small">${g.horiz?'Sideways row: bays run left to right.':'Upright row: bays run top to bottom.'}${ro?'':' Turning a row keeps its bay numbers.'}</p>
       ${ro?'':`<p class="muted small">Drag the row’s dark header to move the whole row. Bays that touch form a row; rows are lettered left to right.</p>`}`;}}
   if(sel&&sel.type==='label'&&!ro){const l=p.map.labels.find(x=>x.id===sel.id);if(l)return `<div><span class="label">Label</span><h2>Map label</h2></div>
       <div class="field"><label class="label" for="lb_text">Text</label><input id="lb_text" data-k="label" data-id="${l.id}" data-f="text" value="${esc(l.text)}"></div>
@@ -1093,24 +1144,22 @@ function mapSide(p,P,ro){
         <div class="field"><label class="label" for="lb_h">Height</label><input id="lb_h" type="number" min="1" max="200" data-k="label" data-id="${l.id}" data-f="h" value="${+l.h||1}"></div>
         <div class="field"><label class="label" for="lb_s">Text size</label><select id="lb_s" data-k="label" data-id="${l.id}" data-f="size">${[[0.8,'Small'],[1,'Normal'],[1.4,'Large'],[2,'Extra large']].map(([v,t])=>`<option value="${v}" ${(+l.size||1)===v?'selected':''}>${t}</option>`).join('')}</select></div>
       </div>
-      <p class="muted small" style="margin-top:-4px">Width and height are in grid squares. One bay is ${RW} × ${RL}.</p>
+      <p class="muted small" style="margin-top:-4px">Width and height are in grid squares. One bay is ${RW} × ${RL}. Drag the corner handle on the map to resize.</p>
       <div class="field"><span class="label">Colour</span><div class="swatches">${LABEL_COLOURS.map(([c,n])=>`<button class="swatch ${(l.color||'')===c?'on':''}" data-act="label-color" data-id="${l.id}" data-color="${c}" title="${n}" aria-label="${n}" style="${c?`background:${c}`:''}">${c?'':'∅'}</button>`).join('')}<input type="color" id="lb_c" data-k="label" data-id="${l.id}" data-f="color" value="${l.color||'#ffffff'}" title="Custom colour" aria-label="Custom colour"></div></div>
       <div class="row"><button class="ghost danger" data-act="label-del" data-id="${l.id}">Delete label</button></div>`;}
   return `<div><span class="label">${ro?'Saved layout':'How it works'}</span><h2>Shed map</h2></div>
-    ${ro?`<p class="muted small">Click a bay or row header to see what’s in it. To rearrange the shed, open a core move.</p>`:`<ul class="small"><li>Drag a bay anywhere on the grid. Near another bay, it snaps on.</li><li>Drop a bay on top of another to swap them.</li><li>Bays that touch form a row. Rows are lettered left to right, bays numbered top to bottom.</li><li>Drag a row’s dark header to move the whole row.</li></ul>`}
+    ${ro?`<p class="muted small">Click a bay or row header to see what’s in it. To rearrange the shed, open a core move.</p>`:`<ul class="small"><li>Drag a bay anywhere on the grid. Near another bay, it snaps on.</li><li>Drop a bay on top of another to swap them.</li><li>Bays that touch form a row. Rows are lettered left to right, bays numbered top to bottom.</li><li>Drag a row’s dark header to move the whole row. Select a row to turn it sideways for a different rack type.</li><li>Scroll to zoom in and out. Drag empty space to pan. <b>Fit</b> shows the whole shed.</li></ul>`}
     <div class="legend small">${P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span></span>`).join('')}</div>`;
 }
 function mapTab(p,P,ro){
   const B=mapBounds(p);const upd=Object.entries(S.updated).filter(([id])=>p.racks.some(r=>r.id===id));
   return `<section class="panel"><div class="toolbar">
       ${ro?`<div class="grow"><span class="label">Map title</span><h3>${esc(p.map.title||projRec().name)}</h3></div>`:`<div class="field grow" style="width:auto;min-width:min(220px,100%)"><label class="label" for="mp_title">Map title</label><input id="mp_title" data-k="map" data-f="title" value="${esc(p.map.title)}" placeholder="${esc(projRec().name)}"></div>
-      <div class="field"><label class="label" for="mp_w">Shed width</label><input id="mp_w" type="number" min="1" data-k="map" data-f="w" value="${B.w}"></div>
-      <div class="field"><label class="label" for="mp_h">Shed length</label><input id="mp_h" type="number" min="1" data-k="map" data-f="h" value="${B.h}"></div>`}
-      <div class="field"><label class="label" for="mp_zoom">Zoom</label><select id="mp_zoom" data-k="ui" data-f="zoom">${[[18,'Small'],[26,'Medium'],[34,'Large']].map(([v,l])=>`<option value="${v}" ${S.zoom===v?'selected':''}>${l}</option>`).join('')}</select></div>
-      <div class="row">${ro?'':`<button data-act="map-add-row">+ Row</button><button data-act="map-add-label">+ Label</button><button data-act="map-auto">Tidy layout</button>`}${ro?'':`<select id="mp_num" data-k="setup" data-f="numbering" aria-label="Bay numbering" title="How bays are numbered in back-to-back rows"><option value="down" ${p.setup.numbering!=='across'?'selected':''}>Numbering: sequential</option><option value="across" ${p.setup.numbering==='across'?'selected':''}>Numbering: alternating</option></select>`}<label class="check small"><input type="checkbox" id="png_leg" data-k="ui" data-f="pngLegend" ${S.pngLegend?'checked':''}> Include legend</label><button class="primary" data-act="map-png">Save as PNG</button></div>
-    </div>${ro?'':`<p class="muted small" style="margin-top:8px">Sizes are in grid squares. One bay is ${RW} × ${RL} squares.</p>`}</section>
+`}
+      <div class="row"><button data-act="map-zoom" data-z="fit" title="Zoom to show the whole shed">Fit to screen</button>${ro?'':`<button data-act="map-add-row">+ Row</button><button data-act="map-add-label">+ Label</button><button data-act="map-auto">Tidy layout</button>`}${ro?'':`<select id="mp_num" data-k="setup" data-f="numbering" aria-label="Bay numbering" title="How bays are numbered in back-to-back rows"><option value="down" ${p.setup.numbering!=='across'?'selected':''}>Numbering: sequential</option><option value="across" ${p.setup.numbering==='across'?'selected':''}>Numbering: alternating</option></select>`}<label class="check small"><input type="checkbox" id="png_leg" data-k="ui" data-f="pngLegend" ${S.pngLegend?'checked':''}> Include legend</label><button class="primary" data-act="map-png">Save as PNG</button></div>
+    </div>${ro?'':`<p class="muted small" style="margin-top:8px">Scroll to zoom, drag empty space to pan.</p>`}</section>
     ${upd.length&&!ro?`<div class="msg warn row" style="align-items:center;justify-content:space-between"><span>${plural(upd.length,'bay has','bays have')} a new ID from the map: ${upd.map(([id,old])=>`<b class="mono">${esc(nameOf(p,id,''))}</b> (was ${esc(old)})`).join(', ')}. The rack plan has been updated to match.</span><button class="ghost" data-act="clear-updated">Clear notes</button></div>`:''}
-    <div class="mapwrap"><div class="mapcanvas" id="mapcanvas">${mapSVG(p,P,{C:S.zoom,pal:pal(),interactive:true})}</div><aside class="panel side">${mapSide(p,P,ro)}</aside></div>`;
+    <div class="mapwrap"><div class="mapcanvas" id="mapcanvas">${mapSVG(p,P,{C:MAPC,pal:pal(),interactive:true})}</div><aside class="panel side">${mapSide(p,P,ro)}</aside></div>`;
 }
 function exportPNG(p){
   const pr=projRec();const P=computePlan(p);const m=moveRec();
@@ -1142,14 +1191,14 @@ function holesBody(p,P){
   <div class="row" style="justify-content:space-between;align-items:center">
     <h3>All boxes <span class="muted mono small">${p.items.length}</span></h3>
     <div class="row" style="align-items:center">
-      <input id="coreFilter" type="search" placeholder="Filter by feature, hole or box" value="${esc(S.q)}" style="width:min(260px,100%)" aria-label="Filter boxes">
+      ${Array.isArray(p.manualOrder)&&p.manualOrder.length?`<span class="pill held">Custom order</span><button class="ghost" data-act="order-reset" title="Go back to sorting by feature, hole, box and depth">Reset to automatic order</button>`:''}
       ${p.items.length?(S.confirm==='clear'?`<span class="small">Remove all ${p.items.length} boxes?</span><button class="danger solid" data-act="clear-yes">Remove all</button><button data-act="cancel">Cancel</button>`:`<button class="ghost danger" data-act="clear">Remove all</button>`):''}
     </div>
   </div>
-  <p class="muted small">Listed in fill order. Edit any cell. The order and bay locations update when you leave the table.</p>
-  ${p.items.length?`<div class="tablewrap" data-live><table class="edit">
-    <thead><tr><th>Planned slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}<th></th></tr></thead>
-    <tbody id="coreBody">${coreRows(p,P)}</tbody></table></div>`:`<div class="empty">No boxes yet. Import a spreadsheet or add a hole above.</div>`}`;
+  <p class="muted small">Listed in fill order. Edit any cell; locations update when you leave the table. Drag <span class="mono">⠿</span> to put a box in a different place in the order.${S.match?` <b>Showing ${S.match.list.length} of ${p.items.length} boxes that match the search and filters.</b>`:' Use the search bar and Filters above to narrow the list.'}</p>
+  ${p.items.length?`<div class="tablewrap" data-live data-hs id="coreWrap"><table class="edit">
+    <thead><tr><th class="lead"></th><th>Planned slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}</tr></thead>
+    <tbody id="coreBody">${coreRows(p,P)}</tbody></table></div>${hsBar('coreWrap')}`:`<div class="empty">No boxes yet. Import a spreadsheet or add a hole above.</div>`}`;
 }
 function rackSettings(p,P){
   const s=p.setup;const slotsShown=s.defaultRows||(p.racks[0]?p.racks[0].rows:'');const need=racksNeeded(p);
@@ -1170,6 +1219,7 @@ function rackSettings(p,P){
           <option value="across" ${p.setup.numbering==='across'?'selected':''}>Alternating: across, then down</option></select>
           <span class="hint">${p.setup.numbering==='across'?'1 is back to back with 2, then 3 and 4…':'1, 2, 3… down one side, then carries on down the next'}</span></div></div>
       <label class="check" style="margin-top:8px"><input type="checkbox" id="st_b2b" ${s.backToBack?'checked':''}> Bays in each row are back to back (rows are 2 bays wide)</label>
+      <div class="field" style="max-width:420px;margin-top:10px"><label class="label" for="st_orient">Row direction</label><select id="st_orient" ><option value="" ${s.orient!=='h'?'selected':''}>Upright: bays run top to bottom</option><option value="h" ${s.orient==='h'?'selected':''}>Sideways: bays run left to right (half-height bays)</option></select><span class="hint">Use sideways for rack types that are installed the other way round. You can turn single rows on the Shed map later.</span></div>
       <div class="row" style="margin-top:10px;align-items:center"><button data-act="rebuild-rows">Rebuild shed map with these rows</button><span class="muted small">Replaces the current bay positions on the shed map.</span></div>
     </div>
     <p class="muted small">Bay IDs come from the shed map: the row letter (A is furthest left) and the bay’s position from the top. To move single bays or rows, use the Shed map tab.</p>
@@ -1192,16 +1242,45 @@ function rackSettings(p,P){
 }
 
 /* import, manual entry and wizard step 1 (shared) */
+function hsBar(id){return `<div class="hsbar" data-hsfor="${id}" hidden><button class="icon ghost" data-act="hs-step" data-for="${id}" data-d="-1" aria-label="Scroll table left">◀</button><div class="hstrack"><div class="hsinner"></div></div><button class="icon ghost" data-act="hs-step" data-for="${id}" data-d="1" aria-label="Scroll table right">▶</button></div>`;}
+function syncHS(){document.querySelectorAll('.hsbar[data-hsfor]').forEach(bar=>{const w=document.getElementById(bar.dataset.hsfor);if(!w)return;
+  const need=w.scrollWidth>w.clientWidth+2;bar.hidden=!need;if(!need)return;const tr=bar.querySelector('.hstrack');tr.querySelector('.hsinner').style.width=(w.scrollWidth/w.clientWidth*tr.clientWidth)+'px';
+  tr.scrollLeft=w.scrollLeft/(w.scrollWidth-w.clientWidth||1)*(tr.scrollWidth-tr.clientWidth);});}
+let HSLOCK=false;
+document.addEventListener('scroll',e=>{const t=e.target;if(!t||!t.classList||HSLOCK)return;HSLOCK=true;
+  if(t.classList.contains('hstrack')){const bar=t.closest('.hsbar'),w=document.getElementById(bar.dataset.hsfor);if(w)w.scrollLeft=t.scrollLeft/(t.scrollWidth-t.clientWidth||1)*(w.scrollWidth-w.clientWidth);}
+  else if(t.dataset&&t.dataset.hs!==undefined){const bar=document.querySelector(`.hsbar[data-hsfor="${t.id}"] .hstrack`);if(bar)bar.scrollLeft=t.scrollLeft/(t.scrollWidth-t.clientWidth||1)*(bar.scrollWidth-bar.clientWidth);}
+  requestAnimationFrame(()=>{HSLOCK=false;});},true);
+addEventListener('resize',()=>syncHS());document.addEventListener('toggle',()=>setTimeout(syncHS,0),true);
+/* drag to reorder boxes in the edit table */
+let DRAG=null;
+document.addEventListener('dragstart',e=>{const h=e.target.closest&&e.target.closest('[data-drag]');if(!h)return;DRAG={id:h.dataset.drag};
+  try{e.dataTransfer.setData('text/plain',DRAG.id);e.dataTransfer.effectAllowed='move';const tr=h.closest('tr');if(tr)e.dataTransfer.setDragImage(tr,12,12);}catch(_){}
+  setTimeout(()=>{const tr=h.closest('tr');if(tr)tr.classList.add('dragsrc');},0);});
+const clearDrop=()=>document.querySelectorAll('#coreBody tr.drop-before,#coreBody tr.drop-after,#coreBody tr.dragsrc').forEach(x=>x.classList.remove('drop-before','drop-after','dragsrc'));
+document.addEventListener('dragover',e=>{if(!DRAG)return;const tr=e.target.closest&&e.target.closest('#coreBody tr[data-row]');if(!tr)return;e.preventDefault();e.dataTransfer.dropEffect='move';
+  const r=tr.getBoundingClientRect();const after=e.clientY>r.top+r.height/2;document.querySelectorAll('#coreBody tr.drop-before,#coreBody tr.drop-after').forEach(x=>{if(x!==tr)x.classList.remove('drop-before','drop-after');});
+  tr.classList.toggle('drop-after',after);tr.classList.toggle('drop-before',!after);
+  const wrap=document.scrollingElement;if(e.clientY<90)wrap.scrollTop-=14;else if(e.clientY>innerHeight-70)wrap.scrollTop+=14;});
+document.addEventListener('drop',e=>{if(!DRAG)return;const tr=e.target.closest&&e.target.closest('#coreBody tr[data-row]');const d=DRAG;DRAG=null;if(!tr){clearDrop();return;}e.preventDefault();
+  const after=tr.classList.contains('drop-after');clearDrop();if(tr.dataset.row===d.id)return;reorderItem(cur(),d.id,tr.dataset.row,after);});
+document.addEventListener('dragend',()=>{DRAG=null;clearDrop();});
+function reorderItem(p,id,targetId,after){const P=computePlan(p);const it=p.items.find(x=>x.id===id);if(!it)return;
+  const c=P.racks.flatMap(R=>R.cells).find(c=>c.item&&c.item.id===id||(c.extra||[]).some(x=>x.id===id));
+  if(c&&c.pin){toast(c.pin==='held'?'This box is being kept in its slot. Press “Update unlocked bays to best positions” first, then reorder it.':'This box is locked in its slot. Unlock it to move it.');return;}
+  const ids=P.sorted.map(x=>x.id).filter(x=>x!==id);let k=ids.indexOf(targetId);if(k<0)return;if(after)k++;ids.splice(k,0,id);
+  const was=P.pos[id];p.manualOrder=ids;touch(p);render();const now=computePlan(p).pos[id];
+  toast(now?`Box ${it.hole} ${it.box} is now in ${now.rackName}-${now.slot}${was?` (was ${was.rackName}-${was.slot})`:''}.`:'Box moved in the order.');}
 function coreRows(p,P){
-  const q=S.q.trim().toLowerCase();
-  const rows=P.sorted.filter(it=>!q||[it.feature,it.hole,it.box,it.feature+'-'+it.hole].some(v=>String(v||'').toLowerCase().includes(q)));
-  if(!rows.length)return `<tr><td colspan="${9+p.customCols.length}" class="muted" style="padding:14px">No boxes match “${esc(S.q)}”.</td></tr>`;
+  const rows=P.sorted.filter(it=>!S.match||S.match.ids.has(it.id));
+  if(!rows.length)return `<tr><td colspan="${9+p.customCols.length}" class="muted" style="padding:14px">No boxes match the search and filters.</td></tr>`;
   const inp=(it,f,cls,num)=>`<td class="${cls||''}"><input id="it_${f}_${it.id}" data-k="item" data-id="${it.id}" data-f="${f}" value="${esc(it[f])}" ${num?'inputmode="decimal" style="text-align:right"':''} aria-label="${f}"></td>`;
-  return rows.map(it=>{const ps=P.pos[it.id];return `<tr>
-    <td class="mono" style="padding-left:10px">${ps?esc(ps.rackName+'-'+ps.slot):'<span class="pill stage">No space</span>'}${it.missing?' <span class="pill missing">missing</span>':''}</td>
+  return rows.map(it=>{const ps=P.pos[it.id];return `<tr data-row="${it.id}">
+    <td class="lead"><span class="draghandle" draggable="true" data-drag="${it.id}" title="Drag to reorder" aria-label="Drag to reorder">⠿</span><button class="icon ghost danger" data-act="item-del" data-id="${it.id}" aria-label="Remove box" title="Remove box">✕</button></td>
+    <td class="mono" style="padding-left:6px">${ps?esc(ps.rackName+'-'+ps.slot):'<span class="pill stage">No space</span>'}${it.missing?' <span class="pill missing">missing</span>':''}</td>
     ${inp(it,'feature','w-m')}${inp(it,'hole','w-m')}${inp(it,'box','w-s',1)}${inp(it,'of','w-s',1)}${inp(it,'from','w-s',1)}${inp(it,'to','w-s',1)}
     ${p.customCols.map(c=>`<td class="w-m"><input id="it_c_${c.id}_${it.id}" data-k="item" data-id="${it.id}" data-c="${c.id}" value="${esc((it.custom||{})[c.id])}" aria-label="${esc(c.name)}"></td>`).join('')}
-    <td><button class="icon ghost danger" data-act="item-del" data-id="${it.id}" aria-label="Remove box">✕</button></td></tr>`;}).join('');
+    </tr>`;}).join('');
 }
 
 
@@ -1259,8 +1338,8 @@ function holesStep(p){
     <div class="intro"><span class="label">Step 1 of 2</span><h1>Add hole information</h1>
       <p>Import a list of holes and boxes to plan, or import the layout of a shed that’s already full. Before anything is added you’ll see which spreadsheet column matched each field.</p></div>
     ${S.imp?`<section class="panel">${importPanel(p)}</section>`:`<div class="grid2">
-      <section class="panel"><header><h2>Plan new core</h2></header><p class="muted small" style="margin-bottom:10px">A list of holes and boxes. The planner works out where they go.</p>${importPanel(p)}</section>
-      <section class="panel"><header><h2>Import an existing shed</h2></header><p class="muted small" style="margin-bottom:10px">Every box already has a row, bay and slot. Nothing is moved.</p>${layoutDrop()}</section></div>`}
+      <section class="panel"><header><h2>Plan new core</h2></header>${importPanel(p)}</section>
+      <section class="panel"><header><h2>Import an existing shed</h2></header>${layoutDrop()}</section></div>`}
     <details class="manual" id="manualDetails" ${S.manualOpen?'open':''}><summary>Enter holes manually</summary><div class="body">${addBoxForm(p,P)}</div></details>
     ${holes.length?`<section class="panel"><header><h2>Holes added</h2><span class="muted small mono">${holes.length} hole${holes.length>1?'s':''} · ${p.items.length} box${p.items.length>1?'es':''}</span></header>
       <div class="tablewrap"><table><thead><tr><th>Feature</th><th>Hole ID</th><th class="num">Boxes</th><th>Box numbers</th><th></th></tr></thead><tbody>
@@ -1281,7 +1360,7 @@ function racksNeeded(p){const d=rackDims(p);const r0=p.racks[0];const rows=d.val
     const t=Object.assign({},p,{racks});if(!computePlan(t).unplaced.length)return n;}return 500;}
 function syncWizardRacks(p){const d=rackDims(p);if(!d.valid){p.racks=[];deriveNames(p);return;}
   const n=p.setup.autoCount!==false?racksNeeded(p):clamp(int(p.setup.rackCount,1),1,500);p.setup.rackCount=n;
-  p.racks=genRacks(p,n);const R=clamp(int(p.setup.rowCount,1),1,n);p.setup.rowCount=R;autoLayout(p.racks,R,!!p.setup.backToBack);deriveNames(p);}
+  p.racks=genRacks(p,n);const R=clamp(int(p.setup.rowCount,1),1,n);p.setup.rowCount=R;autoLayout(p.racks,R,!!p.setup.backToBack,p.setup.orient,p.setup.numbering==='across');deriveNames(p);}
 function setBayCount(p,n){n=clamp(n|0,1,500);deriveNames(p);
   while(p.racks.length<n){const g=rowGroups(p);const b=makeRack(p);appendBayToRow(p,b,g[g.length-1]);p.racks.push(b);deriveNames(p);}
   while(p.racks.length>n){p.racks.pop();deriveNames(p);}
@@ -1316,6 +1395,7 @@ function racksStep(p){
           <option value="across" ${p.setup.numbering==='across'?'selected':''}>Alternating: across, then down</option></select>
           <span class="hint">${p.setup.numbering==='across'?'1 is back to back with 2, then 3 and 4…':'1, 2, 3… down one side, then carries on down the next'}</span></div></div>
       <label class="check" style="margin-top:10px"><input type="checkbox" id="wz_b2b" data-k="setup" data-f="backToBack" ${s.backToBack?'checked':''} ${d.valid?'':'disabled'}> Bays in each row are back to back (rows are 2 bays wide)</label>
+      <div class="field" style="max-width:420px;margin-top:10px"><label class="label" for="wz_orient">Row direction</label><select id="wz_orient" data-k="setup" data-f="orient" ${d.valid?'':'disabled'}><option value="" ${s.orient!=='h'?'selected':''}>Upright: bays run top to bottom</option><option value="h" ${s.orient==='h'?'selected':''}>Sideways: bays run left to right (half-height bays)</option></select><span class="hint">Use sideways for rack types that are installed the other way round. You can turn single rows on the Shed map later.</span></div>
       ${d.valid&&ranges.length?`<p class="small" style="margin-top:10px">${plural(ranges.length,'row')}: <span class="mono">${ranges.map(esc).join(' · ')}</span></p>`:''}
     </section>
     ${!s.defaultRows?`<div class="msg info">Enter slots per bay to work out how many bays you need.</div>`:
@@ -1405,9 +1485,9 @@ function applyLayout(p,Lay,opts){
   order.forEach(R=>{const inRow=cells.filter(c=>c.row===R.src);const maxB=Math.max(...inRow.map(c=>c.bay));const n=maxB-start+1;const list=[];
     const letter=cleanLetter(R.letter||R.src);const mode=R.style==='across'?'across':'down';
     for(let k=0;k<n;k++){const num=start+k;const b=makeRack(p);b.rows=Math.max(0,...inRow.filter(c=>c.bay===num).map(c=>c.slot))||Math.max(...inRow.map(c=>c.slot))||maxSlot;b.blocked=[];b._has=inRow.some(c=>c.bay===num);if(!b._has)addedBays++;b.letterFix=letter;b.numMode=mode;list.push(b);byKey.set(R.src+'|'+num,b);}
-    const cols=R.style==='single'||n<2?1:2;const len=Math.ceil(n/cols);
-    list.forEach((b,k)=>{let col,y;if(cols===1){col=0;y=k;}else if(R.style==='across'){col=k%2;y=Math.floor(k/2);}else{col=k>=len?1:0;y=col?k-len:k;}b.x=x+col*RW;b.y=2+y*RL;});
-    x+=cols*RW+AISLE;bays.push(...list);});
+    const cols=R.style==='single'||n<2?1:2;const horiz=R.orient==='h';
+    if(horiz){x+=1;placeRow(list,x,2,true,cols,R.style==='across');x+=Math.ceil(n/cols)*HW+AISLE;}
+    else{placeRow(list,x,2,false,cols,R.style==='across');x+=cols*RW+AISLE;}bays.push(...list);});
   const items=[];
   cells.forEach(c=>{const b=byKey.get(c.row+'|'+c.bay);if(!b)return;if(c.item){items.push(c.item);const tg=opts.lock?b.fixed:b.hold;const ex=tg[c.slot];tg[c.slot]=ex===undefined?c.item.id:[].concat(ex,c.item.id);}});
   bays.forEach(b=>{if(opts.lock&&b._has)b.locked=true;delete b._has;});
@@ -1428,14 +1508,15 @@ function arrangePanel(p,res){
   const sel=v=>STYLES.map(([k,l])=>`<option value="${k}" ${v===k?'selected':''}>${l}</option>`).join('');
   return `<div class="stack">
     <div class="row" style="align-items:center"><button class="ghost" data-act="imp-back">← Column matches</button><span class="pill held">Shed layout</span><span class="mono small">${esc(imp.fileName)}</span><span class="spacer"></span><button class="ghost" data-act="imp-cancel">Cancel</button></div>
-    <div><h3>Arrange the shed</h3><p class="muted small" style="max-width:70ch">Set each row’s letter, how its bays sit and the order from left to right, so the map matches the real shed. Rows can be different styles. The boxes fill in when you import.</p></div>
-    <div class="row" style="align-items:center"><label class="label" for="arr_all">Set every row to</label><select id="arr_all" data-k="arrall"><option value="">Choose a style…</option>${sel('')}</select></div>
+    <div><h3>Arrange the shed</h3><p class="muted small" style="max-width:70ch">Set each row’s letter, how its bays sit, which way it runs (sideways for rack types installed the other way round) and the order from left to right, so the map matches the real shed. Rows can be different styles. The boxes fill in when you import.</p></div>
+    <div class="row" style="align-items:center"><label class="label" for="arr_all">Set every row to</label><select id="arr_all" data-k="arrall"><option value="">Choose a style…</option>${sel('')}</select><select id="arr_allo" data-k="arrallo" aria-label="Set every row's direction"><option value="">Direction for every row…</option><option value="v">Upright ↕</option><option value="h">Sideways ↔</option></select></div>
     <div class="tablewrap"><table class="edit">
-      <thead><tr><th>Left to right</th><th>Row in sheet</th><th>Letter in planner</th><th>How the bays sit</th><th class="num">Bays</th><th class="num">Boxes</th></tr></thead>
+      <thead><tr><th>Left to right</th><th>Row in sheet</th><th>Letter in planner</th><th>Direction</th><th>How the bays sit</th><th class="num">Bays</th><th class="num">Boxes</th></tr></thead>
       <tbody>${arr.map((r,i)=>{const c=counts(r.src);return `<tr>
         <td style="padding-left:10px;white-space:nowrap"><span class="mono muted">${i+1}</span> <button class="icon ghost" data-act="arr-up" data-i="${i}" ${i===0?'disabled':''} aria-label="Move row ${esc(r.src)} left">←</button><button class="icon ghost" data-act="arr-down" data-i="${i}" ${i===arr.length-1?'disabled':''} aria-label="Move row ${esc(r.src)} right">→</button></td>
         <td class="mono" style="padding-left:10px">${esc(r.src)}</td>
         <td class="w-s"><input id="arr_l_${i}" data-k="arr" data-i="${i}" data-f="letter" value="${esc(r.letter)}" maxlength="3" style="text-transform:uppercase" aria-label="Letter for sheet row ${esc(r.src)}"></td>
+        <td><select id="arr_o_${i}" data-k="arr" data-i="${i}" data-f="orient" aria-label="Direction of row ${esc(r.src)}"><option value="" ${r.orient!=='h'?'selected':''}>Upright ↕</option><option value="h" ${r.orient==='h'?'selected':''}>Sideways ↔</option></select></td>
         <td><select id="arr_s_${i}" data-k="arr" data-i="${i}" data-f="style" aria-label="How the bays in row ${esc(r.src)} sit">${sel(r.style)}</select></td>
         <td class="num mono">${c.bays}</td><td class="num mono">${c.boxes}</td></tr>`;}).join('')}</tbody>
     </table></div>
@@ -1449,9 +1530,9 @@ function arrangePanel(p,res){
 }
 function layoutDrop(){return `<div class="dropzone" id="dropzone-layout" data-kind="layout">
     <strong>Drop a shed layout here</strong>
-    <span class="muted small" style="max-width:54ch">A spreadsheet with the row, bay and slot of every box, or one Location column like A1-3. Every box goes exactly where the sheet says and the bays are locked, so nothing moves.</span>
+    <span class="muted small" style="max-width:54ch">Excel (.xlsx, .xls) or CSV.</span>
+    <span class="muted small" style="max-width:54ch">Headings are detected automatically. Check the matches and add any columns that were missed before importing.</span>
     <button class="primary" data-act="pick-layout">Choose file…</button>
-    <span class="muted small">Depth “missing” marks a box that should be there but isn’t. Box “EMPTY” leaves the slot empty. Depth “Unknown” shows as “?”.</span>
   </div>`;}
 function layoutPanel(p){
   const imp=S.imp;const ncols=Math.max(0,...imp.rows.slice(0,50).map(r=>r.length));
@@ -1531,7 +1612,8 @@ function importPanel(p){
   const imp=S.imp;if(imp&&imp.kind==='layout')return layoutPanel(p);
   if(!imp)return `<div class="dropzone" id="dropzone" data-kind="holes">
     <strong>Drop a spreadsheet here</strong>
-    <span class="muted small" style="max-width:52ch">Excel (.xlsx, .xls) or CSV. Headings like Feature ID, Hole ID, Box, Of, From and To are matched automatically. You can change any match before importing.</span>
+    <span class="muted small" style="max-width:52ch">Excel (.xlsx, .xls) or CSV.</span>
+    <span class="muted small" style="max-width:52ch">Headings are detected automatically. Check the matches and add any columns that were missed before importing.</span>
     <button class="primary" data-act="pick-sheet">Choose file…</button>
     ${window.XLSX?'':'<span class="small" style="color:var(--warn)">The Excel reader needs an internet connection the first time. CSV files work offline.</span>'}
   </div>`;
@@ -1845,7 +1927,9 @@ document.addEventListener('click',e=>{
   switch(act){
     case 'rack-add':{const before=p.racks.length;setBayCount(p,before+1);touch(p);render();toast(`Added bay ${p.racks[p.racks.length-1].name}`);break;}
     case 'rack-del':if(p.racks.length>1){const before=nameSnapshot(p);p.racks=p.racks.filter(r=>r.id!==id);markUpdated(p,before);p.setup.rackCount=p.racks.length;touch(p);render();}break;
-    case 'rebuild-rows':{const R=clamp(int($('#st_rowsct').value,1),1,50);const b2b=$('#st_b2b').checked;p.setup.rowCount=R;p.setup.backToBack=b2b;autoLayout(p.racks,R,b2b);S.updated={};deriveNames(p);touch(p);render();toast(`Shed map rebuilt with ${plural(p._rows.length,'row')}`);break;}
+    case 'rebuild-rows':{const R=clamp(int($('#st_rowsct').value,1),1,50);const b2b=$('#st_b2b').checked;const orient=$('#st_orient').value;p.setup.rowCount=R;p.setup.backToBack=b2b;p.setup.orient=orient;autoLayout(p.racks,R,b2b,orient,p.setup.numbering==='across');S.updated={};deriveNames(p);touch(p);render();toast(`Shed map rebuilt with ${plural(p._rows.length,'row')}`);break;}
+    case 'order-reset':delete p.manualOrder;touch(p);render();toast('Back to the automatic order');break;
+    case 'hs-step':{const w=document.getElementById(b.dataset.for);if(w)w.scrollBy({left:(+b.dataset.d)*Math.max(200,w.clientWidth*0.6),behavior:'smooth'});break;}
     case 'item-del':p.items=p.items.filter(it=>it.id!==id);touch(p);render();break;
     case 'clear':S.confirm='clear';render();break;
     case 'clear-yes':p.items=[];S.confirm=null;touch(p);render();toast('All boxes removed');break;
@@ -1875,13 +1959,18 @@ document.addEventListener('click',e=>{
     case 'row-add-rack':{const g=groupOfBay(p,id);if(g){const r=makeRack(p);appendBayToRow(p,r,g);p.racks.push(r);deriveNames(p);p.setup.rackCount=p.racks.length;touch(p);render();}break;}
     case 'row-del-rack':{const g=groupOfBay(p,id);if(g&&p.racks.length>1){const last=g.bays[g.bays.length-1];p.racks=p.racks.filter(r=>r.id!==last.id);deriveNames(p);if(!groupOfBay(p,S.sel&&S.sel.id))S.sel=null;p.setup.rackCount=p.racks.length;touch(p);render();}break;}
     case 'map-add-row':{const gs=p._rows||deriveNames(p);const last=gs[gs.length-1];const n=last?last.bays.length:4;const cols=last?new Set(last.bays.map(b=>b.x)).size:1;
-      const x=last?Math.max(...gs.map(g=>g.maxX))+AISLE:2;const list=[];for(let i=0;i<n;i++){const r=makeRack(p);list.push(r);}
-      const len=Math.ceil(n/cols);list.forEach((r,k)=>{const col=cols===2&&k>=len?1:0;r.x=x+col*RW;r.y=2+(col?k-len:k)*RL;});p.racks.push(...list);deriveNames(p);
+      const horiz=!!(last&&last.horiz);const lines=last?new Set(last.bays.map(b=>horiz?b.y:b.x)).size:1;
+      const x=(last?Math.max(...gs.map(g=>g.maxX))+AISLE:2)+(horiz?1:0);const list=[];for(let i=0;i<n;i++){const r=makeRack(p);list.push(r);}
+      placeRow(list,x,2,horiz,Math.min(2,lines),(last&&last.mode||p.setup.numbering)==='across');p.racks.push(...list);deriveNames(p);
       p.setup.rackCount=p.racks.length;S.sel={type:'row',id:list[0].id};touch(p);render();toast(`Added row ${list[0].rowLetter} with ${plural(n,'bay')}`);break;}
     case 'map-add-label':{const B=mapBounds(p);const l={id:uid(),x:1,y:Math.max(1,B.h-2),text:'Door'};p.map.labels.push(l);S.sel={type:'label',id:l.id};S.focusAfter='lb_text';touch(p);render();break;}
     case 'label-color':{const l=p.map.labels.find(x=>x.id===id);if(l){l.color=b.dataset.color||'';touch(p);render();}break;}
     case 'label-del':p.map.labels=p.map.labels.filter(l=>l.id!==id);S.sel=null;touch(p);render();break;
-    case 'map-auto':{const gs=rowGroups(p);let x=2;gs.forEach(g=>{const dx=x-g.minX,dy=2-g.minY;g.bays.forEach(b=>{b.x+=dx;b.y+=dy;});x+=(g.maxX-g.minX)+AISLE;});deriveNames(p);touch(p);render();toast('Rows lined up');break;}
+    case 'row-orient':{const g=groupOfBay(p,id);if(g){const before=nameSnapshot(p);const res=flipRow(p,g);
+      if(res==='fail'){toast('There isn’t room to turn this row here. Move it to open space first.');break;}
+      markUpdated(p,before);S.sel={type:'row',id};touch(p);render();toast(`Row ${g.letter} is now ${g.horiz?'upright':'sideways'}${res==='moved'?' and moved below the other rows to make room':''}.`);}break;}
+    case 'map-zoom':{const z=b.dataset.z;if(z==='fit')mapFit();else setMapScale(mapScale()*(z==='in'?1.25:0.8));break;}
+    case 'map-auto':{const gs=rowGroups(p);let x=2;gs.forEach(g=>{const lx=g.horiz?x+1:x;const dx=lx-g.minX,dy=2-g.minY;g.bays.forEach(b=>{b.x+=dx;b.y+=dy;});x=lx+(g.maxX-g.minX)+AISLE;});deriveNames(p);touch(p);render();toast('Rows lined up');break;}
     case 'clear-updated':S.updated={};render();break;
   }
 });
@@ -1948,6 +2037,7 @@ document.addEventListener('change',e=>{
     if(f==='rows')r.rows=clamp(int(val,0),0,500);else if(f==='blocked'){r.blocked=parseRows(val);t.value=fmtRows(r.blocked);}
     touch(p);S.dirty=true;refreshSummary();return;}
   if(k==='arr'&&S.imp&&S.imp.arr){const r=S.imp.arr[+t.dataset.i];if(r){r[f]=f==='letter'?String(val).toUpperCase().replace(/[^A-Z]/g,'').slice(0,3):val;render();if(f==='letter'){const el=document.getElementById(t.id);}}return;}
+  if(k==='arrallo'&&S.imp&&S.imp.arr){if(val)S.imp.arr.forEach(r=>r.orient=val==='h'?'h':'');render();return;}
   if(k==='arrall'&&S.imp&&S.imp.arr){if(val)S.imp.arr.forEach(r=>r.style=val);render();return;}
   if(k==='rowcfg'){const g=groupOfBay(p,t.dataset.id);if(!g)return;const before=nameSnapshot(p);
     if(f==='letter'){const L=String(val).toUpperCase().replace(/[^A-Z]/g,'').slice(0,3);
@@ -1986,22 +2076,44 @@ document.addEventListener('focusout',e=>{
 });
 document.addEventListener('toggle',e=>{const t=e.target;if(t.id==='manualDetails')S.manualOpen=t.open;if(t.dataset&&t.dataset.sec)S.open[t.dataset.sec]=t.open;if(t.dataset&&t.dataset.pid)S.homeOpen[t.dataset.pid]=t.open;},true);
 
+/* shed map zoom */
+function mapScale(){return clamp(+S.mapScale||1,0.15,3);}
+function setMapScale(v,cx,cy){const mc=$('#mapcanvas'),svg=$('#shedmap');const old=mapScale();const nv=clamp(v,0.15,3);S.mapScale=nv;if(!mc||!svg)return;
+  const r=mc.getBoundingClientRect();const mx=cx===undefined?mc.clientWidth/2:cx-r.left,my=cy===undefined?mc.clientHeight/2:cy-r.top;
+  const px=(mc.scrollLeft+mx)/old,py=(mc.scrollTop+my)/old;
+  svg.setAttribute('width',Math.round(+svg.dataset.w*nv));svg.setAttribute('height',Math.round(+svg.dataset.h*nv));
+  mc.scrollLeft=px*nv-mx;mc.scrollTop=py*nv-my;}
+function mapFit(){const mc=$('#mapcanvas'),svg=$('#shedmap');if(!mc||!svg)return;const top=mc.getBoundingClientRect().top;const vis=Math.max(200,Math.min(mc.clientHeight,innerHeight-Math.max(0,top)-12));const v=Math.min((mc.clientWidth-4)/+svg.dataset.w,(vis-4)/+svg.dataset.h);setMapScale(v);mc.scrollLeft=0;mc.scrollTop=0;}
+document.addEventListener('wheel',e=>{const mc=e.target.closest&&e.target.closest('#mapcanvas');if(!mc||MD)return;e.preventDefault();
+  const d=e.deltaMode===1?e.deltaY*16:e.deltaMode===2?e.deltaY*400:e.deltaY;setMapScale(mapScale()*Math.exp(-clamp(d,-200,200)*0.0016),e.clientX,e.clientY);},{passive:false});
+
 /* shed map dragging */
 let MD=null;
 document.addEventListener('pointerdown',e=>{
-  const svg=e.target.closest&&e.target.closest('#shedmap');if(!svg||e.button>0)return;
-  const rk=e.target.closest('[data-rack]'),rh=e.target.closest('[data-rowh]'),lb=e.target.closest('[data-label]');
+  const mc=e.target.closest&&e.target.closest('#mapcanvas');if(!mc||e.button>1)return;
+  if(e.clientX-mc.getBoundingClientRect().left>mc.clientWidth||e.clientY-mc.getBoundingClientRect().top>mc.clientHeight)return;/* scrollbars */
+  const svg=mc.querySelector('#shedmap');
+  const lr=e.button===0&&e.target.closest('[data-lresize]');
+  const rk=e.button===0&&e.target.closest('[data-rack]'),rh=e.button===0&&e.target.closest('[data-rowh]'),lb=e.button===0&&e.target.closest('[data-label]');
   let type,id,el;
-  if(rk){type='rack';id=rk.dataset.rack;el=rk;}else if(rh){type='row';id=rh.dataset.rowh;el=svg.querySelector(`[data-rowg="${id}"]`);}else if(lb){type='label';id=lb.dataset.label;el=lb;}
-  else{if(S.sel){S.sel=null;render();}return;}
+  if(lr){type='lresize';id=lr.dataset.lresize;el=lr.closest('[data-label]');}
+  else if(rk){type='rack';id=rk.dataset.rack;el=rk;}else if(rh){type='row';id=rh.dataset.rowh;el=svg.querySelector(`[data-rowg="${id}"]`);}else if(lb){type='label';id=lb.dataset.label;el=lb;}
+  else{e.preventDefault();MD={type:'pan',mc,sx:e.clientX,sy:e.clientY,sl:mc.scrollLeft,st:mc.scrollTop,moved:false,pid:e.pointerId};try{mc.setPointerCapture(e.pointerId);}catch(_){}return;}
   e.preventDefault();MD={type,id,el,svg,sx:e.clientX,sy:e.clientY,moved:false,target:null,pid:e.pointerId,ro:isReadOnly()};
   if(!MD.ro)try{svg.setPointerCapture(e.pointerId);}catch(_){}
 });
 document.addEventListener('pointermove',e=>{
-  if(!MD||e.pointerId!==MD.pid||MD.ro)return;const dx=e.clientX-MD.sx,dy=e.clientY-MD.sy;
+  if(!MD||e.pointerId!==MD.pid)return;const dx=e.clientX-MD.sx,dy=e.clientY-MD.sy;
+  if(MD.type==='pan'){if(!MD.moved){if(Math.hypot(dx,dy)<4)return;MD.moved=true;MD.mc.classList.add('panning');}MD.mc.scrollLeft=MD.sl-dx;MD.mc.scrollTop=MD.st-dy;return;}
+  if(MD.ro)return;const sc=mapScale(),C=MAPC;
+  if(MD.type==='lresize'){MD.moved=true;const l=cur().map.labels.find(x=>x.id===MD.id);if(!l)return;
+    const w=Math.max(1,Math.round(labelW(l)+dx/sc/C)),h=Math.max(1,Math.round((+l.h||1)+dy/sc/C));MD.nw=w;MD.nh=h;
+    const rc=MD.el.querySelector('rect'),tx=MD.el.querySelector('text');rc.setAttribute('width',w*C-2);rc.setAttribute('height',h*C-4);
+    tx.setAttribute('x',l.x*C+w*C/2);tx.setAttribute('y',l.y*C+h*C/2+(+tx.getAttribute('font-size'))*0.36);
+    const hd=MD.el.querySelector('[data-lresize]');const hz=+hd.getAttribute('width');hd.setAttribute('x',l.x*C+w*C-hz);hd.setAttribute('y',l.y*C+h*C-hz-1);return;}
   if(!MD.moved){if(Math.hypot(dx,dy)<5)return;MD.moved=true;MD.el.classList.add('dragging');MD.el.style.pointerEvents='none';MD.svg.lastElementChild.appendChild(MD.el);}
-  const C=S.zoom;const free=MD.type==='rack';
-  const tx=free?dx:Math.round(dx/C)*C,ty=free?dy:Math.round(dy/C)*C;
+  const free=MD.type==='rack';
+  const tx=free?dx/sc:Math.round(dx/sc/C)*C,ty=free?dy/sc:Math.round(dy/sc/C)*C;
   MD.el.setAttribute('transform',`translate(${tx} ${ty})`);
   if(MD.type==='rack'){const t=document.elementFromPoint(e.clientX,e.clientY);const tg=t&&t.closest&&t.closest('#shedmap [data-rack]');
     MD.svg.querySelectorAll('.droptarget').forEach(x=>x.classList.remove('droptarget'));
@@ -2009,16 +2121,18 @@ document.addEventListener('pointermove',e=>{
 });
 function endDrag(e,cancel){
   if(!MD||(e&&e.pointerId!==MD.pid))return;const d=MD;MD=null;const p=cur();
+  if(d.type==='pan'){d.mc.classList.remove('panning');if(!d.moved&&!cancel&&S.sel){S.sel=null;render();}return;}
+  if(d.type==='lresize'){const l=p.map.labels.find(x=>x.id===d.id);if(l&&d.nw&&!cancel){l.w=clamp(d.nw,1,200);l.h=clamp(d.nh,1,200);touch(p);}render();return;}
   if(!d.moved||d.ro){if(!cancel){S.sel={type:d.type,id:d.type==='row'?d.id:d.id};render();}return;}
   if(cancel){render();return;}
-  const C=S.zoom,fdx=(e.clientX-d.sx)/C,fdy=(e.clientY-d.sy)/C;const before=nameSnapshot(p);let msg='';
+  const C=MAPC*mapScale(),fdx=(e.clientX-d.sx)/C,fdy=(e.clientY-d.sy)/C;const before=nameSnapshot(p);let msg='';
   if(d.type==='rack'){const bay=p.racks.find(r=>r.id===d.id);
     if(d.target){swapRacks(p,d.id,d.target);msg='swap';}
     else if(bay){const spot=magnet(p,bay,bay.x+fdx,bay.y+fdy);const ox=bay.x,oy=bay.y;bay.x=Math.max(0,spot.x);bay.y=Math.max(1,spot.y);
       if(p.racks.some(o=>o.id!==bay.id&&overlap(o,bay))){bay.x=ox;bay.y=oy;msg='overlap';}else msg='moved';}
     S.sel={type:'rack',id:d.id};}
   else if(d.type==='row'){const g=groupOfBay(p,d.id);if(g){const dx=Math.round(fdx),dy=Math.round(fdy);const ids=new Set(g.bays.map(b=>b.id));
-      const ok=g.bays.every(b=>b.x+dx>=0&&b.y+dy>=1&&!p.racks.some(o=>!ids.has(o.id)&&overlap(o,{x:b.x+dx,y:b.y+dy})));
+      const ok=g.bays.every(b=>b.x+dx>=0&&b.y+dy>=1&&!p.racks.some(o=>!ids.has(o.id)&&overlap(o,{x:b.x+dx,y:b.y+dy,orient:b.orient})));
       if(ok)g.bays.forEach(b=>{b.x+=dx;b.y+=dy;});else msg='overlap';}S.sel={type:'row',id:d.id};}
   else if(d.type==='label'){const l=p.map.labels.find(x=>x.id===d.id);if(l){l.x=Math.max(0,l.x+Math.round(fdx));l.y=Math.max(0,l.y+Math.round(fdy));}S.sel={type:'label',id:d.id};}
   markUpdated(p,before);touch(p);render();
