@@ -1817,8 +1817,10 @@ function templateRows(p,P){
       if(key==='box')return it?outVal(it,'box'):'';if(key==='of')return it?outVal(it,'of'):'';
       if(col==='Y')return [cv('Y'),note].filter(Boolean).join('; ');
       return cv(col);});};
-  P.racks.forEach(R=>{if(!R.cells.some(c=>c.item))return;const r=R.rack;const L=r.rowLetter||'';const bay=r.name.slice(L.length);
-    R.cells.forEach(c=>{if(c.blocked)return;if(!c.item){rows.push(one(L,bay,c.slot,null,''));return;}slotBoxes(c).forEach(it=>rows.push(one(L,bay,c.slot,it,'')));});});
+  /* every bay and every slot, in shed order, so empty bays and blocked slots keep their place */
+  P.racks.forEach(R=>{const r=R.rack;const L=r.rowLetter||'';const bay=r.name.slice(L.length);
+    if(!R.cells.length){rows.push(one(L,bay,'',null,'Bay has no slots'));return;}
+    R.cells.forEach(c=>{if(c.blocked){rows.push(one(L,bay,c.slot,null,'Blocked slot'));return;}if(!c.item){rows.push(one(L,bay,c.slot,null,''));return;}slotBoxes(c).forEach(it=>rows.push(one(L,bay,c.slot,it,'')));});});
   P.unplaced.forEach(it=>rows.push(one('','','',it,'Not placed: no space in the plan')));
   return rows;}
 function exportContext(){const pr=projRec(),m=moveRec();return{title:[pr.name,pr.site].filter(Boolean).join(' – '),detail:`Exported from Core Rack Planner on ${new Date().toLocaleDateString()}: ${m?`core move “${m.name}”`:'saved shed layout'}`,file:safeName([pr.name,pr.site,m&&m.name].filter(Boolean).join(' - '))};}
