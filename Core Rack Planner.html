@@ -227,7 +227,10 @@ footer.foot{padding-block:28px;color:var(--muted);font-size:.8rem}
 .mapcanvas.panning{cursor:grabbing}
 .zoombar{display:flex;gap:4px;align-items:center;height:36px}.zoombar #mp_zpct{min-width:44px;text-align:center}
 #shedmap{display:block;user-select:none;-webkit-user-select:none}
-#shedmap [data-rack],#shedmap [data-rowh],#shedmap [data-label]{touch-action:none}
+#shedmap [data-rack],#shedmap [data-rowh],#shedmap [data-label],#shedmap .rstretch{touch-action:none}
+#shedmap .rstretch{fill:var(--accent);fill-opacity:0;cursor:ew-resize}
+#shedmap .rstretch[data-dir="y"]{cursor:ns-resize}
+#shedmap .rstretch:hover,#shedmap .rstretch.active{fill-opacity:.45}
 #shedmap [data-rack].droptarget > rect:first-child{stroke:var(--accent);stroke-width:4}
 #shedmap .dragging{opacity:.85}
 .side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 116px);display:flex;flex-direction:column;gap:12px}
@@ -357,7 +360,8 @@ tr.hit td{background:var(--accent-soft)}
 'use strict';
 const KEY='coreRackPlanner.v1';
 const RW=3,RL=4,HW=4,HL=2,AISLE=2,SNAP=1.6,MAPC=26;
-const isH=b=>!!b&&b.orient==='h';const dw=b=>isH(b)?HW:RW,dh=b=>isH(b)?HL:RL;
+const isH=b=>!!b&&b.orient==='h';const baseW=b=>isH(b)?HW:RW,baseH=b=>isH(b)?HL:RL;const dw=b=>+b.sw>0?+b.sw:baseW(b),dh=b=>+b.sh>0?+b.sh:baseH(b);
+const EPS=1e-3,near=(a,b)=>Math.abs(a-b)<EPS,r4=v=>Math.round(v*1e4)/1e4;
 /* order of bays inside a row: sequential runs along a line first; sideways rows swap the axes */
 const bayCmp=(horiz,across)=>((horiz?!across:across)?(a,b)=>a.y-b.y||a.x-b.x:(a,b)=>a.x-b.x||a.y-b.y);
 const $=(s,r=document)=>r.querySelector(s);
@@ -542,7 +546,7 @@ function migrateRecord(r){
 function normalisePlan(p){const d=defaultsPlan();p.setup=Object.assign(d.setup,p.setup||{});p.options=Object.assign(d.options,p.options||{});
   const hadXY=(p.racks||[]).every(r=>typeof r.x==='number'&&typeof r.y==='number');
   p.racks=(p.racks||[]).map(r=>({id:r.id||uid(),name:r.name||'',rows:+r.rows||0,blocked:Array.isArray(r.blocked)?r.blocked:parseRows(r.blocked),x:+r.x||0,y:+r.y||0,
-    locked:!!r.locked,fixed:r.fixed||r.lock||{},slotLocks:r.slotLocks||{},hold:r.hold||{},...(r.letterFix?{letterFix:r.letterFix}:{}),...(r.numMode?{numMode:r.numMode}:{}),...(r.orient==='h'?{orient:'h'}:{})}));
+    locked:!!r.locked,fixed:r.fixed||r.lock||{},slotLocks:r.slotLocks||{},hold:r.hold||{},...(r.letterFix?{letterFix:r.letterFix}:{}),...(r.numMode?{numMode:r.numMode}:{}),...(r.orient==='h'?{orient:'h'}:{}),...(+r.sw>0?{sw:+r.sw}:{}),...(+r.sh>0?{sh:+r.sh}:{})}));
   if(!hadXY||p.layout){ // old row-based layout → bay positions
     const rows=(p.layout&&Array.isArray(p.layout.rows))?p.layout.rows:[{x:2,y:2,width:1,rackIds:p.racks.map(r=>r.id)}];const byId=new Map(p.racks.map(r=>[r.id,r]));
     rows.forEach(row=>{const n=row.rackIds.length,cols=row.width===2?2:1,len=Math.max(1,Math.ceil(n/cols));row.rackIds.forEach((id,k)=>{const r=byId.get(id);if(!r)return;const col=cols===2&&k>=len?1:0;r.x=row.x+col*RW;r.y=row.y+(col?k-len:k)*RL;});});
@@ -577,8 +581,8 @@ const fname=f=>f===''?'(no feature)':f;
 const cleanLetter=L=>(String(L||'A').toUpperCase().replace(/[^A-Z]/g,''))||'A';
 
 /* ---------- layout: bays placed on a grid; touching bays form a row ---------- */
-const touching=(a,b)=>isH(a)===isH(b)&&(((a.x+dw(a)===b.x||b.x+dw(b)===a.x)&&a.y<b.y+dh(b)&&b.y<a.y+dh(a))||((a.y+dh(a)===b.y||b.y+dh(b)===a.y)&&a.x<b.x+dw(b)&&b.x<a.x+dw(a)));
-const overlap=(a,b)=>a.x<b.x+dw(b)&&b.x<a.x+dw(a)&&a.y<b.y+dh(b)&&b.y<a.y+dh(a);
+const touching=(a,b)=>isH(a)===isH(b)&&((((near(a.x+dw(a),b.x)||near(b.x+dw(b),a.x))&&a.y<b.y+dh(b)-EPS&&b.y<a.y+dh(a)-EPS))||((near(a.y+dh(a),b.y)||near(b.y+dh(b),a.y))&&a.x<b.x+dw(b)-EPS&&b.x<a.x+dw(a)-EPS));
+const overlap=(a,b)=>a.x<b.x+dw(b)-EPS&&b.x<a.x+dw(a)-EPS&&a.y<b.y+dh(b)-EPS&&b.y<a.y+dh(a)-EPS;
 function rowGroups(p){
   const bays=p.racks;const parent=bays.map((_,i)=>i);const find=i=>parent[i]===i?i:(parent[i]=find(parent[i]));
   for(let i=0;i<bays.length;i++)for(let j=i+1;j<bays.length;j++)if(touching(bays[i],bays[j])){const a=find(i),b=find(j);if(a!==b)parent[a]=b;}
@@ -602,7 +606,7 @@ function deriveNames(p){
 const letterNum=l=>{let n=0;for(const ch of String(l))n=n*26+(ch.charCodeAt(0)-64);return n;};
 /* where bay k of n sits in a row: line (0 or 1 when back to back) and position along the line */
 function rowSpot(k,n,lines,across){if(lines<2)return{line:0,pos:k};if(across)return{line:k%2,pos:Math.floor(k/2)};const len=Math.ceil(n/2);return k>=len?{line:1,pos:k-len}:{line:0,pos:k};}
-function placeRow(list,ax,ay,horiz,lines,across){list.forEach((b,k)=>{const q=rowSpot(k,list.length,lines,across);if(horiz){b.orient='h';b.x=ax+q.pos*HW;b.y=ay+q.line*HL;}else{delete b.orient;b.x=ax+q.line*RW;b.y=ay+q.pos*RL;}});}
+function placeRow(list,ax,ay,horiz,lines,across){list.forEach((b,k)=>{delete b.sw;delete b.sh;const q=rowSpot(k,list.length,lines,across);if(horiz){b.orient='h';b.x=ax+q.pos*HW;b.y=ay+q.line*HL;}else{delete b.orient;b.x=ax+q.line*RW;b.y=ay+q.pos*RL;}});}
 function autoLayout(bays,R,b2b,orient,across){
   R=clamp(R|0,1,Math.max(1,bays.length));const per=Math.ceil(bays.length/R)||1;const horiz=orient==='h';let x=2,y=2;
   for(let i=0;i<R;i++){const list=bays.slice(i*per,(i+1)*per);if(!list.length)break;const cols=b2b&&list.length>1?2:1;
@@ -611,18 +615,24 @@ function autoLayout(bays,R,b2b,orient,across){
 function freeAt(p,x,y,except,orient){const t={x,y,orient};return x>=0&&y>=1&&!p.racks.some(o=>(!except||!except.has(o.id))&&overlap(t,o));}
 function appendBayToRow(p,bay,group){
   if(!group){const gs=rowGroups(p);const maxX=gs.length?Math.max(...gs.map(g=>g.maxX)):0;bay.x=gs.length?maxX+AISLE:2;bay.y=2;return;}
+  const b0=group.bays[0];delete bay.sw;delete bay.sh;if(b0.sw)bay.sw=b0.sw;if(b0.sh)bay.sh=b0.sh;
+  const free=(x,y)=>{const t={x,y,orient:group.horiz?'h':undefined,sw:bay.sw,sh:bay.sh};return x>=0&&y>=1&&!p.racks.some(o=>overlap(t,o));};
   if(group.horiz){bay.orient='h';const lines=new Map();group.bays.forEach(b=>{if(!lines.has(b.y))lines.set(b.y,[]);lines.get(b.y).push(b);});
-    const ln=[...lines.entries()].sort((a,b)=>a[1].length-b[1].length||a[0]-b[0])[0];
-    let x=Math.max(...ln[1].map(b=>b.x))+HW;while(!freeAt(p,x,ln[0],null,'h')&&x<2000)x+=HW;bay.x=x;bay.y=ln[0];return;}
+    const ln=[...lines.entries()].sort((a,b)=>a[1].length-b[1].length||a[0]-b[0])[0];const st=dw(b0);
+    let x=r4(Math.max(...ln[1].map(b=>b.x))+st);while(!free(x,ln[0])&&x<2000)x=r4(x+st);bay.x=x;bay.y=ln[0];return;}
   delete bay.orient;
   const cols=new Map();group.bays.forEach(b=>{if(!cols.has(b.x))cols.set(b.x,[]);cols.get(b.x).push(b);});
-  const col=[...cols.entries()].sort((a,b)=>a[1].length-b[1].length||a[0]-b[0])[0];
-  let y=Math.max(...col[1].map(b=>b.y))+RL;while(!freeAt(p,col[0],y)&&y<2000)y+=RL;bay.x=col[0];bay.y=y;}
+  const col=[...cols.entries()].sort((a,b)=>a[1].length-b[1].length||a[0]-b[0])[0];const st=dh(b0);
+  let y=r4(Math.max(...col[1].map(b=>b.y))+st);while(!free(col[0],y)&&y<2000)y=r4(y+st);bay.x=col[0];bay.y=y;}
 function swapRacks(p,a,b){const A=p.racks.find(r=>r.id===a),B=p.racks.find(r=>r.id===b);if(!A||!B)return;[A.x,B.x]=[B.x,A.x];[A.y,B.y]=[B.y,A.y];}
 function magnet(p,bay,fx,fy){
   let best=null,bd=SNAP;
   p.racks.forEach(o=>{if(o.id===bay.id||isH(o)!==isH(bay))return;[[o.x,o.y+dh(o)],[o.x,o.y-dh(bay)],[o.x+dw(o),o.y],[o.x-dw(bay),o.y]].forEach(([cx,cy])=>{const d=Math.hypot(cx-fx,cy-fy);if(d<bd){bd=d;best={x:cx,y:cy};}});});
   return best||{x:Math.round(fx),y:Math.round(fy)};}
+/* stretch every bay in a row by the same factor along one axis; the row's top-left corner stays put */
+function stretchRow(g,dir,f){const m=dir==='x'?g.minX:g.minY;g.bays.forEach(b=>{const sn=v=>near(v,Math.round(v))?Math.round(v):r4(v);if(dir==='x'){const w=dw(b);b.x=sn(m+(b.x-m)*f);b.sw=sn(w*f);}else{const h=dh(b);b.y=sn(m+(b.y-m)*f);b.sh=sn(h*f);}
+  if(near(b.sw||0,baseW(b)))delete b.sw;if(near(b.sh||0,baseH(b)))delete b.sh;});}
+function rowStretched(g){return g.bays.some(b=>b.sw||b.sh);}
 function flipRow(p,g){
   const horiz=!g.horiz;const across=(g.mode||p.setup.numbering)==='across';
   const lines=Math.min(2,new Set(g.bays.map(b=>g.horiz?b.y:b.x)).size);const ids=new Set(g.bays.map(b=>b.id));
@@ -1084,10 +1094,10 @@ function mapSVG(p,P,o){
   P.rowList.forEach(G=>{const g=G.row;const rsel=sel&&sel.type==='row'&&G.racks.some(R=>R.rack.id===sel.id);
     s+=`<g data-rowg="${g.key}">`;const hfill=rsel?pl.accent:pl.ink,hatt=o.interactive?`data-rowh="${g.key}" style="cursor:move"`:'';
     if(g.horiz){/* sideways row: header runs down its left-hand end */
-      const leftX=Math.min(...g.bays.map(b=>b.x));const topY=Math.min(...g.bays.filter(b=>b.x===leftX).map(b=>b.y));const botY=Math.max(...g.bays.filter(b=>b.x===leftX).map(b=>b.y+HL));
+      const leftX=Math.min(...g.bays.map(b=>b.x));const topY=Math.min(...g.bays.filter(b=>near(b.x,leftX)).map(b=>b.y));const botY=Math.max(...g.bays.filter(b=>near(b.x,leftX)).map(b=>b.y+dh(b)));
       const hx=(leftX-1)*C,hy=topY*C,hh=(botY-topY)*C;const long=!compact&&hh>=60;const tx=hx+C/2,ty=hy+hh/2;
       s+=`<g ${hatt}><rect x="${hx+3}" y="${hy+1}" width="${C-6}" height="${hh-2}" rx="4" fill="${hfill}"/><text x="${tx}" y="${ty}" ${long?`transform="rotate(-90 ${tx} ${ty})"`:''} text-anchor="middle" dominant-baseline="central" font-size="${compact?Math.max(9,C*0.6):12}" font-weight="700" fill="${pl.surface}">${long?`Row ${esc(g.letter)}`:esc(g.letter)}</text></g>`;}
-    else{const topY=Math.min(...g.bays.filter(b=>b.x===g.minX).map(b=>b.y));const hx=g.minX*C,hy=(topY-1)*C,hw=(g.maxX-g.minX)*C;
+    else{const topY=Math.min(...g.bays.filter(b=>near(b.x,g.minX)).map(b=>b.y));const hx=g.minX*C,hy=(topY-1)*C,hw=(g.maxX-g.minX)*C;
       s+=`<g ${hatt}><rect x="${hx+1}" y="${hy+3}" width="${hw-2}" height="${C-6}" rx="4" fill="${hfill}"/><text x="${hx+hw/2}" y="${hy+C/2+4}" text-anchor="middle" font-size="${compact?Math.max(9,C*0.6):12}" font-weight="700" fill="${pl.surface}">${compact?esc(g.letter):`Row ${esc(g.letter)}`}</text></g>`;}
     G.racks.forEach(R=>{const r=R.rack,x=r.x*C,y=r.y*C,w=dw(r)*C,h=dh(r)*C,hz=isH(r);
       const usable=R.cells.filter(c=>!c.blocked).length;const upd=!!o.interactive&&S.updated[r.id]!==undefined;const isSel=sel&&sel.type==='rack'&&sel.id===r.id;
@@ -1108,6 +1118,8 @@ function mapSVG(p,P,o){
       s+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="1.5" fill="${pl.grid}"/>`;
       let cx=bx;featBreakdown(R).forEach(([f,n])=>{const ww=usable?bw*n/usable:0;s+=`<rect x="${cx}" y="${by}" width="${ww}" height="${bh}" fill="${fc(f)}"/>`;cx+=ww;});
       s+=`</g>`;});
+    if(o.interactive&&!isReadOnly()){const x0=g.minX*C,y0=g.minY*C,x1=g.maxX*C,y1=g.maxY*C;
+      s+=`<rect class="rstretch" data-rstretch="${g.key}" data-dir="x" x="${x1-5}" y="${y0}" width="10" height="${y1-y0}"><title>Drag to stretch the bays in Row ${esc(g.letter)} sideways</title></rect><rect class="rstretch" data-rstretch="${g.key}" data-dir="y" x="${x0}" y="${y1-5}" width="${x1-x0}" height="10"><title>Drag to stretch the bays in Row ${esc(g.letter)} up or down</title></rect>`;}
     s+=`</g>`;});
   (p.map.labels||[]).forEach(l=>{const lsel=sel&&sel.type==='label'&&sel.id===l.id;const lw=labelW(l)*C,lh=(+l.h||1)*C,fill=l.color||pl.surface,tc=l.color?inkOn(l.color):pl.ink;const fs=Math.max(9,Math.min(lh*0.5,C*0.46*(+l.size||1)));
     s+=`<g data-label="${l.id}" ${o.interactive?'style="cursor:move"':''}><rect x="${l.x*C+1}" y="${l.y*C+2}" width="${lw-2}" height="${lh-4}" rx="4" fill="${fill}" stroke="${lsel?pl.accent:l.color?'none':pl.frame}" stroke-width="${lsel?2.5:1}" stroke-dasharray="${lsel||l.color?'':'4 3'}"/><text x="${l.x*C+lw/2}" y="${l.y*C+lh/2+fs*0.36}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${tc}">${esc(l.text)}</text>${lsel&&!isReadOnly()?`<rect data-lresize="${l.id}" x="${l.x*C+lw-hs}" y="${l.y*C+lh-hs-1}" width="${hs}" height="${hs}" rx="2" fill="${pl.accent}" stroke="${pl.surface}" stroke-width="1.5" style="cursor:nwse-resize"><title>Drag to resize</title></rect>`:''}</g>`;});
@@ -1134,8 +1146,9 @@ function mapSide(p,P,ro){
         <div class="field"><label class="label" for="rw_l">Row letter</label><input id="rw_l" data-k="rowcfg" data-id="${g.key}" data-f="letter" value="${esc(g.ov||'')}" placeholder="Auto (${esc(g.letter)})" maxlength="3" style="text-transform:uppercase"></div>
         <div class="field"><label class="label" for="rw_n">Numbering</label><select id="rw_n" data-k="rowcfg" data-id="${g.key}" data-f="numMode"><option value="" ${!g.mode?'selected':''}>Same as the shed</option><option value="down" ${g.mode==='down'?'selected':''}>Sequential</option><option value="across" ${g.mode==='across'?'selected':''}>Alternating</option></select></div>
       </div><p class="muted small" style="margin-top:-4px">Leave the letter blank to letter rows automatically from left to right. Numbering only matters when the row is two bays wide.</p>`}
-      <div class="row">${lockBtn('lock-row',g.key,all,'Lock row',ro)}${ro?'':`<button data-act="row-orient" data-id="${g.key}" title="${g.horiz?'Bays run top to bottom':'Bays run left to right, at half height'}">${g.horiz?'↕ Turn row upright':'↔ Turn row sideways'}</button>`}</div>
+      <div class="row">${lockBtn('lock-row',g.key,all,'Lock row',ro)}${ro?'':`${rowStretched(g)?`<button data-act="row-unstretch" data-id="${g.key}" title="Put the bays in this row back to the standard size">Reset bay size</button>`:''}<button data-act="row-orient" data-id="${g.key}" title="${g.horiz?'Bays run top to bottom':'Bays run left to right, at half height'}">${g.horiz?'↕ Turn row upright':'↔ Turn row sideways'}</button>`}</div>
       <p class="muted small">${g.horiz?'Sideways row: bays run left to right.':'Upright row: bays run top to bottom.'}${ro?'':' Turning a row keeps its bay numbers.'}</p>
+      ${ro?'':`<p class="muted small">Drag the right or bottom edge of the row to stretch its bays, so rows with different numbers of bays line up. Edges snap to other rows.</p>`}
       ${ro?'':`<p class="muted small">Drag the row’s dark header to move the whole row. Bays that touch form a row; rows are lettered left to right.</p>`}`;}}
   if(sel&&sel.type==='label'&&!ro){const l=p.map.labels.find(x=>x.id===sel.id);if(l)return `<div><span class="label">Label</span><h2>Map label</h2></div>
       <div class="field"><label class="label" for="lb_text">Text</label><input id="lb_text" data-k="label" data-id="${l.id}" data-f="text" value="${esc(l.text)}"></div>
@@ -1966,6 +1979,10 @@ document.addEventListener('click',e=>{
     case 'map-add-label':{const B=mapBounds(p);const l={id:uid(),x:1,y:Math.max(1,B.h-2),text:'Door'};p.map.labels.push(l);S.sel={type:'label',id:l.id};S.focusAfter='lb_text';touch(p);render();break;}
     case 'label-color':{const l=p.map.labels.find(x=>x.id===id);if(l){l.color=b.dataset.color||'';touch(p);render();}break;}
     case 'label-del':p.map.labels=p.map.labels.filter(l=>l.id!==id);S.sel=null;touch(p);render();break;
+    case 'row-unstretch':{const g=groupOfBay(p,id);if(g){const b=g.bays[0];const fx=baseW(b)/dw(b),fy=baseH(b)/dh(b);const orig=g.bays.map(x=>({b:x,x:x.x,y:x.y,sw:x.sw,sh:x.sh}));
+      stretchRow(g,'x',fx);stretchRow(g,'y',fy);g.bays.forEach(x=>{delete x.sw;delete x.sh;});
+      if(g.bays.some(x=>p.racks.some(o=>!g.bays.includes(o)&&overlap(o,x)))){restoreStretch({orig});toast('There isn’t room to shrink this row back here.');break;}
+      touch(p);render();toast(`Row ${g.letter} is back to the standard bay size.`);}break;}
     case 'row-orient':{const g=groupOfBay(p,id);if(g){const before=nameSnapshot(p);const res=flipRow(p,g);
       if(res==='fail'){toast('There isn’t room to turn this row here. Move it to open space first.');break;}
       markUpdated(p,before);S.sel={type:'row',id};touch(p);render();toast(`Row ${g.letter} is now ${g.horiz?'upright':'sideways'}${res==='moved'?' and moved below the other rows to make room':''}.`);}break;}
@@ -2093,7 +2110,12 @@ document.addEventListener('pointerdown',e=>{
   const mc=e.target.closest&&e.target.closest('#mapcanvas');if(!mc||e.button>1)return;
   if(e.clientX-mc.getBoundingClientRect().left>mc.clientWidth||e.clientY-mc.getBoundingClientRect().top>mc.clientHeight)return;/* scrollbars */
   const svg=mc.querySelector('#shedmap');
-  const lr=e.button===0&&e.target.closest('[data-lresize]');
+  const lr=e.button===0&&e.target.closest('[data-lresize]');const rs=e.button===0&&!isReadOnly()&&e.target.closest('[data-rstretch]');
+  if(rs){const p=cur();const g=groupOfBay(p,rs.dataset.rstretch);if(!g)return;e.preventDefault();
+    MD={type:'stretch',id:g.key,dir:rs.dataset.dir,mc,sx:e.clientX,sy:e.clientY,moved:false,pid:e.pointerId,orig:g.bays.map(b=>({b,x:b.x,y:b.y,sw:b.sw,sh:b.sh})),
+      span:rs.dataset.dir==='x'?g.maxX-g.minX:g.maxY-g.minY,start:rs.dataset.dir==='x'?g.minX:g.minY,ids:new Set(g.bays.map(b=>b.id)),names:p.racks.map(b=>[b,b.letterFix,b.numMode]),
+      edges:(p._rows||[]).filter(o=>o.key!==g.key).map(o=>rs.dataset.dir==='x'?o.maxX:o.maxY)};
+    try{mc.setPointerCapture(e.pointerId);}catch(_){}return;}
   const rk=e.button===0&&e.target.closest('[data-rack]'),rh=e.button===0&&e.target.closest('[data-rowh]'),lb=e.button===0&&e.target.closest('[data-label]');
   let type,id,el;
   if(lr){type='lresize';id=lr.dataset.lresize;el=lr.closest('[data-label]');}
@@ -2106,6 +2128,15 @@ document.addEventListener('pointermove',e=>{
   if(!MD||e.pointerId!==MD.pid)return;const dx=e.clientX-MD.sx,dy=e.clientY-MD.sy;
   if(MD.type==='pan'){if(!MD.moved){if(Math.hypot(dx,dy)<4)return;MD.moved=true;MD.mc.classList.add('panning');}MD.mc.scrollLeft=MD.sl-dx;MD.mc.scrollTop=MD.st-dy;return;}
   if(MD.ro)return;const sc=mapScale(),C=MAPC;
+  if(MD.type==='stretch'){const d=MD.dir==='x'?dx:dy;if(!MD.moved&&Math.abs(d)<3)return;MD.moved=true;
+    const p=cur();const g=groupOfBay(p,MD.id);restoreStretch(MD);
+    const minF=Math.max(...MD.orig.map(o=>1/(MD.dir==='x'?dw(o.b):dh(o.b))));/* no bay smaller than one square */
+    let end=MD.start+MD.span+d/sc/C;const hit=MD.edges.find(v=>Math.abs(v-end)<0.6);end=hit!==undefined?hit:Math.round(end*2)/2;
+    let f=Math.max(minF,(end-MD.start)/MD.span);MD.f=f;MD.snap=hit!==undefined;
+    const gg={bays:MD.orig.map(o=>o.b),minX:MD.dir==='x'?MD.start:0,minY:MD.dir==='y'?MD.start:0};stretchRow(gg,MD.dir,f);
+    if(!MD.raf)MD.raf=requestAnimationFrame(()=>{if(!MD||MD.type!=='stretch')return;MD.raf=0;const P2=computePlan(cur());MD.mc.innerHTML=mapSVG(cur(),P2,{C:MAPC,pal:pal(),interactive:true});
+      const h=MD.mc.querySelector(`[data-rstretch="${MD.id}"][data-dir="${MD.dir}"]`);if(h)h.classList.add('active');});
+    return;}
   if(MD.type==='lresize'){MD.moved=true;const l=cur().map.labels.find(x=>x.id===MD.id);if(!l)return;
     const w=Math.max(1,Math.round(labelW(l)+dx/sc/C)),h=Math.max(1,Math.round((+l.h||1)+dy/sc/C));MD.nw=w;MD.nh=h;
     const rc=MD.el.querySelector('rect'),tx=MD.el.querySelector('text');rc.setAttribute('width',w*C-2);rc.setAttribute('height',h*C-4);
@@ -2119,9 +2150,17 @@ document.addEventListener('pointermove',e=>{
     MD.svg.querySelectorAll('.droptarget').forEach(x=>x.classList.remove('droptarget'));
     MD.target=tg&&tg.dataset.rack!==MD.id?tg.dataset.rack:null;if(MD.target)tg.classList.add('droptarget');}
 });
+function restoreStretch(d){(d.names||[]).forEach(([b,l,n])=>{if(l)b.letterFix=l;else delete b.letterFix;if(n)b.numMode=n;else delete b.numMode;});d.orig.forEach(o=>{const b=o.b;b.x=o.x;b.y=o.y;if(o.sw)b.sw=o.sw;else delete b.sw;if(o.sh)b.sh=o.sh;else delete b.sh;});}
 function endDrag(e,cancel){
   if(!MD||(e&&e.pointerId!==MD.pid))return;const d=MD;MD=null;const p=cur();
   if(d.type==='pan'){d.mc.classList.remove('panning');if(!d.moved&&!cancel&&S.sel){S.sel=null;render();}return;}
+  if(d.type==='stretch'){if(d.raf)cancelAnimationFrame(d.raf);const g0=groupOfBay(p,d.id);
+    if(!d.moved||cancel){restoreStretch(d);render();return;}
+    const clash=d.orig.some(o=>p.racks.some(x=>!d.ids.has(x.id)&&(overlap(x,o.b)||touching(x,o.b))));
+    if(!clash)(d.names||[]).forEach(([b,l,n])=>{if(l)b.letterFix=l;else delete b.letterFix;if(n)b.numMode=n;else delete b.numMode;});
+    if(clash){restoreStretch(d);render();toast('That would run into another row. Move the row to open space first, or stretch it less.');return;}
+    S.sel={type:'row',id:d.id};touch(p);render();const b=d.orig[0].b;
+    toast(`Each bay in this row is now ${+dw(b).toFixed(2)} × ${+dh(b).toFixed(2)} squares${d.snap?', lined up with the next row':''}.`);return;}
   if(d.type==='lresize'){const l=p.map.labels.find(x=>x.id===d.id);if(l&&d.nw&&!cancel){l.w=clamp(d.nw,1,200);l.h=clamp(d.nh,1,200);touch(p);}render();return;}
   if(!d.moved||d.ro){if(!cancel){S.sel={type:d.type,id:d.type==='row'?d.id:d.id};render();}return;}
   if(cancel){render();return;}
@@ -2132,7 +2171,7 @@ function endDrag(e,cancel){
       if(p.racks.some(o=>o.id!==bay.id&&overlap(o,bay))){bay.x=ox;bay.y=oy;msg='overlap';}else msg='moved';}
     S.sel={type:'rack',id:d.id};}
   else if(d.type==='row'){const g=groupOfBay(p,d.id);if(g){const dx=Math.round(fdx),dy=Math.round(fdy);const ids=new Set(g.bays.map(b=>b.id));
-      const ok=g.bays.every(b=>b.x+dx>=0&&b.y+dy>=1&&!p.racks.some(o=>!ids.has(o.id)&&overlap(o,{x:b.x+dx,y:b.y+dy,orient:b.orient})));
+      const ok=g.bays.every(b=>b.x+dx>=0&&b.y+dy>=1&&!p.racks.some(o=>!ids.has(o.id)&&overlap(o,{x:b.x+dx,y:b.y+dy,orient:b.orient,sw:b.sw,sh:b.sh})));
       if(ok)g.bays.forEach(b=>{b.x+=dx;b.y+=dy;});else msg='overlap';}S.sel={type:'row',id:d.id};}
   else if(d.type==='label'){const l=p.map.labels.find(x=>x.id===d.id);if(l){l.x=Math.max(0,l.x+Math.round(fdx));l.y=Math.max(0,l.y+Math.round(fdy));}S.sel={type:'label',id:d.id};}
   markUpdated(p,before);touch(p);render();
