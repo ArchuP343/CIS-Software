@@ -270,6 +270,11 @@ tr.locked-empty td{color:var(--muted);font-style:italic}
 .crumb .sub{font-family:var(--f-body);font-size:.85rem;color:var(--muted);font-weight:500}
 .readonly-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
 .cell.dim{opacity:.22}
+.shed{position:relative;scroll-behavior:smooth}
+.rowgroup.flash>header .rname{color:var(--accent)}
+.rowgroup.flash{outline:2px solid var(--brand);outline-offset:6px;border-radius:6px}
+.totop{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:45;background:var(--navy);color:var(--navy-ink);border:0;border-radius:999px;padding:10px 16px;font-weight:700;box-shadow:0 8px 24px rgba(6,33,48,.28);gap:6px}
+.totop:hover{filter:brightness(1.15);border:0}
 .cell.missing{background:repeating-linear-gradient(-45deg,var(--bad-soft) 0 4px,var(--surface) 4px 8px)!important;color:var(--bad);border-color:var(--bad)!important}
 .pill.missing{background:var(--bad-soft);color:var(--bad);font-size:.7rem;padding:0 7px;text-transform:lowercase}
 .linkbtn{border:0;background:none;padding:0;color:var(--accent);text-decoration:underline;font-weight:600;cursor:pointer}
@@ -330,6 +335,7 @@ tr.hit td{background:var(--accent-soft)}
 
 <div id="app"></div>
 <div id="toast" role="status" aria-live="polite" hidden></div>
+<button id="toTop" class="totop" data-act="to-top" hidden aria-label="Back to top"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Top</button>
 <input type="file" id="fileProject" accept=".json,application/json" hidden>
 <input type="file" id="fileSheet" accept=".xlsx,.xls,.xlsm,.csv,.txt,.tsv" hidden>
 
@@ -493,6 +499,7 @@ function storagePanel(){
 }
 function conflictBanner(){const ids=Object.keys(FS.conflicts).filter(id=>S.projects.some(p=>p.id===id));if(!ids.length)return'';
   return ids.map(id=>{const p=S.projects.find(x=>x.id===id);return `<div class="msg warn row" style="align-items:center;justify-content:space-between"><span><b>${esc(p.name)}</b> was changed by someone else while you were editing it. Your latest changes haven’t been saved to the shared folder.</span><div class="row"><button data-act="fs-conflict-theirs" data-id="${id}">Load their version</button><button class="primary" data-act="fs-conflict-mine" data-id="${id}">Keep mine</button></div></div>`;}).join('');}
+window.addEventListener('scroll',()=>{const b=$('#toTop');if(b){const show=window.scrollY>700;if(b.hidden===show)b.hidden=!show;}},{passive:true});
 window.addEventListener('focus',()=>{if(FS.status==='connected')fsRefresh(false);});
 
 function load(){
@@ -608,11 +615,13 @@ function mapBounds(p){let w=0,h=0;p.racks.forEach(r=>{w=Math.max(w,r.x+RW);h=Mat
    Locked bay: keeps exactly its boxes (fixed). Locked slot: keeps its box, or stays empty.
    Unlocking keeps boxes where they are (held) until "Update to best positions" is pressed. */
 function lockBays(p,ids,on){const P=computePlan(p);ids.forEach(id=>{const r=p.racks.find(x=>x.id===id);if(!r)return;
-  if(on){const R=P.racks.find(x=>x.rack.id===id);r.fixed={};if(R)R.cells.forEach(c=>{if(c.item)r.fixed[c.slot]=c.item.id;});r.locked=true;r.hold={};}
+  if(on){const R=P.racks.find(x=>x.rack.id===id);r.fixed={};if(R)R.cells.forEach(c=>{if(c.item)r.fixed[c.slot]=slotIds(c);});r.locked=true;r.hold={};}
   else{r.hold=Object.assign({},r.fixed);r.fixed={};r.locked=false;}});}
 function lockSlot(p,id,slot){const r=p.racks.find(x=>x.id===id);if(!r)return;const P=computePlan(p);const R=P.racks.find(x=>x.rack.id===id);const c=R&&R.cells[slot-1];
   if(r.slotLocks[slot]!==undefined){const it=r.slotLocks[slot];delete r.slotLocks[slot];if(it)r.hold[slot]=it;return false;}
-  r.slotLocks[slot]=c&&c.item?c.item.id:'';delete r.hold[slot];return true;}
+  r.slotLocks[slot]=c&&c.item?slotIds(c):'';delete r.hold[slot];return true;}
+const slotIds=c=>c.extra&&c.extra.length?[c.item.id,...c.extra.map(x=>x.id)]:c.item.id;
+const slotBoxes=c=>c.item?[c.item,...(c.extra||[])]:[];
 const heldCount=p=>p.racks.reduce((n,r)=>n+(r.locked?0:Object.keys(r.hold||{}).length),0);
 function reoptimise(p){p.racks.forEach(r=>{if(!r.locked)r.hold={};});}
 
@@ -627,11 +636,14 @@ function computePlan(p){
   const racks=p.racks.map(r=>({rack:r,used:0,locked:!!r.locked,cells:Array.from({length:Math.max(0,r.rows|0)},(_,i)=>({slot:i+1,blocked:(r.blocked||[]).includes(i+1),item:null,gap:false,closed:false,pin:''}))}));
   const pos={},pinned=new Set();let held=0;
   const place=(R,c,it)=>{c.item=it;R.used++;pos[it.id]={rackId:R.rack.id,rackName:R.rack.name,slot:c.slot,key:R.rack.id+'|'+c.slot};};
-  const pin=(R,slot,id,kind)=>{const c=R.cells[(+slot)-1];if(!c||c.blocked)return false;c.closed=true;c.pin=kind;const it=byId.get(id);if(!it||pinned.has(id)||c.item)return true;place(R,c,it);pinned.add(id);if(kind==='held')held++;return true;};
+  const pin=(R,slot,ids,kind)=>{const c=R.cells[(+slot)-1];if(!c||c.blocked)return false;c.closed=true;c.pin=kind;
+    (Array.isArray(ids)?ids:[ids]).forEach(id=>{const it=byId.get(id);if(!it||pinned.has(id))return;
+      if(c.item){(c.extra=c.extra||[]).push(it);R.used++;pos[it.id]={rackId:R.rack.id,rackName:R.rack.name,slot:c.slot,key:R.rack.id+'|'+c.slot};}else place(R,c,it);
+      pinned.add(id);if(kind==='held')held++;});return true;};
   racks.forEach(R=>{const r=R.rack;
     if(r.locked){R.cells.forEach(c=>{c.closed=true;});Object.entries(r.fixed||{}).forEach(([s,id])=>pin(R,s,id,'bay'));return;}
     Object.entries(r.slotLocks||{}).forEach(([s,id])=>pin(R,s,id,'slot'));
-    Object.entries(r.hold||{}).forEach(([s,id])=>{const c=R.cells[(+s)-1];if(!c||c.closed||c.blocked||!byId.has(id)||pinned.has(id))return;pin(R,s,id,'held');});});
+    Object.entries(r.hold||{}).forEach(([s,id])=>{const c=R.cells[(+s)-1];if(!c||c.closed||c.blocked)return;const ids=(Array.isArray(id)?id:[id]).filter(x=>byId.has(x)&&!pinned.has(x));if(ids.length)pin(R,s,ids,'held');});});
   const pool=sorted.filter(it=>!pinned.has(it.id));
   let ri=0,si=0;
   const next=()=>{while(ri<racks.length){if(racks[ri].locked){ri++;si=0;continue;}const c=racks[ri].cells;while(si<c.length&&(c[si].blocked||c[si].closed))si++;if(si<c.length)return c[si];ri++;si=0;}return null;};
@@ -892,7 +904,7 @@ function rackElev(R,P,M,small){
     if(c.blocked)return `<div class="cell blocked" title="${esc(r.name)}-${c.slot}: blocked">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
     if(c.gap)return `<div class="cell gap" title="${esc(r.name)}-${c.slot}: spare (reserved)">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
     if(c.item){const it=c.item;const moved=M&&M.moved.has(it.id);const hl=S.match?(S.match.ids.has(it.id)?' hit':' dim'):'';
-      return `<div class="cell filled${pin}${hl}${it.missing?' missing':''} ${moved?'moved':''}" style="--h:${P.hue.get(it.feature||'')}" title="${esc(r.name)}-${c.slot}: ${esc(fname(it.feature))} ${esc(it.hole)} box ${esc(it.box)}${it.of?' of '+esc(it.of):''}${it.missing?' (missing)':''}${c.pin?` (${c.pin==='held'?'held':'locked'})`:''}">${small?'':`<span class="n">${c.slot}</span><span>${esc(it.hole)}·${esc(it.box)}</span>`}</div>`;}
+      return `<div class="cell filled${pin}${hl}${it.missing?' missing':''} ${moved?'moved':''}" style="--h:${P.hue.get(it.feature||'')}" title="${esc(r.name)}-${c.slot}: ${esc(fname(it.feature))} ${esc(it.hole)} box ${esc(it.box)}${it.of?' of '+esc(it.of):''}${it.missing?' (missing)':''}${c.pin?` (${c.pin==='held'?'held':'locked'})`:''}">${small?'':`<span class="n">${c.slot}</span><span>${esc(it.hole)}·${esc(it.box)}${c.extra&&c.extra.length?' +'+c.extra.length:''}</span>`}</div>`;}
     return `<div class="cell${pin}" title="${esc(r.name)}-${c.slot}: empty${c.pin?' (locked)':''}">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
   }).join('');
   return `<button class="rackcol" data-act="goto-rack" data-id="${r.id}" aria-label="Bay ${esc(r.name)}"><span class="rname">${esc(r.name)}</span><div class="rack ${small?'small':''} ${R.locked?'locked':''}">${cells||'<div class="cell">no slots</div>'}</div>${small?'':`<span class="rmeta">${R.used}/${R.cells.filter(c=>!c.blocked).length}${R.locked?' · locked':''}${S.updated[r.id]?' · moved':''}</span>`}</button>`;
@@ -958,14 +970,14 @@ function planTab(p,P,M,ro){
   return `
   ${P.unplaced.length?`<div class="notice"><strong>${plural(P.unplaced.length,'box','boxes')} don't fit.</strong> ${ro?'Plan more bays in a core move.':'Add bays or slots in Edit, unlock a bay, or reduce spare slots.'} First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
   <section class="panel">
-    <header><h2>Shed overview</h2>
+    <header><div class="row" style="align-items:center;gap:12px"><h2>Shed overview</h2>${P.rowList.length>1?`<select id="jumprow" data-k="ui" data-f="jumprow" aria-label="Jump to a row"><option value="">Jump to row…</option>${P.rowList.map(G=>`<option value="${G.row.key}">Row ${esc(G.row.letter)} · ${plural(G.racks.length,'bay')}</option>`).join('')}</select>`:''}</div>
       <div class="legend small">${P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span> <span class="muted">${counts.get(f)||0}</span></span>`).join('')}
       <span><span class="sw" style="background:repeating-linear-gradient(-45deg,var(--surface) 0 2px,var(--hatch) 2px 4px)"></span>Blocked</span>
       ${P.gaps?`<span><span class="sw" style="border-style:dashed;border-color:var(--muted)"></span>Spare</span>`:''}
       ${M&&M.moved.size?`<span><span class="sw" style="box-shadow:inset 3px 0 0 var(--warn)"></span>Moves</span>`:''}</div>
     </header>
     ${P.sorted.length?'':`<p class="muted" style="margin-bottom:10px">No boxes yet.${ro?'':' Add or import them in <b>Edit</b>, under Holes &amp; boxes.'}</p>`}
-    <div class="shed">${P.rowList.map(G=>{const all=G.racks.length&&G.racks.every(R=>R.locked);return `<div class="rowgroup"><header><span class="rname">Row ${esc(G.row.letter)}</span>${lockBtn('lock-row',G.row.key,all,'Lock row',ro)}</header><div class="racks">${G.racks.map(R=>rackElev(R,P,M,false)).join('')}</div></div>`;}).join('')}</div>
+    <div class="shed">${P.rowList.map(G=>{const all=G.racks.length&&G.racks.every(R=>R.locked);return `<div class="rowgroup" id="rg-${G.row.key}"><header><span class="rname">Row ${esc(G.row.letter)}</span>${lockBtn('lock-row',G.row.key,all,'Lock row',ro)}</header><div class="racks">${G.racks.map(R=>rackElev(R,P,M,false)).join('')}</div></div>`;}).join('')}</div>
     <p class="muted small">Slot 1 is the top of the bay. Click a bay to jump to its table.${ro?'':' Locked bays and slots keep their boxes where they are, and everything else is planned around them.'}</p>
   </section>
   <div class="rackgrid">
@@ -983,9 +995,10 @@ function planTab(p,P,M,ro){
           if(c.blocked)return `<tr class="blocked"><td class="num mono">${c.slot}</td><td colspan="${span}">Blocked, not for use</td></tr>`;
           if(c.gap)return `<tr class="gap">${sc}<td colspan="${span}">Spare, kept free</td></tr>`;
           if(!c.item)return `<tr class="${c.closed?'locked-empty':'empty-slot'}">${sc}<td colspan="${span}">${R.locked?'Empty (bay locked)':c.closed?'Empty (slot locked)':'Empty'}</td></tr>`;
-          const it=c.item;let ch='';
+          return slotBoxes(c).map((it,bi)=>{let ch='';
           if(M){if(M.newIds.has(it.id))ch='<span class="pill new">New</span>';else if(M.moved.has(it.id)){const b=M.basePos[it.id];ch=`<span class="pill moved">from ${esc(loc(b))}</span>`;}}
-          return `<tr class="${S.match&&S.match.ids.has(it.id)?'hit':''}">${sc}<td><span class="chip" style="--h:${P.hue.get(it.feature||'')}">${esc(fname(it.feature))}</span></td><td class="mono">${esc(it.hole)}${tag}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(col=>`<td>${esc((it.custom||{})[col.id])}</td>`).join('')}${M?`<td>${ch}</td>`:''}</tr>`;
+          const tg=(it.missing?' <span class="pill missing">missing</span>':'')+(c.pin==='held'?' <span class="pill held">held</span>':'')+(bi>0?' <span class="pill draft">same slot</span>':'');
+          return `<tr class="${S.match&&S.match.ids.has(it.id)?'hit':''}">${bi?`<td class="num mono muted">${c.slot}</td>`:sc}<td><span class="chip" style="--h:${P.hue.get(it.feature||'')}">${esc(fname(it.feature))}</span></td><td class="mono">${esc(it.hole)}${tg}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(col=>`<td>${esc((it.custom||{})[col.id])}</td>`).join('')}${M?`<td>${ch}</td>`:''}</tr>`;}).join('');
         }).join('')||`<tr><td class="muted">This bay has no slots.</td></tr>`}</tbody>
       </table></div>
     </section>`;}).join('')}
@@ -1010,7 +1023,7 @@ function movesTab(p,P,M){
 }
 
 /* shed map */
-function featBreakdown(R){const m=new Map();R.cells.forEach(c=>{if(c.item){const f=c.item.feature||'';m.set(f,(m.get(f)||0)+1);}});return[...m.entries()];}
+function featBreakdown(R){const m=new Map();R.cells.forEach(c=>slotBoxes(c).forEach(it=>{const f=it.feature||'';m.set(f,(m.get(f)||0)+1);}));return[...m.entries()];}
 function mapSVG(p,P,o){
   const C=o.C,pl=o.pal,B=mapBounds(p),W=B.w*C,H=B.h*C,exp=!!o.export,compact=!!o.compact;
   const sel=o.interactive?S.sel:null;
@@ -1052,8 +1065,8 @@ function mapSVG(p,P,o){
   if(exp&&legend)s+=`<g transform="translate(16 ${top+H+18})">${legend}</g>`;
   return s+`</svg>`;
 }
-function holesInRack(R){const out=[];R.cells.forEach(c=>{if(!c.item)return;const it=c.item;const k=(it.feature||'')+'-'+(it.hole||'');const last=out[out.length-1];
-  if(last&&last.k===k)last.items.push(it);else out.push({k,feature:it.feature,hole:it.hole,items:[it]});});return out;}
+function holesInRack(R){const out=[];R.cells.forEach(c=>slotBoxes(c).forEach(it=>{const k=(it.feature||'')+'-'+(it.hole||'');const last=out[out.length-1];
+  if(last&&last.k===k)last.items.push(it);else out.push({k,feature:it.feature,hole:it.hole,items:[it]});}));return out;}
 function groupOfBay(p,id){return (p._rows||deriveNames(p)).find(g=>g.bays.some(b=>b.id===id));}
 function mapSide(p,P,ro){
   const sel=S.sel;
@@ -1320,7 +1333,11 @@ function racksStep(p){
 /* depth words: Unknown → ?, missing → red label, EMPTY → empty slot */
 const isWord=(v,w)=>String(v??'').trim().toLowerCase()===w;
 const fixDepth=v=>isWord(v,'unknown')?'?':String(v??'').trim();
-function cleanItem(it){let miss=!!it.missing;['from','to'].forEach(f=>{if(isWord(it[f],'missing')){miss=true;it[f]='';}else it[f]=fixDepth(it[f]);});if(miss)it.missing=true;return it;}
+function cleanItem(it){let miss=!!it.missing;const orig=Object.assign({},it.missingOrig||{});
+  ['from','to','box','of','hole'].forEach(f=>{const v=String(it[f]??'').trim();if(/\bmissing\b/i.test(v)){miss=true;orig[f]=v;it[f]='';}else if(f==='from'||f==='to')it[f]=fixDepth(it[f]);});
+  if(miss){it.missing=true;if(Object.keys(orig).length)it.missingOrig=orig;}return it;}
+function outVal(it,f){const v=it[f]??'';if(!it.missing||v!=='')return v;const o=it.missingOrig||{};if(o[f]!=null)return o[f];
+  if((f==='from'||f==='to')&&!o.from&&!o.to&&!o.hole&&!o.box&&!o.of)return 'MISSING';return v;}
 const isEmptyBox=(...vals)=>vals.some(v=>isWord(v,'empty'));
 /* import */
 const FIELDS=[['feature','Feature ID',['feature','featureid','feat','feature code','structure','area']],
@@ -1328,7 +1345,7 @@ const FIELDS=[['feature','Feature ID',['feature','featureid','feat','feature cod
   ['box','Box',['box','boxno','boxnumber','boxid','tray','trayno','traynumber','box#','core box']],
   ['of','Of',['of','totalboxes','boxes','ofboxes','boxof','noofboxes','numberofboxes','total']],
   ['from','From (m)',['from','fromm','depthfrom','from(m)','fromdepth','start','startdepth','top','depthfromm']],
-  ['to','To (m)',['to','tom','depthto','to(m)','todepth','end','enddepth','bottom','depthtom']]];
+  ['to','To (m)',['to','tom','depthto','to(m)','todepth','end','enddepth','bottom','depthtom','base','depthbase','basem']]];
 const normH=s=>String(s??'').toLowerCase().replace(/[^a-z0-9#]/g,'');
 const LAYOUT_FIELDS=[['location','Location (e.g. A1-3)',['location','loc','position','rackposition','racklocation','shedlocation','address','rowbayslot','locationid','coreshedlocation']],
   ['row','Row',['row','rackrow','rowletter','aisle','line']],
@@ -1341,12 +1358,24 @@ function parseLoc(R,B,Sl,loc){
   const bm=B.match(/^([A-Z]+)\s*-?\s*(\d+)$/);if(bm){R=R||bm[1];B=bm[2];}
   if(/^\d+$/.test(R))R=+R>0?letterAdd('A',+R-1):'';R=R.replace(/[^A-Z]/g,'');
   const b=parseInt(B,10),s=parseInt(Sl,10);if(!R||!(b>=0)||!(s>=1)||s>500)return null;return{row:R,bay:b,slot:s};}
+const tidyName=n=>{n=String(n).replace(/\s+/g,' ').trim();n=n.split(' ').map(w=>/[A-Z]{2}/.test(w)&&w===w.toUpperCase()?w.toLowerCase():w).join(' ');return n.charAt(0).toUpperCase()+n.slice(1);};
+function layoutExtraCols(p,imp){if(!imp.extras)return[];
+  const hdr=imp.headerRow>0?(imp.rows[imp.headerRow-1]||[]):[];const grp=imp.headerRow>1?(imp.rows[imp.headerRow-2]||[]):[];const sub=imp.sub?(imp.rows[imp.headerRow]||[]):[];
+  const mapped=new Set(Object.values(imp.map).filter(v=>v>=0));const ncols=Math.max(0,...imp.rows.slice(0,60).map(r=>r.length));const data=dataRows(imp);
+  const have=new Set((p.customCols||[]).map(c=>normH(c.name)));const out=[];let lastTop='';
+  for(let i=0;i<ncols;i++){const top=String(hdr[i]??'').trim();if(top)lastTop=top;if(mapped.has(i))continue;const sb=String(sub[i]??'').trim();
+    let name=sb?((top||lastTop)+' '+sb):(top||String(grp[i]??'').trim());if(!name)continue;
+    if(['uniqueno','uniquenumber','no','number','id'].includes(normH(name)))continue;
+    if(!data.some(r=>String(r[i]??'').trim()))continue;
+    name=tidyName(name);if(out.some(o=>normH(o.name)===normH(name)))continue;out.push({i,name,exists:have.has(normH(name))});}
+  return out;}
 function buildLayout(p,imp,rows){
+  const xcols=layoutExtraCols(p,imp);
   const m=imp.map;const get=(row,k)=>{const i=m[k];return i>=0&&row[i]!=null?String(row[i]).trim():'';};
   const cells=[],seen=new Map();let noLoc=0,dupes=0,empty=0,missing=0,unknown=0;
   for(const row of rows){
-    const L=parseLoc(get(row,'row'),get(row,'bay'),get(row,'slot'),get(row,'location'));if(!L){noLoc++;continue;}
-    const key=L.row+'|'+L.bay+'|'+L.slot;if(seen.has(key)){dupes++;continue;}
+    const L=parseLoc(get(row,'row'),get(row,'bay'),get(row,'slot'),get(row,'location'));if(!L){if(['feature','hole','box','from','to'].some(k=>get(row,k)))noLoc++;continue;}
+    const key=L.row+'|'+L.bay+'|'+L.slot;const dupe=seen.has(key);if(dupe)dupes++;
     let feature=get(row,'feature'),hole=get(row,'hole'),box=get(row,'box'),of=get(row,'of');
     if(imp.split&&hole.includes('-')){const k=hole.indexOf('-');const f=hole.slice(0,k).trim(),h=hole.slice(k+1).trim();if(!feature||feature===f){feature=f;hole=h;}}
     const bm=box.match(/^(\d+)\s*(?:\/|of)\s*(\d+)$/i);if(bm){box=bm[1];if(!of)of=bm[2];}
@@ -1354,10 +1383,11 @@ function buildLayout(p,imp,rows){
     if(isEmptyBox(feature,hole,box)||(!feature&&!hole&&!box&&!isWord(get(row,'from'),'missing')&&!isWord(get(row,'to'),'missing')))empty++;
     else{const custom={};p.customCols.forEach(c=>{const v=get(row,'c:'+c.id);if(v)custom[c.id]=v;});
       const fr=get(row,'from'),to=get(row,'to');if(isWord(fr,'unknown')||isWord(to,'unknown'))unknown++;
-      item=cleanItem({id:uid(),feature,hole,box,of,from:fr,to,custom});if(item.missing)missing++;}
-    const cell=Object.assign({},L,{item});seen.set(key,cell);cells.push(cell);}
+      item=cleanItem({id:uid(),feature,hole,box,of,from:fr,to,custom});
+      const ex={};xcols.forEach(e=>{const v=row[e.i]!=null?String(row[e.i]).trim():'';if(v)ex[e.name]=v;});if(Object.keys(ex).length)item._extras=ex;if(item.missing)missing++;}
+    const cell=Object.assign({},L,{item});if(!dupe)seen.set(key,cell);cells.push(cell);}
   const letters=[...new Set(cells.map(c=>c.row))];const bays=new Set(cells.map(c=>c.row+c.bay));
-  return{cells,noLoc,dupes,empty,missing,unknown,boxes:cells.filter(c=>c.item).length,letters,bayCount:bays.size};
+  return{cells,noLoc,dupes,empty,missing,unknown,boxes:cells.filter(c=>c.item).length,letters,bayCount:bays.size,xcols};
 }
 const STYLES=[['single','One line of bays'],['down','Back to back, sequential (down one side, then the other)'],['across','Back to back, alternating (1 is back to back with 2)']];
 function arrangeRows(imp,res){
@@ -1374,17 +1404,19 @@ function applyLayout(p,Lay,opts){
   const bays=[],byKey=new Map();let addedBays=0,x=2;
   order.forEach(R=>{const inRow=cells.filter(c=>c.row===R.src);const maxB=Math.max(...inRow.map(c=>c.bay));const n=maxB-start+1;const list=[];
     const letter=cleanLetter(R.letter||R.src);const mode=R.style==='across'?'across':'down';
-    for(let k=0;k<n;k++){const num=start+k;const b=makeRack(p);b.rows=maxSlot;b.blocked=[];b._has=inRow.some(c=>c.bay===num);if(!b._has)addedBays++;b.letterFix=letter;b.numMode=mode;list.push(b);byKey.set(R.src+'|'+num,b);}
+    for(let k=0;k<n;k++){const num=start+k;const b=makeRack(p);b.rows=Math.max(0,...inRow.filter(c=>c.bay===num).map(c=>c.slot))||Math.max(...inRow.map(c=>c.slot))||maxSlot;b.blocked=[];b._has=inRow.some(c=>c.bay===num);if(!b._has)addedBays++;b.letterFix=letter;b.numMode=mode;list.push(b);byKey.set(R.src+'|'+num,b);}
     const cols=R.style==='single'||n<2?1:2;const len=Math.ceil(n/cols);
     list.forEach((b,k)=>{let col,y;if(cols===1){col=0;y=k;}else if(R.style==='across'){col=k%2;y=Math.floor(k/2);}else{col=k>=len?1:0;y=col?k-len:k;}b.x=x+col*RW;b.y=2+y*RL;});
     x+=cols*RW+AISLE;bays.push(...list);});
   const items=[];
-  cells.forEach(c=>{const b=byKey.get(c.row+'|'+c.bay);if(!b)return;if(c.item){items.push(c.item);(opts.lock?b.fixed:b.hold)[c.slot]=c.item.id;}});
+  cells.forEach(c=>{const b=byKey.get(c.row+'|'+c.bay);if(!b)return;if(c.item){items.push(c.item);const tg=opts.lock?b.fixed:b.hold;const ex=tg[c.slot];tg[c.slot]=ex===undefined?c.item.id:[].concat(ex,c.item.id);}});
   bays.forEach(b=>{if(opts.lock&&b._has)b.locked=true;delete b._has;});
+  const cnt={};bays.forEach(b=>{cnt[b.rows]=(cnt[b.rows]||0)+1;});const common=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
   p.racks=bays;p.items=items;
-  Object.assign(p.setup,{letter:'A',startNum:start,defaultRows:String(maxSlot),defaultBlocked:'',numbering:'down',backToBack:order.some(r=>r.style!=='single'),rowCount:order.length,rackCount:bays.length,autoCount:false});
+  Object.assign(p.setup,{letter:'A',startNum:start,defaultRows:String(common||maxSlot),defaultBlocked:'',numbering:'down',backToBack:order.some(r=>r.style!=='single'),rowCount:order.length,rackCount:bays.length,autoCount:false});
   deriveNames(p);
-  return{addedRows:[],addedBays,bays:bays.length,rows:order.length};
+  const big=bays.reduce((a,b)=>b.rows>a.rows?b:a,bays[0]);
+  return{addedRows:[],addedBays,bays:bays.length,rows:order.length,slots:{min:Math.min(...bays.map(b=>b.rows)),max:big.rows,maxName:big.name}};
 }
 function arrangePanel(p,res){
   const imp=S.imp;const arr=arrangeRows(imp,res);
@@ -1408,7 +1440,7 @@ function arrangePanel(p,res){
         <td class="num mono">${c.bays}</td><td class="num mono">${c.boxes}</td></tr>`;}).join('')}</tbody>
     </table></div>
     ${dup?`<div class="msg err">Letter ${esc(dup)} is used for more than one row. Each row needs its own letter.</div>`:''}${bad?`<div class="msg err">Row letters must be 1 to 3 letters, like A or AB.</div>`:''}
-    <div><h3 style="margin-bottom:6px">Preview</h3><p class="small muted" style="margin-bottom:8px">${plural(info.rows,'row')} · ${plural(info.bays,'bay')} · ${plural(res.boxes,'box','boxes')}${info.addedBays?` · ${plural(info.addedBays,'empty bay')} added where bay numbers skip`:''}. You can fine-tune positions on the Shed map after importing.</p>
+    <div><h3 style="margin-bottom:6px">Preview</h3><p class="small muted" style="margin-bottom:8px">${plural(info.rows,'row')} · ${plural(info.bays,'bay')} · ${plural(res.boxes,'box','boxes')} · ${info.slots.min===info.slots.max?`${info.slots.max} slots per bay`:`${info.slots.min}–${info.slots.max} slots per bay (most: ${esc(info.slots.maxName)})`}${info.addedBays?` · ${plural(info.addedBays,'empty bay')} added where bay numbers skip`:''}. You can fine-tune positions on the Shed map after importing.</p>
       <div class="preview-map" style="max-height:520px">${mapSVG(t,TP,{C:20,pal:pal()})}</div></div>
     <label class="check"><input type="checkbox" id="imp_lock" data-k="imp" data-f="lockAll" ${imp.lockAll!==false?'checked':''}> Lock the imported bays so nothing in them moves</label>
     ${replacing?`<div class="msg warn">Importing replaces all ${plural(p.racks.length,'bay')} and ${plural(p.items.length,'box','boxes')} in this core move with the layout from the spreadsheet.</div>`:''}
@@ -1433,7 +1465,7 @@ function layoutPanel(p){
   const msgs=[];
   if(!hasLoc)msgs.push(['err','Match either the Location column, or the Row, Bay and Slot columns.']);
   if(hasLoc&&res.noLoc)msgs.push(['warn',`${plural(res.noLoc,'row has','rows have')} no readable row, bay and slot and will be skipped.`]);
-  if(res.dupes)msgs.push(['warn',`${plural(res.dupes,'location appears','locations appear')} more than once. Only the first one is used.`]);
+  if(res.dupes)msgs.push(['info',`${plural(res.dupes,'box shares','boxes share')} a location with another box. Every box is kept, in the same slot, exactly as in the sheet.`]);
   if(!(m.hole>=0))msgs.push(['warn','Hole ID isn’t matched, so boxes will come in without hole IDs.']);
   if(res.missing)msgs.push(['info',`${plural(res.missing,'box is','boxes are')} marked missing. ${res.missing===1?'It keeps its':'They keep their'} space and ${res.missing===1?'gets':'get'} a red “missing” label.`]);
   if(res.empty)msgs.push(['info',`${plural(res.empty,'slot is','slots are')} EMPTY and will be left empty.`]);
@@ -1460,6 +1492,8 @@ function layoutPanel(p){
     ${msgs.length?`<div class="msgs">${msgs.map(([t,x])=>`<div class="msg ${t}">${esc(x)}</div>`).join('')}</div>`:''}
     <div class="stack" style="gap:8px">
       <label class="check"><input type="checkbox" id="imp_split" data-k="imp" data-f="split" ${imp.split?'checked':''}> Split combined IDs like <span class="mono">BMA1-DD100</span> into Feature and Hole</label>
+      <label class="check"><input type="checkbox" id="imp_extras" data-k="imp" data-f="extras" ${imp.extras?'checked':''}> Bring in every other column too, so the shed matches the sheet exactly</label>
+      ${imp.extras&&res.xcols&&res.xcols.length?`<p class="muted small" style="margin:-2px 0 0 26px">Also brings in: ${res.xcols.map(e=>esc(e.name)).join(', ')}</p>`:''}
     </div>
     <div><h3 style="margin-bottom:8px">First rows</h3>
       <div class="tablewrap"><table><thead><tr><th>Location</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}</tr></thead>
@@ -1471,6 +1505,8 @@ function layoutPanel(p){
 function runLayoutImport(p){
   const imp=S.imp;const res=buildLayout(p,imp,dataRows(imp));if(!res.cells.length){toast('No rows with a readable row, bay and slot.');return;}
   const info=applyLayout(p,res,{rows:arrangeRows(imp,res),lock:imp.lockAll!==false});
+  const ids={};(res.xcols||[]).forEach(e=>{let c=p.customCols.find(x=>normH(x.name)===normH(e.name));if(!c){c={id:uid(),name:e.name};p.customCols.push(c);}ids[e.name]=c.id;});
+  p.items.forEach(it=>{if(it._extras){Object.entries(it._extras).forEach(([n,v])=>{if(ids[n])it.custom[ids[n]]=v;});delete it._extras;}});
   S.imp=null;S.confirm=null;S.updated={};
   const first=p.stage!=='done';p.stage='done';S.tab='plan';touch(p);const saved=first&&finishFirstMove();
   render();window.scrollTo(0,0);
@@ -1482,13 +1518,15 @@ function detectHeader(rows){
   return bestScore?best+1:1;}
 function autoMap(p,imp){
   const hdr=imp.headerRow>0?(imp.rows[imp.headerRow-1]||[]):[];const map={},auto={};const used=new Set();
-  const find=(names)=>{const ns=names.map(normH);for(let i=0;i<hdr.length;i++){if(used.has(i))continue;if(ns.includes(normH(hdr[i]))){used.add(i);return i;}}return -1;};
+  const sub=imp.headerRow>0?(imp.rows[imp.headerRow]||[]):[];
+  imp.sub=false;
+  const find=(names)=>{const ns=names.map(normH);for(const [hi,H] of [[0,hdr],[1,sub]])for(let i=0;i<H.length;i++){if(used.has(i))continue;if(ns.includes(normH(H[i]))){used.add(i);if(hi)imp.sub=true;return i;}}return -1;};
   fieldsFor(imp).forEach(([k,,syn])=>{map[k]=find(syn);auto[k]=map[k]>=0;});
   p.customCols.forEach(c=>{const k='c:'+c.id;map[k]=find([c.name]);auto[k]=map[k]>=0;});
   imp.map=map;imp.auto=auto;
   const data=dataRows(imp);const hi=map.hole;
   imp.split=hi>=0&&data.slice(0,30).some(r=>String(r[hi]??'').includes('-'));}
-function dataRows(imp){return imp.rows.slice(imp.headerRow>0?imp.headerRow:0).filter(r=>r.some(v=>String(v??'').trim()!==''));}
+function dataRows(imp){return imp.rows.slice(imp.headerRow>0?imp.headerRow+(imp.sub?1:0):0).filter(r=>r.some(v=>String(v??'').trim()!==''));}
 function importPanel(p){
   const imp=S.imp;if(imp&&imp.kind==='layout')return layoutPanel(p);
   if(!imp)return `<div class="dropzone" id="dropzone" data-kind="holes">
@@ -1565,7 +1603,7 @@ function buildImport(p,imp,rows){
 }
 async function readSheetFile(file,kind){
   const name=file.name;const buf=await file.arrayBuffer();
-  let imp={fileName:name,mode:'append',skipDup:true,extras:false,headerRow:1,map:{},kind:kind||'holes',layoutStyle:'single',lockAll:true};
+  let imp={fileName:name,mode:'append',skipDup:true,extras:kind==='layout',headerRow:1,map:{},kind:kind||'holes',layoutStyle:'single',lockAll:true};
   if(window.XLSX){const wb=XLSX.read(buf,{type:'array'});imp.wb=wb;imp.sheets=wb.SheetNames;imp.sheet=wb.SheetNames[0];imp.rows=sheetRows(wb,imp.sheet);}
   else if(/\.(csv|txt|tsv)$/i.test(name)){imp.rows=parseCSV(new TextDecoder().decode(buf));}
   else{toast('The Excel reader isn’t available offline. Save the sheet as CSV and try again.');return;}
@@ -1636,9 +1674,9 @@ function advancedTab(p,P){
 function planRowsAll(p,P){
   const head=['Bay','Slot','Feature','Hole ID','Box','Of','From (m)','To (m)',...p.customCols.map(c=>c.name),'Status'];
   const rows=[];
-  P.racks.forEach(R=>R.cells.forEach(c=>{const it=c.item;
-    rows.push([R.rack.name,c.slot,it?it.feature:'',it?it.hole:'',it?numOr(it.box):'',it?numOr(it.of):'',it?numOr(it.from):'',it?numOr(it.to):'',...p.customCols.map(col=>it?((it.custom||{})[col.id]||''):''),c.blocked?'Blocked':c.gap?'Spare':it?(it.missing?'Missing':''):'Empty']);}));
-  P.unplaced.forEach(it=>rows.push(['(no space)','',it.feature,it.hole,numOr(it.box),numOr(it.of),numOr(it.from),numOr(it.to),...p.customCols.map(col=>(it.custom||{})[col.id]||''),'Does not fit']));
+  P.racks.forEach(R=>R.cells.forEach(c=>{(c.item?slotBoxes(c):[null]).forEach(it=>{
+    rows.push([R.rack.name,c.slot,it?it.feature:'',it?outVal(it,'hole'):'',it?numOr(outVal(it,'box')):'',it?numOr(outVal(it,'of')):'',it?numOr(outVal(it,'from')):'',it?numOr(outVal(it,'to')):'',...p.customCols.map(col=>it?((it.custom||{})[col.id]||''):''),c.blocked?'Blocked':c.gap?'Spare':it?(it.missing?'Missing':''):'Empty']);});}));
+  P.unplaced.forEach(it=>rows.push(['(no space)','',it.feature,outVal(it,'hole'),numOr(outVal(it,'box')),numOr(outVal(it,'of')),numOr(outVal(it,'from')),numOr(outVal(it,'to')),...p.customCols.map(col=>(it.custom||{})[col.id]||''),'Does not fit']));
   return{head,rows};}
 const numOr=v=>{if(v===''||v==null)return'';const n=Number(v);return isNaN(n)?v:n;};
 const safeName=s=>String(s||'plan').replace(/[\\/:*?"<>|]+/g,'_').trim()||'plan';
@@ -1653,7 +1691,7 @@ function exportXLSX(p){
   const all=XLSX.utils.aoa_to_sheet([[p.name+(p.site?' · '+p.site:'')],[],head,...rows]);all['!cols']=head.map((h,i)=>({wch:i<2?7:Math.max(10,h.length+2)}));
   XLSX.utils.book_append_sheet(wb,all,sname('All bays'));
   const rh=head.slice(1,-1).concat(['Status']);
-  P.racks.forEach(R=>{const aoa=[['Bay ID',R.rack.name],[],rh];R.cells.forEach(c=>{const it=c.item;aoa.push([c.slot,it?it.feature:'',it?it.hole:'',it?numOr(it.box):'',it?numOr(it.of):'',it?numOr(it.from):'',it?numOr(it.to):'',...p.customCols.map(col=>it?((it.custom||{})[col.id]||''):''),c.blocked?'Blocked':c.gap?'Spare':it?(it.missing?'Missing':''):'Empty']);});
+  P.racks.forEach(R=>{const aoa=[['Bay ID',R.rack.name],[],rh];R.cells.forEach(c=>{(c.item?slotBoxes(c):[null]).forEach(it=>{aoa.push([c.slot,it?it.feature:'',it?outVal(it,'hole'):'',it?numOr(outVal(it,'box')):'',it?numOr(outVal(it,'of')):'',it?numOr(outVal(it,'from')):'',it?numOr(outVal(it,'to')):'',...p.customCols.map(col=>it?((it.custom||{})[col.id]||''):''),c.blocked?'Blocked':c.gap?'Spare':it?(it.missing?'Missing':''):'Empty']);});});
     const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=rh.map((h,i)=>({wch:i===0?6:Math.max(10,h.length+2)}));XLSX.utils.book_append_sheet(wb,ws,sname('Bay '+R.rack.name));});
   if(M&&M.steps.length){const aoa=[['Step','Action','Feature','Hole ID','Box','Of','From','To']];M.steps.forEach((s,i)=>{const it=s.item||{};aoa.push([i+1,{move:'Move',new:'Place new',stage:'To staging',unstage:'From staging',remove:'Remove'}[s.kind],it.feature||'',it.hole||'',numOr(it.box),numOr(it.of),loc(s.from),s.to?loc(s.to):'Out of plan']);});
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),sname('Moves'));}
@@ -1667,10 +1705,10 @@ const TPL_B64='UEsDBBQABgAIAAAAIQA7t3X9kwEAACsGAAATAAgCW0NvbnRlbnRfVHlwZXNdLnhtb
 const TPL=[['B','Row','row'],['C','Bay','bay'],['D','Slot','slot'],['E','Core Size',null,['coresize','size','core','coresizes','coretype']],['F','Borehole ID','borehole'],
   ['G','Depth Top (m)','from'],['H','Depth Base (m)','to'],['I','Box No.','box'],['J','Box Total','of'],
   ['K','Asset / Location',null,['asset','location','assetlocation','assetorlocation']],['L','Project (if known)',null,['project','projectname','projectifknown']],
-  ['M','Box Material',null,['boxmaterial','material']],['N','Box Length (mm)',null,['boxlength','boxlengthmm']],['O','Box Width (mm)',null,['boxwidth','boxwidthmm']],['P','Box Height (mm)',null,['boxheight','boxheightmm']],
-  ['Q','Box Condition',null,['boxcondition','condition']],['R','Max Rack Length (m)',null,['maxracklength','racklength','maxracklengthm']],['S','Max Rack Width (m)',null,['maxrackwidth','rackwidth','maxrackwidthm']],['T','Max Rack Height (m)',null,['maxrackheight','rackheight','maxrackheightm']],
-  ['U','Bay Length (mm)',null,['baylength','baylengthmm']],['V','Bay Width (mm)',null,['baywidth','baywidthmm']],['W','Bay Height (mm)',null,['bayheight','bayheightmm']],
-  ['X','Rack Condition',null,['rackcondition']],['Y','Additional Details',null,['additionaldetails','notes','note','comments','comment','details','additionalinfo']]];
+  ['M','Box Material',null,['boxmaterial','material']],['N','Box Length (mm)',null,['boxlength','boxlengthmm','boxsizemmlength','boxsizelength']],['O','Box Width (mm)',null,['boxwidth','boxwidthmm','boxsizemmwidth','boxsizewidth']],['P','Box Height (mm)',null,['boxheight','boxheightmm','boxsizemmheight','boxsizeheight']],
+  ['Q','Box Condition',null,['boxcondition','condition']],['R','Max Rack Length (m)',null,['maxracklength','racklength','maxracklengthm','maxracksizemlength','maxracksizelength']],['S','Max Rack Width (m)',null,['maxrackwidth','rackwidth','maxrackwidthm','maxracksizemwidth','maxracksizewidth']],['T','Max Rack Height (m)',null,['maxrackheight','rackheight','maxrackheightm','maxracksizemheight','maxracksizeheight']],
+  ['U','Bay Length (mm)',null,['baylength','baylengthmm','baysizemmlength','baysizelength']],['V','Bay Width (mm)',null,['baywidth','baywidthmm','baysizemmwidth','baysizewidth']],['W','Bay Height (mm)',null,['bayheight','bayheightmm','baysizemmheight','baysizeheight']],
+  ['X','Rack Condition',null,['rackcondition']],['Y','Additional Details',null,['additionaldetails','additionaldetailsifrequired','notes','note','comments','comment','details','additionalinfo']]];
 function templateMap(p){const map=new Map(),extras=[];
   (p.customCols||[]).forEach(c=>{const n=normH(c.name);const t=TPL.find(f=>!f[2]&&f[3].includes(n)&&!map.has(f[0]));if(t)map.set(t[0],c.id);else extras.push(c.name);});
   return{map,extras};}
@@ -1679,13 +1717,13 @@ function templateRows(p,P){
   const one=(row,bay,slot,it,note)=>{const cv=col=>{const id=map.get(col);return id&&it?((it.custom||{})[id]||''):'';};
     return TPL.map(([col,,key])=>{
       if(key==='row')return row;if(key==='bay')return bay;if(key==='slot')return slot;
-      if(key==='borehole')return it?([it.feature,it.hole].filter(Boolean).join('-')||'?'):'EMPTY';
-      if(key==='from')return it?(it.missing?'missing':it.from):'';if(key==='to')return it?(it.missing?'missing':it.to):'';
-      if(key==='box')return it?it.box:'';if(key==='of')return it?it.of:'';
+      if(key==='borehole')return it?([it.feature,outVal(it,'hole')].filter(Boolean).join('-')||'?'):'EMPTY';
+      if(key==='from')return it?outVal(it,'from'):'';if(key==='to')return it?outVal(it,'to'):'';
+      if(key==='box')return it?outVal(it,'box'):'';if(key==='of')return it?outVal(it,'of'):'';
       if(col==='Y')return [cv('Y'),note].filter(Boolean).join('; ');
       return cv(col);});};
   P.racks.forEach(R=>{if(!R.cells.some(c=>c.item))return;const r=R.rack;const L=r.rowLetter||'';const bay=r.name.slice(L.length);
-    R.cells.forEach(c=>{if(c.blocked)return;rows.push(one(L,bay,c.slot,c.item,''));});});
+    R.cells.forEach(c=>{if(c.blocked)return;if(!c.item){rows.push(one(L,bay,c.slot,null,''));return;}slotBoxes(c).forEach(it=>rows.push(one(L,bay,c.slot,it,'')));});});
   P.unplaced.forEach(it=>rows.push(one('','','',it,'Not placed: no space in the plan')));
   return rows;}
 function exportContext(){const pr=projRec(),m=moveRec();return{title:[pr.name,pr.site].filter(Boolean).join(' – '),detail:`Exported from Core Rack Planner on ${new Date().toLocaleDateString()}: ${m?`core move “${m.name}”`:'saved shed layout'}`,file:safeName([pr.name,pr.site,m&&m.name].filter(Boolean).join(' - '))};}
@@ -1781,6 +1819,7 @@ document.addEventListener('click',e=>{
       if(E.ok)E.kind==='csv'?exportTemplateCSV(p):exportTemplateXLSX(p);else{E.kind==='csv'?exportCSV(p):exportXLSX(p);toast('Exported in the original planner layout');}break;}
     case 'save-file':saveFile(projRec());break;
     case 'map-png':exportPNG(p);break;
+    case 'to-top':window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});break;
     case 'modal-close':S.modal=null;render();break;
     case 'modal-dl':modalDownload();break;
     case 'goto-rack':gotoRack(id);break;
@@ -1887,7 +1926,8 @@ document.addEventListener('change',e=>{
   if(t.name==='abmode'){S.addMode=t.value;const form=$('#addForm');form.querySelectorAll('[data-mode]').forEach(el=>el.hidden=el.dataset.mode!==S.addMode);$('#ab_submit').textContent=S.addMode==='range'?'Add boxes':'Add box';updateAbHint();return;}
   const k=t.dataset.k;if(!k)return;const p=cur();const f=t.dataset.f;
   const val=t.type==='checkbox'?t.checked:t.value;
-  if(k==='ui'){if(f==='zoom'){S.zoom=int(val,26);render();}if(f==='onlyMatches'){S.filter.onlyMatches=val;render();}if(f==='pngLegend')S.pngLegend=val;if(f==='pfilter'){S.pfilter=val;render();}if(f==='expOk'&&S.expPrompt)S.expPrompt.ok=val;return;}
+  if(k==='ui'){if(f==='zoom'){S.zoom=int(val,26);render();}if(f==='onlyMatches'){S.filter.onlyMatches=val;render();}if(f==='pngLegend')S.pngLegend=val;if(f==='pfilter'){S.pfilter=val;render();}
+    if(f==='jumprow'&&val){const el=document.getElementById('rg-'+val);const sc=el&&el.closest('.shed');if(sc){const smooth=!matchMedia('(prefers-reduced-motion: reduce)').matches;sc.scrollTo({left:el.offsetLeft-8,behavior:smooth?'smooth':'auto'});const top=sc.getBoundingClientRect().top;if(top<80||top>innerHeight-120)sc.scrollIntoView({block:'center',behavior:smooth?'smooth':'auto'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1400);}t.value='';}if(f==='expOk'&&S.expPrompt)S.expPrompt.ok=val;return;}
   if(k==='cond'){const c=S.filter.conds[+t.dataset.i];if(!c)return;if(f==='v'||f==='w')return;c[f]=val;
     if(f==='field'){const ty=(filterFields(p).find(x=>x[0]===val)||[0,0,'t'])[2];c.op=FOPS[ty][0][0];c.v='';c.w='';}render();return;}
   if(!p||isReadOnly())return;
