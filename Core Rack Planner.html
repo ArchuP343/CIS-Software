@@ -250,6 +250,50 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 .rowgroup{display:flex;flex-direction:column;gap:8px;padding-right:16px;border-right:1px dashed var(--line);flex:0 0 auto}
 .rowgroup:last-child{border-right:0;padding-right:0}
 .printhead,.printnotes{display:none}
+.summary{position:relative}.summary .spacer{flex:1}
+.popwrap{position:relative;display:flex;gap:6px;align-items:center}
+.iconbtn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;font-size:.8rem}.iconbtn.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.popover{position:absolute;top:calc(100% + 8px);right:0;z-index:60;width:min(620px,calc(100vw - 32px));max-height:70vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 18px 40px rgba(10,31,46,.22);padding:14px 16px;display:flex;flex-direction:column;gap:10px;text-align:left}
+.pophead{display:flex;align-items:center;justify-content:space-between}.popover table{width:100%}.popover h4{margin:0 0 4px}
+.savestate.unsaved{color:var(--warn);font-weight:700}
+.mmflow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px;padding:4px 0 2px;opacity:.6;user-select:none}
+.mmnode{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:104px;min-height:46px;padding:6px 12px;border:1.5px dashed var(--muted);border-radius:12px;color:var(--muted);font-size:.8rem;font-weight:600;text-align:center;line-height:1.2}
+.mmnode small{font-weight:400;font-size:.72rem;margin-top:2px}.mmnode.cur{border-color:var(--ink);color:var(--ink);border-style:dashed;background:var(--surface)}.mmnode.past{border-style:solid}
+.mmarrow{color:var(--muted);font-size:1rem}
+.mmstage{position:relative;padding:28px 28px 30px;overflow:hidden}
+.mmbody{display:flex;flex-direction:column;gap:18px;max-width:1000px;margin:0 auto}.mmbody>h2{text-align:center;margin:0}
+.mmbody p{margin:0;line-height:1.5}
+.mmback{position:absolute;top:16px;left:16px}
+.mmbtns{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:6px}.mmbtns.center{justify-content:center}
+.mm-in-next .mmbody{animation:mmInR .32s ease-out}.mm-in-back .mmbody{animation:mmInL .32s ease-out}
+@keyframes mmInR{from{transform:translateX(60px);opacity:0}to{transform:none;opacity:1}}@keyframes mmInL{from{transform:translateX(-60px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.mm-in-next .mmbody,.mm-in-back .mmbody{animation:none}}
+.mmdrop{position:relative;width:min(520px,100%);min-height:220px;margin:8px auto 0;border:2.5px dashed var(--muted);border-radius:22px;cursor:pointer;color:var(--ink);justify-content:center;transition:border-color .15s,background .15s;height:auto;white-space:normal;font-weight:400}
+.mmdrop .plus{position:absolute;inset:0;display:grid;place-items:center;font-size:5rem;font-weight:300;color:var(--accent);opacity:0;transition:opacity .15s}
+.mmdrop:hover,.mmdrop:focus-visible,.mmdrop.over{border-color:var(--accent);background:var(--accent-soft)}.mmdrop:hover>:not(.plus),.mmdrop:focus-visible>:not(.plus),.mmdrop.over>:not(.plus){opacity:0}.mmdrop:hover .plus,.mmdrop:focus-visible .plus,.mmdrop.over .plus{opacity:1}
+.mmlist{opacity:.85}
+.mmstage .choice{border-style:dashed;border-radius:18px;min-height:120px;justify-content:center;align-items:center;text-align:center;padding:20px}
+.mmstage .choice:hover:not([disabled]){border-color:var(--accent);background:var(--accent-soft)}.mmstage .choice[disabled]{opacity:.45;cursor:not-allowed}
+.mmstage .mmchoice{max-width:640px;margin:0 auto;width:100%}
+.mmstage .row{gap:12px}.mmstage .msg{margin:0}.mmstage table{margin:0}
+.mmcard{gap:20px 24px}.mmcard .mmact{margin-top:4px}.mmalt{margin-top:2px}.mmalt>div{display:flex;flex-direction:column;gap:8px}
+.mmprogress{margin:0}.mmnext,.mmtemp{margin-top:4px}.mmstep.dim{opacity:.55}
+.mmnum{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--brand,var(--ink));color:#fff;font-weight:800}
+.mmchoice{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.choice{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:14px 16px;border-radius:12px;border:2px solid var(--line);background:var(--surface);height:auto;white-space:normal}
+.choice b{font-size:1.05rem}.choice span{color:var(--muted);font-weight:400;font-size:.88rem}.choice.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.mmprogress{display:flex;align-items:center;gap:12px;margin-bottom:12px}.mmprogress .bar{flex:1;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}.mmprogress .bar span{display:block;height:100%;background:var(--accent)}
+.mmcard{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:18px;border:2px solid var(--accent);border-radius:14px;background:var(--surface)}
+@media (max-width:760px){.mmcard{grid-template-columns:1fr}}
+.mmbox,.mmdest{display:flex;flex-direction:column;gap:4px}.mmbox b{font-size:1.6rem}.mmdest b{font-size:2.4rem;color:var(--accent)}
+.mmbay,.mmact,.mmalt,.mmcard>p{grid-column:1/-1}
+.mmslots{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}.mmslots span{min-width:26px;padding:2px 4px;text-align:center;font-family:var(--f-mono);font-size:.72rem;border:1px solid var(--line);border-radius:4px}
+.mmslots .full{background:var(--surface-2);color:var(--muted)}.mmslots .blk{background:repeating-linear-gradient(-45deg,var(--surface) 0 2px,var(--line) 2px 4px)}.mmslots .here{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:800}
+button.big{font-size:1.1rem;padding:12px 22px;height:auto}
+.mmalt{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;padding:14px;border-radius:10px;background:var(--surface-2)}.mmalt h4{margin:0 0 6px}
+.mmnext ol{margin:6px 0 0;padding-left:28px;display:flex;flex-direction:column;gap:4px}.mmnext li span{margin-right:14px}.mmnext .dest{font-weight:700}
+.mmtemp ul{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:8px}.mmtemp li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
+.noteslines{height:120px;background:repeating-linear-gradient(transparent 0 27px,#999 27px 28px)}
 table.palt td.dest{font-weight:700;font-size:1rem}
 .tick{width:56px;text-align:center}.tickbox{display:inline-block;width:16px;height:16px;border:1.5px solid var(--muted);border-radius:3px}
 @media print{
@@ -533,7 +577,7 @@ async function backupProject(pr){
   }else{download(name,new Blob([body],{type:'application/json'}));toast('Backup downloaded. Connect a shared folder to save backups there instead.');}
 }
 function fsCopyLocal(){const n=FS.localOnly.length;FS.localOnly.forEach(p=>{if(!S.projects.some(x=>x.id===p.id))S.projects.push(p);});FS.localOnly=[];fsQueue();render();toast(`Copied ${plural(n,'project')} into the shared folder`);}
-function updateSaveState(){const el=$('#savestate');if(el)el.textContent=saveText();}
+function updateSaveState(){const el=$('#savestate');if(el){el.textContent=saveText();el.classList.toggle('unsaved',draftDirty());}const sb=$('#saveBtn');if(sb){sb.disabled=!draftDirty();sb.textContent=draftDirty()?'Save':'Saved';}}
 function storagePanel(){
   const st=FS.status;
   if(st==='connected')return `<p>Saving to the shared folder <b>${esc(FS.name)}</b>. Everyone who connects to this folder sees the same projects. Changes from others load automatically every 30 seconds.</p>
@@ -561,7 +605,7 @@ function persist(){
   try{localStorage.setItem(KEY,JSON.stringify({version:2,projects:S.projects,seeded:true}));S.storageOk=true;}catch(e){S.storageOk=false;}
   updateSaveState();
 }
-function saveText(){if(FS.status==='connected')return FS.saving?'Saving to shared folder…':`Saved to shared folder “${FS.name}”`;
+function saveText(){if(draftDirty())return 'Unsaved changes';if(FS.status==='connected')return FS.saving?'Saving to shared folder…':`Saved to shared folder “${FS.name}”`;
   if(FS.status==='needs-permission')return 'Shared folder not connected. Saving in this browser.';
   return S.storageOk?'Saved in this browser':'Not saved in this browser. Use Export → Project file.';}
 function migrateRecord(r){
@@ -587,9 +631,15 @@ function normalisePlan(p){const d=defaultsPlan();p.setup=Object.assign(d.setup,p
 
 const projRec=()=>S.ctx&&S.projects.find(x=>x.id===S.ctx.pid);
 const moveRec=()=>{const pr=projRec();return pr&&S.ctx.mid?pr.moves.find(m=>m.id===S.ctx.mid):null;};
-const cur=()=>{const pr=projRec();if(!pr)return null;if(S.ctx.mid){const m=moveRec();return m?m.plan:null;}return pr.plan;};
+/* A core move is edited on a working copy. Save writes it to the move (and the shared folder); leaving without saving throws the changes away. */
+const draftOn=()=>!!(S.draft&&S.ctx&&S.ctx.mid&&S.draft.pid===S.ctx.pid&&S.draft.mid===S.ctx.mid);
+const cur=()=>{const pr=projRec();if(!pr)return null;if(S.ctx.mid){const m=moveRec();if(!m)return null;if(draftOn())return S.draft.plan;return m.plan;}return pr.plan;};
+function startDraft(){const m=moveRec();S.draft=m?{pid:S.ctx.pid,mid:S.ctx.mid,plan:clone(m.plan),dirty:false}:null;}
+function commitDraft(quiet){if(!draftOn())return false;const pr=projRec(),m=moveRec();if(!m)return false;const now=Date.now();
+  m.plan=clone(S.draft.plan);m.updated=now;pr.updated=now;S.draft.dirty=false;persist();if(!quiet)toast('Core move saved');return true;}
+const draftDirty=()=>draftOn()&&S.draft.dirty;
 const isReadOnly=()=>!!(S.ctx&&!S.ctx.mid);
-function touch(p){const pr=projRec();const now=Date.now();if(pr){pr.updated=now;const m=moveRec();if(m)m.updated=now;}persist();}
+function touch(p){if(draftOn()&&(!p||p===S.draft.plan)){S.draft.dirty=true;updateSaveState();return;}const pr=projRec();const now=Date.now();if(pr){pr.updated=now;const m=moveRec();if(m)m.updated=now;}persist();}
 
 /* ---------- helpers ---------- */
 function parseRows(str){if(Array.isArray(str))return str;const out=new Set();String(str||'').split(/[,;\s]+/).forEach(t=>{if(!t)return;const m=t.match(/^(\d+)-(\d+)$/);
@@ -620,6 +670,16 @@ function fitIssue(p,it,r,DC){const d=bayDim(r);if(!d)return'';const b=boxDims(it
   maxi(b.h,d.h,'height');return out.join('; ');}
 function bayDimsFromItems(p){const DC=dimCols(p);if(!DC.yl&&!DC.yw&&!DC.yh)return 0;const P=computePlan(p);let n=0;
   P.racks.forEach(R=>{if(bayDim(R.rack))return;for(const c of R.cells){const it=c.item;if(!it)continue;const cu=it.custom||{};const d={l:mm(cu[DC.yl]),w:mm(cu[DC.yw]),h:mm(cu[DC.yh])};if(d.l||d.w||d.h){R.rack.dim=d;n++;break;}}});return n;}
+function sizeBody(p,P){const DC=P.DC;const anyBay=P.racks.some(R=>bayDim(R.rack));const anyBox=p.items.some(it=>boxDims(it,DC));
+  if(!anyBay&&!anyBox)return `<p class="muted small">No sizes yet. Box sizes come from Box Length, Width and Height columns when you import. Set bay sizes in Edit → Edit Bay Settings.</p>`;
+  const bs=new Map();p.items.forEach(it=>{const d=boxDims(it,DC);const k=d?dimTxt(d):'';if(!bs.has(k))bs.set(k,{d,n:0,it});bs.get(k).n++;});
+  const ys=new Map();P.racks.forEach(R=>{const d=bayDim(R.rack);const k=d?dimTxt(d)+(isH(R.rack)?' sideways':''):'';if(!ys.has(k))ys.set(k,{d,n:0,names:[]});const y=ys.get(k);y.n++;y.names.push(R.rack.name);});
+  const fitN=e=>P.racks.filter(R=>bayDim(R.rack)&&!fitIssue(p,e.it,R.rack,DC)).length;
+  return `<h4>Boxes by size <span class="muted small">L × W × H mm</span></h4><table><thead><tr><th>Size</th><th class="num">Boxes</th><th class="num">Bays it fits</th></tr></thead><tbody>
+      ${[...bs.entries()].sort((a,b)=>b[1].n-a[1].n).map(([k2,e])=>`<tr><td class="mono">${k2||'<span class="muted">No size given</span>'}</td><td class="num mono">${e.n}</td><td class="num mono">${e.d?fitN(e):'<span class="muted">any</span>'}</td></tr>`).join('')}</tbody></table>
+    <h4 style="margin-top:12px">Bays by size</h4><table><thead><tr><th>Size</th><th class="num">Bays</th><th>Bays</th></tr></thead><tbody>
+      ${[...ys.entries()].map(([k2,y])=>`<tr><td class="mono">${k2||'<span class="muted">No size set</span>'}</td><td class="num mono">${y.n}</td><td class="mono small">${esc(y.names.slice(0,14).join(', '))}${y.names.length>14?' …':''}</td></tr>`).join('')}</tbody></table>
+    <p class="muted small" style="margin-top:8px">Upright bays: the box length must be within ${p.options.fitTol===undefined?10:+p.options.fitTol||0} mm of the bay length (never longer); width and height can be smaller. Sideways bays: the width must match instead. Boxes already in a slot are never moved for size. Hover over a bay on the Rack plan to see its size.</p>`;}
 function sizePanel(p,P){const DC=P.DC;const bays=P.racks.filter(R=>bayDim(R.rack));const anyBox=p.items.some(it=>boxDims(it,DC));if(!bays.length&&!anyBox)return'';
   const bs=new Map();p.items.forEach(it=>{const d=boxDims(it,DC);const k=d?dimTxt(d):'';if(!bs.has(k))bs.set(k,{d,n:0,it});bs.get(k).n++;});
   const ys=new Map();P.racks.forEach(R=>{const d=bayDim(R.rack);const k=d?dimTxt(d)+(isH(R.rack)?' sideways':''):'';if(!ys.has(k))ys.set(k,{d,n:0,names:[]});const y=ys.get(k);y.n++;y.names.push(R.rack.name);});
@@ -712,9 +772,9 @@ function markUpdated(p,before){deriveNames(p);p.racks.forEach(r=>{const old=befo
 function labelW(l){return +l.w>0?+l.w:Math.max(2,Math.ceil(String(l.text).length*0.42*(+l.size||1))+1);}
 function inkOn(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return '#0f2433';const n=parseInt(m[1],16),r=n>>16&255,g=n>>8&255,b=n&255;const L=(0.2126*r+0.7152*g+0.0722*b)/255;return L>0.6?'#0f2433':'#ffffff';}
 const LABEL_COLOURS=[['','None'],['#0a1f2e','Navy'],['#00b0c9','Sunwater cyan'],['#bfeaf1','Light cyan'],['#ffd166','Amber'],['#f4a3a3','Red'],['#b7e4c7','Green'],['#d9dee2','Grey']];
-function mapBounds(p){let w=0,h=0;p.racks.forEach(r=>{w=Math.max(w,r.x+dw(r));h=Math.max(h,r.y+dh(r));});
+function mapBounds(p){let w=0,h=0;const nTemp=(p.items||[]).filter(it=>it.temp).length;p.racks.forEach(r=>{w=Math.max(w,r.x+dw(r));h=Math.max(h,r.y+dh(r));});
   (p.map.labels||[]).forEach(l=>{w=Math.max(w,l.x+labelW(l)+1);h=Math.max(h,l.y+(+l.h||1)+1);});
-  return{w:Math.max(w+2,12),h:Math.max(h+2,10)};}
+  if(nTemp){w+=7;h=Math.max(h,6);}return{w:Math.max(w+2,12),h:Math.max(h+2,10),temp:nTemp,tx:w-6};}
 
 /* ---------- locking ----------
    Locked bay: keeps exactly its boxes (fixed). Locked slot: keeps its box, or stays empty.
@@ -794,6 +854,17 @@ function spaceNotice(p,P){const list=spaceSuggestions(p,P);if(!list.length)retur
     <ul>${list.map((sg,i)=>`<li><span>${esc(sg.text)}</span><span class="row"><button class="primary" data-act="space-accept" data-i="${i}">Move</button><button class="ghost" data-act="space-dismiss" data-i="${i}">Dismiss</button></span></li>`).join('')}</ul>
     ${list.length>1?`<div class="row"><button data-act="space-accept-all">Move all ${list.length}</button></div>`:''}</details>`;}
 /* ---------- quick view of which bays are locked ---------- */
+const ICON_LOCK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+const ICON_TAPE='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a8 8 0 1 1 8 8H3z"/><circle cx="11" cy="12" r="2.5"/><path d="M15 20h6M17 20v-3M19 20v-2"/></svg>';
+function lockBody(p,P,ro){
+  const st=R=>R.locked?'on':(Object.values(R.rack.slotLocks||{}).length||Object.keys(R.rack.hold||{}).length)?'part':'off';
+  const all=P.racks.map(st);const n={on:all.filter(x=>x==='on').length,part:all.filter(x=>x==='part').length,off:all.filter(x=>x==='off').length};
+  return `<div class="row" style="gap:14px"><span class="lockcount"><span class="lk on"></span>${n.on} locked</span>${n.part?`<span class="lockcount"><span class="lk part"></span>${n.part} partly locked</span>`:''}<span class="lockcount"><span class="lk off"></span>${n.off} unlocked</span></div>
+    <div class="lockrows">${P.rowList.map(G=>`<div class="lockrow"><span class="rl">Row ${esc(G.row.letter)}</span>${G.racks.map(R=>{const s2=st(R);
+      const tip=s2==='on'?'locked: nothing in it moves':s2==='part'?'unlocked, with some slots locked or boxes kept in place':'unlocked: the plan can fill and move boxes here';
+      return ro?`<span class="lk-chip ${s2}" title="${esc(R.rack.name)} ${tip}">${esc(R.rack.name)}</span>`:`<button class="lk-chip ${s2}" data-act="lock-rack" data-id="${R.rack.id}" title="${esc(R.rack.name)} ${tip}. Click to ${R.locked?'unlock':'lock'}.">${esc(R.rack.name)}</button>`;}).join('')}
+      ${ro?'':`<button class="ghost small" data-act="lock-row" data-id="${G.row.key}">${G.racks.every(R=>R.locked)?'Unlock row':'Lock row'}</button>`}</div>`).join('')}</div>
+    <p class="muted small">${ro?'Locked bays keep their boxes where they are.':'Click a bay to lock or unlock it. Before importing new boxes, lock the bays that are already full so nothing in them moves.'}</p>`;}
 function lockStrip(p,P,ro,where){
   const st=R=>R.locked?'on':(Object.values(R.rack.slotLocks||{}).length||Object.keys(R.rack.hold||{}).length)?'part':'off';
   const all=P.racks.map(st);const n={on:all.filter(x=>x==='on').length,part:all.filter(x=>x==='part').length,off:all.filter(x=>x==='off').length};
@@ -836,7 +907,7 @@ function computePlan(p){
     if(r.locked){R.cells.forEach(c=>{c.closed=true;});Object.entries(r.fixed||{}).forEach(([s,id])=>pin(R,s,id,'bay'));return;}
     Object.entries(r.slotLocks||{}).forEach(([s,id])=>pin(R,s,id,'slot'));
     Object.entries(r.hold||{}).forEach(([s,id])=>{const c=R.cells[(+s)-1];if(!c||c.closed||c.blocked)return;const ids=(Array.isArray(id)?id:[id]).filter(x=>byId.has(x)&&!pinned.has(x));if(ids.length)pin(R,s,ids,'held');});});
-  const pool=sorted.filter(it=>!pinned.has(it.id));
+  const temp=sorted.filter(it=>it.temp&&!pinned.has(it.id));const pool=sorted.filter(it=>!pinned.has(it.id)&&!it.temp);
   let ri=0,si=0;
   const DC=dimCols(p),anyDim=p.racks.some(r=>bayDim(r));const noFit=[];
   const next=()=>{while(ri<racks.length){if(racks[ri].locked){ri++;si=0;continue;}const c=racks[ri].cells;while(si<c.length&&(c[si].blocked||c[si].closed||c[si].item))si++;if(si<c.length)return c[si];ri++;si=0;}return null;};
@@ -856,7 +927,7 @@ function computePlan(p){
   }
   let usable=0,gaps=0,free=0,lockedEmpty=0;racks.forEach(R=>R.cells.forEach(c=>{if(c.blocked)return;usable++;if(c.gap)gaps++;else if(!c.item&&!c.closed)free++;else if(!c.item&&c.closed)lockedEmpty++;}));
   const rowList=p._rows.map(g=>({row:g,racks:g.bays.map(b=>racks.find(R=>R.rack.id===b.id)).filter(Boolean)}));
-  return{sorted,racks,rowList,pos,unplaced,hue,feats,usable,gaps,placed:sorted.length-unplaced.length,free,lockedEmpty,noFit,DC,tooBig:anyDim?unplaced.filter(it=>boxDims(it,DC)&&!racks.some(R=>bayDim(R.rack)&&!fitIssue(p,it,R.rack,DC))):[],pinned:pinned.size,held};
+  return{sorted,racks,rowList,pos,unplaced,hue,feats,usable,gaps,placed:sorted.length-unplaced.length-temp.length,temp,free,lockedEmpty,noFit,DC,tooBig:anyDim?unplaced.filter(it=>boxDims(it,DC)&&!racks.some(R=>bayDim(R.rack)&&!fitIssue(p,it,R.rack,DC))):[],pinned:pinned.size,held};
 }
 
 /* moves = differences between this core move and the saved project */
@@ -897,11 +968,14 @@ function render(){
   if(S.view==='home'||!projRec())html=homeView();
   else if(isReadOnly())html=projectReadView(projRec());
   else html=p.stage==='holes'?holesStep(p):p.stage==='racks'?racksStep(p):moveView();
-  app.innerHTML=html+modalView()+exportModal();
+  app.innerHTML=html+modalView()+exportModal()+leaveModal();
   const mc2=$('#mapcanvas');if(mc2&&keep){mc2.scrollLeft=keep.l;mc2.scrollTop=keep.t;}
   if(S.focusAfter){const el=document.getElementById(S.focusAfter);S.focusAfter=null;if(el){el.focus();if(el.select)el.select();}}
   S.dirty=false;syncHS();
 }
+function leaveModal(){if(!S.leaveAsk||!draftDirty())return'';return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="leaveTitle"><div class="box" style="width:min(480px,100%)">
+  <h2 id="leaveTitle">Save this core move?</h2><p class="muted">You have changes that haven’t been saved. If you don’t save, the move goes back to how it was when you last saved it.</p>
+  <div class="row" style="justify-content:flex-end"><button class="ghost" data-act="leave-stay">Keep editing</button><button class="danger" data-act="leave-discard">Don’t save</button><button class="primary" data-act="leave-save">Save and close</button></div></div></div>`;}
 function modalView(){if(!S.modal)return'';return `<div class="modal" role="dialog" aria-modal="true" aria-label="Shed map image"><div class="box">
   <div class="row" style="justify-content:space-between;align-items:center"><h2>Shed map image</h2><button data-act="modal-close">Close</button></div>
   <p class="muted small">The PNG has been downloaded. If it didn’t download, right-click the image and choose “Save Image As”, or use the button below.</p>
@@ -1047,8 +1121,8 @@ function projectReadView(pr){
 
 /* core move workspace */
 function moveView(){
-  const pr=projRec(),m=moveRec(),p=m.plan,P=computePlan(p),M=computeMoves(p,P);S.match=matchInfo(p,P);
-  const tabs=[['plan','Rack plan',''],['map','Shed map',''],['moves','Moves',M?M.steps.length:''],['edit','Edit','']];
+  const pr=projRec(),m=moveRec(),p=cur(),P=computePlan(p),M=computeMoves(p,P);S.match=matchInfo(p,P);
+  const tabs=[['plan','Rack plan',''],['map','Shed map',''],['moves','Move mode',''],['edit','Edit','']];
   let body='';
   if(S.tab==='map')body=mapTab(p,P,false);
   else if(S.tab==='moves')body=movesTab(p,P,M);
@@ -1058,7 +1132,8 @@ function moveView(){
   <div class="appbar"><div class="wrap">
     <button class="ghost" data-act="home" aria-label="Back to projects">← Projects</button>
     <div class="crumb" style="flex-direction:column;align-items:flex-start;gap:0"><span class="sub">${esc(pr.name)}${pr.site?' · '+esc(pr.site):''} · core move</span><strong title="${esc(m.name)}">${esc(m.name)}</strong></div><span class="spacer"></span>
-    <span id="savestate" class="savestate">${esc(saveText())}</span>
+    <span id="savestate" class="savestate ${draftDirty()?'unsaved':''}">${esc(saveText())}</span>
+    <button class="primary" id="saveBtn" data-act="draft-save" ${draftDirty()?'':'disabled'} title="Save this core move (Ctrl+S). Leave without saving to go back to the last save.">${draftDirty()?'Save':'Saved'}</button>
     <details class="menu" id="exportMenu"><summary class="btn">Export</summary><div class="menu-pop" role="menu">
       <button role="menuitem" data-act="export-xlsx">Excel, inventory template <span class="hint">.xlsx</span></button>
       <button role="menuitem" data-act="export-csv">CSV, inventory template <span class="hint">.csv</span></button>
@@ -1080,6 +1155,23 @@ function moveView(){
 }
 
 function summary(p,P){
+  const empty=P.racks.reduce((n,R)=>n+R.cells.filter(c=>!c.blocked&&!c.item).length,0);const waiting=P.unplaced.length+(P.temp?P.temp.length:0);
+  const nUn=P.racks.filter(R=>!R.locked).length;const ro=isReadOnly();
+  return `<div class="summary">
+    <div class="stat"><span class="label">Rows</span><b>${p._rows?p._rows.length:0}</b></div>
+    <div class="stat"><span class="label">Bays</span><b>${p.racks.length}</b></div>
+    <div class="stat"><span class="label">Boxes</span><b>${p.items.length}</b></div>
+    <div class="stat" title="Empty slots, including empty slots in locked bays. Blocked slots aren’t counted."><span class="label">Free slots</span><b>${empty}</b></div>
+    ${waiting?`<div class="stat warn" title="Boxes that don’t have a slot yet${P.temp&&P.temp.length?', including boxes on the temporary pallet':''}"><span class="label">Waiting for a slot</span><b>${waiting}</b></div>`:''}
+    <span class="spacer"></span>
+    <div class="popwrap"><button class="iconbtn ${S.pop==='locks'?'on':''}" data-act="pop" data-pop="locks" title="Bay locks: see which bays are locked" aria-label="Bay locks" aria-expanded="${S.pop==='locks'}">${ICON_LOCK}<span>${P.racks.length-nUn} locked</span></button>
+      <button class="iconbtn ${S.pop==='sizes'?'on':''}" data-act="pop" data-pop="sizes" title="Sizes: box and bay dimensions" aria-label="Sizes" aria-expanded="${S.pop==='sizes'}">${ICON_TAPE}</button>
+      ${S.pop==='locks'?`<div class="popover" role="dialog" aria-label="Bay locks"><div class="pophead"><h3>Bay locks</h3><button class="icon ghost" data-act="pop" data-pop="" aria-label="Close">✕</button></div>${lockBody(p,P,ro)}</div>`:''}
+      ${S.pop==='sizes'?`<div class="popover" role="dialog" aria-label="Sizes"><div class="pophead"><h3>Sizes</h3><button class="icon ghost" data-act="pop" data-pop="" aria-label="Close">✕</button></div>${sizeBody(p,P)}</div>`:''}
+    </div>
+  </div>`;
+}
+function summaryOld(p,P){
   return `<div class="summary">
     <div class="stat"><span class="label">Rows</span><b>${p._rows?p._rows.length:0}</b></div>
     <div class="stat"><span class="label">Bays</span><b>${p.racks.length}</b></div>
@@ -1105,9 +1197,8 @@ function rackElev(R,P,M,small){
       return `<div class="cell filled${pin}${hl}${it.missing?' missing':''} ${moved?'moved':''}" style="--h:${P.hue.get(it.feature||'')}" title="${esc(r.name)}-${c.slot}: ${esc(fname(it.feature))} ${esc(it.hole)} box ${esc(it.box)}${it.of?' of '+esc(it.of):''}${it.missing?' (missing)':''}${c.pin?` (${c.pin==='held'?'held':'locked'})`:''}">${small?'':`<span class="n">${c.slot}</span><span>${esc(it.hole)}·${esc(it.box)}${c.extra&&c.extra.length?' +'+c.extra.length:''}</span>`}</div>`;}
     return `<div class="cell${pin}" title="${esc(r.name)}-${c.slot}: empty${c.pin?' (locked)':''}">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
   }).join('');
-  const d=bayDim(r);const maxL=Math.max(0,...P.racks.map(x=>{const dd=bayDim(x.rack);return dd?(isH(x.rack)?dd.w:dd.l)||0:0;}));const ln=d?(isH(r)?d.w:d.l):0;
-  const wcss=!small&&ln&&maxL?`style="width:${Math.round(Math.max(72,112*ln/maxL))}px"`:'';
-  return `<button class="rackcol" data-act="goto-rack" data-id="${r.id}" aria-label="Bay ${esc(r.name)}" ${d?`title="${esc(dimTxt(d))} mm"`:''}><span class="rname">${esc(r.name)}</span><div class="rack ${small?'small':''} ${R.locked?'locked':''}" ${wcss}>${cells||'<div class="cell">no slots</div>'}</div>${small?'':`<span class="rmeta">${R.used}/${R.cells.filter(c=>!c.blocked).length}${R.locked?' · locked':''}${S.updated[r.id]?' · moved':''}</span>${d?`<span class="rmeta">${esc(dimTxt(d))}</span>`:''}`}</button>`;
+  const d=bayDim(r);const wcss='';
+  return `<button class="rackcol" data-act="goto-rack" data-id="${r.id}" aria-label="Bay ${esc(r.name)}" title="Bay ${esc(r.name)}${d?` · ${esc(dimTxt(d))} mm (L × W × H)`:''}"><span class="rname">${esc(r.name)}</span><div class="rack ${small?'small':''} ${R.locked?'locked':''}" ${wcss}>${cells||'<div class="cell">no slots</div>'}</div>${small?'':`<span class="rmeta">${R.used}/${R.cells.filter(c=>!c.blocked).length}${R.locked?' · locked':''}${S.updated[r.id]?' · moved':''}</span>`}</button>`;
 }
 
 /* search and filters */
@@ -1173,7 +1264,7 @@ function planTab(p,P,M,ro){
   if(!p.racks.length)return `<div class="empty">No bays yet. Open <b>Edit</b> and set up the bays under Edit Bay Settings.</div>`;
   const counts=new Map();P.sorted.forEach(it=>counts.set(it.feature||'',(counts.get(it.feature||'')||0)+1));
   const cols=p.customCols;
-  return `${lockStrip(p,P,ro,'plan')}${sizePanel(p,P)}
+  return `
   ${P.tooBig.length?`<div class="notice"><strong>${plural(P.tooBig.length,'box is','boxes are')} the wrong size for every bay in the shed</strong>, so ${P.tooBig.length===1?'it hasn’t':'they haven’t'} been given a slot: ${P.tooBig.slice(0,4).map(it=>`<span class="mono">${esc(it.hole)} box ${esc(it.box)}</span> (${esc(dimTxt(boxDims(it,P.DC)))} mm)`).join(', ')}${P.tooBig.length>4?' …':''}. Check the box sizes, or add a bay of the right size.</div>`:''}
   ${P.noFit.length>P.noFit.filter(it=>P.tooBig.includes(it)).length?`<div class="notice"><strong>${plural(P.noFit.length-P.noFit.filter(it=>P.tooBig.includes(it)).length,'box doesn’t','boxes don’t')} fit any open bay.</strong> Bays of the right size are full or locked. Unlock one, or add a bay of the right size.</div>`:''}
   ${P.unplaced.filter(it=>!P.noFit.includes(it)&&!P.tooBig.includes(it)).length?`<div class="notice"><strong>${plural(P.unplaced.filter(it=>!P.noFit.includes(it)&&!P.tooBig.includes(it)).length,'box','boxes')} don't fit.</strong> ${ro?'Plan more bays in a core move.':'Add bays or slots in Edit, unlock a bay, or reduce spare slots.'} First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
@@ -1214,25 +1305,109 @@ function planTab(p,P,M,ro){
 }
 
 /* moves tab */
-function palletRows(p,P){if(!p.pallet||!p.pallet.list)return[];const byId=new Map(p.items.map(it=>[it.id,it]));
-  return p.pallet.list.filter(x=>byId.has(x.id)).map(x=>({it:byId.get(x.id),pal:x.pal})).reverse().map((x,i)=>{const ps=P.pos[x.it.id];return{n:i+1,it:x.it,pal:x.pal,dest:ps?ps.rackName+'-'+ps.slot:'',fitWarn:''};});}
-function palletSection(p,P){const rows=palletRows(p,P);
-  if(!rows.length)return `<section class="panel"><header><h2>Pallet sheet</h2></header>
-    <p class="muted small" style="max-width:75ch">Import the inventory list of the boxes in the order they were stacked onto the pallets. The sheet then lists them in the order they come off (last on, first off) with the slot each one goes to, ready to print.</p>
-    <div class="row"><button class="primary" data-act="pick-pallet">Import pallet order…</button><span class="muted small">Excel or CSV. A numbered order column is used if there is one, otherwise the row order.</span></div></section>`;
-  const noDest=rows.filter(r=>!r.dest).length;const hasPal=rows.some(r=>r.pal);
-  return `<section class="panel" id="palletSheet"><header class="row" style="justify-content:space-between;align-items:baseline"><h2>Pallet sheet</h2><span class="muted small">${plural(rows.length,'box','boxes')} in the order they come off the pallets${p.pallet.file?` · from ${esc(p.pallet.file)}`:''}</span></header>
-    <div class="row noprint"><button class="primary" data-act="pallet-print">Print pallet sheet</button><button data-act="pallet-export">Export to Excel</button><button class="ghost" data-act="pick-pallet">Import a new pallet order…</button><button class="ghost danger" data-act="pallet-clear">Clear</button></div>
+/* ---------- Move mode ---------- */
+function mmBoxes(p,P,M){const byId=new Map(p.items.map(i=>[i.id,i]));
+  if(p.pallet&&p.pallet.list&&p.pallet.list.length)return{src:'pallet',list:p.pallet.list.map(x=>byId.get(x.id)).filter(Boolean),pal:new Map(p.pallet.list.map(x=>[x.id,x.pal||'']))};
+  const pr=projRec();if(M&&pr&&pr.plan){const ids=[];M.steps.forEach(s2=>{if(s2.item&&s2.kind!=='remove'&&!ids.includes(s2.item.id))ids.push(s2.item.id);});return{src:'changes',list:ids.map(id=>byId.get(id)).filter(Boolean),pal:new Map()};}
+  return{src:'all',list:P.sorted.slice(),pal:new Map()};}
+function slotRank(P){const rank=new Map();let k=0;P.rowList.forEach(G=>G.racks.forEach(R=>R.cells.forEach(c=>rank.set(R.rack.id+'|'+c.slot,k++))));return rank;}
+function mmOrdered(p,P,B,order){if(order==='pallet'&&B.src==='pallet')return B.list.slice().reverse();
+  const rank=slotRank(P);const key=it=>{const ps=P.pos[it.id];return ps?rank.get(ps.rackId+'|'+ps.slot):1e9;};return B.list.slice().sort((a,b)=>key(a)-key(b));}
+const destOf=(P,it)=>{const ps=P.pos[it.id];return ps?ps.rackName+'-'+ps.slot:'';};
+const boxLabel=it=>[fname(it.feature||''),it.hole].filter(Boolean).join(' · ')+' · box '+it.box+(it.of?' of '+it.of:'');
+function mmState(p){p.mm=p.mm||{};p.mm.done=p.mm.done||{};return p.mm;}
+function pinHere(p,id){const P=computePlan(p);const ps=P.pos[id];if(!ps)return false;const r=p.racks.find(x=>x.id===ps.rackId);if(!r)return false;
+  if(r.locked){const ex=r.fixed[ps.slot];if(ex===undefined)r.fixed[ps.slot]=id;else if(ex!==id&&!(Array.isArray(ex)&&ex.includes(id)))r.fixed[ps.slot]=[].concat(ex,id);}
+  else{const ex=r.slotLocks[ps.slot];if(ex===undefined||ex===''||ex===id)r.slotLocks[ps.slot]=id;else if(!(Array.isArray(ex)&&ex.includes(id)))r.slotLocks[ps.slot]=[].concat(ex,id);delete r.hold[ps.slot];}
+  return ps.rackName+'-'+ps.slot;}
+function keepEmpty(p,before){if(!before)return;const r=p.racks.find(x=>x.id===before.rackId);if(!r||r.locked)return;if(r.slotLocks[before.slot]===undefined){r.slotLocks[before.slot]='';delete r.hold[before.slot];}}
+/* empty slots that fit the box, nearest to where it was meant to go; bays the same size as the one it failed in are left out */
+function altSlots(p,P,it,failRackId){const DC=P.DC;if(!boxDims(it,DC))return null;const fr=p.racks.find(r=>r.id===failRackId);const fd=bayDim(fr);
+  const rank=slotRank(P);const ps=P.pos[it.id];const at=ps?rank.get(ps.rackId+'|'+ps.slot):0;const out=[];
+  P.racks.forEach(R=>{if(R.locked||R.rack.id===failRackId||!bayDim(R.rack))return;const d=bayDim(R.rack);if(fd&&dimTxt(d)===dimTxt(fd)&&isH(R.rack)===isH(fr))return;if(fitIssue(p,it,R.rack,DC))return;
+    R.cells.forEach(c=>{if(c.blocked||c.closed||c.item||c.gap)return;out.push({loc:R.rack.name+'-'+c.slot,d:Math.abs(rank.get(R.rack.id+'|'+c.slot)-at)});});});
+  return out.sort((a,b)=>a.d-b.d).slice(0,6).map(x=>x.loc);}
+function mmSheetRows(p,P,B,order){return mmOrdered(p,P,B,order).map((it,i)=>({n:i+1,it,dest:destOf(P,it),pal:B.pal.get(it.id)||''}));}
+/* Move mode is one step at a time: 0 upload, 1 offline/online, 2 order, 3 move, 4 finish */
+function mmStep(p,B){const mm=mmState(p);let st=mm.step|0;if(st>=1&&!mm.mode)st=Math.min(st,1);if(st>=3&&!mm.mode)st=1;return st;}
+function movesTab(p,P,M){
+  const mm=mmState(p);const B=mmBoxes(p,P,M);const hasPal=B.src==='pallet';const order=mm.order==='pallet'&&hasPal?'pallet':'slot';const st=mmStep(p,B);
+  const flow=[['Upload sheet',hasPal?`${B.list.length} boxes`:''],['Offline or online',mm.mode&&st>1?(mm.mode==='online'?'Online':'Offline'):''],['Order',st>2?(order==='pallet'?'Pallet':'Slot'):''],['Move',''],['Finish','']];
+  const chart=`<div class="mmflow" aria-hidden="true">${flow.map(([t,v],i)=>`${i?'<span class="mmarrow">→</span>':''}<div class="mmnode ${i===st?'cur':i<st?'past':''}"><span>${t}</span>${v?`<small>${esc(v)}</small>`:''}</div>`).join('')}</div>`;
+  const back=st>0&&!(S.imp&&S.imp.fromMove)?`<button class="ghost mmback" data-act="mm-back">← Back</button>`:'';
+  let body='';
+  if(st===0){
+    if(S.imp&&S.imp.fromMove)body=`<h2>Check the columns</h2>${importPanel(p)}`;
+    else if(hasPal)body=`<h2>Pallet sheet loaded</h2><p><b>${plural(B.list.length,'box','boxes')}</b> from <span class="mono">${esc(p.pallet.file||'your sheet')}</span>.</p>
+      <div class="mmbtns"><button class="primary" data-act="mm-go" data-v="1">Continue →</button><button data-act="pick-pallet">Use a different sheet</button><button class="ghost danger" data-act="pallet-clear">Remove it</button></div>`;
+    else body=`<button class="dropzone mmdrop" data-kind="holes" data-pallet="1" data-act="pick-pallet"><span class="plus" aria-hidden="true">+</span><strong>Upload pallet sheet</strong><span class="muted small">The boxes in the order they were stacked on the pallets · Excel or CSV</span></button>
+      ${B.list.length?`<div class="mmbtns center"><button class="ghost" data-act="mm-skip">No sheet: use the ${plural(B.list.length,'box','boxes')} in this move →</button></div>`:''}`;}
+  else if(st===1)body=`<h2>How are you doing the move?</h2><div class="mmchoice">
+      <button class="choice" data-act="mm-mode" data-v="offline"><b>Offline</b><span>Print a sheet and tick boxes off</span></button>
+      <button class="choice" data-act="mm-mode" data-v="online"><b>Online</b><span>Follow along on this laptop</span></button></div>`;
+  else if(st===2)body=`<h2>What order?</h2><div class="mmchoice">
+      <button class="choice" data-act="mm-order" data-v="pallet" ${hasPal?'':'disabled'}><b>Pallet order</b><span>${hasPal?'As they come off the pallets':'Upload a pallet sheet to use this'}</span></button>
+      <button class="choice" data-act="mm-order" data-v="slot"><b>Slot order</b><span>A1-1, A1-2, A1-3 …</span></button></div>`;
+  else if(st===3)body=mm.mode==='online'?`<h2>Move the boxes</h2>${onlineRun(p,P,B,order)}`
+      :`<h2>Print the ${order==='pallet'?'pallet':'slot'} sheet</h2>${offlineSheet(p,P,B,order)}<div class="mmbtns"><span class="spacer"></span><button class="primary" data-act="mm-go" data-v="4">I’m back from the move →</button></div>`;
+  else body=mm.mode==='online'?`<h2>Finish</h2>${finishPanel(p,P,B)}`:`<h2>After the move</h2>${offlineFinish(p,P,B)}`;
+  if(st===3&&(mm.step|0)===4)return movesTab(p,P,M);
+  const pr=projRec();
+  const list=pr.plan&&M&&(M.steps.length||M.noSpace.length)?`<details class="manual mmlist" data-sec="mmlist" ${S.open.mmlist?'open':''}><summary>Full move list compared with the saved shed <span class="muted small">${plural(M.steps.length,'step')}</span></summary><div class="body">${movesList(p,P,M)}</div></details>`:'';
+  const anim=S.mmDir?`mm-in-${S.mmDir}`:'';S.mmDir=null;
+  return `<div class="stack">${chart}<section class="panel mmstage ${anim}">${back}<div class="mmbody">${body}</div></section>${list}</div>`;}
+function offlineSheet(p,P,B,order){const rows=mmSheetRows(p,P,B,order);if(!rows.length)return'<p class="muted">No boxes to move.</p>';
+  const noDest=rows.filter(r=>!r.dest).length;const hasPal=rows.some(r=>r.pal);const title=order==='pallet'?'Pallet sheet':'Slot sheet';
+  return `<div class="row noprint"><button class="primary" data-act="mm-print">Print ${title.toLowerCase()}</button><button data-act="mm-export">Export to Excel</button></div>
     ${noDest?`<div class="msg warn">${plural(noDest,'box has','boxes have')} no slot in the plan yet. Add bays or slots, or check sizes.</div>`:''}
-    <div class="printhead"><h1>${esc([projRec().name,projRec().site].filter(Boolean).join(' – '))}</h1><p>Pallet sheet · core move “${esc((moveRec()||{}).name||'')}” · printed ${new Date().toLocaleDateString()}</p></div>
-    <div class="tablewrap"><table class="palt">
-      <thead><tr><th class="num">Off</th>${hasPal?'<th>Pallet</th>':''}<th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Depth (m)</th><th>Goes to</th><th class="tick">Done</th></tr></thead>
+    <div id="palletSheet"><div class="printhead"><h1>${esc([projRec().name,projRec().site].filter(Boolean).join(' – '))}</h1><p>${title} · core move “${esc((moveRec()||{}).name||'')}” · ${order==='pallet'?'in the order the boxes come off the pallets':'in slot order'} · printed ${new Date().toLocaleDateString()}</p></div>
+    <div class="tablewrap" style="max-height:520px;overflow:auto"><table class="palt">
+      <thead><tr><th class="num">${order==='pallet'?'Off':'Step'}</th>${hasPal?'<th>Pallet</th>':''}<th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Depth (m)</th><th>Goes to</th><th class="tick">Done</th></tr></thead>
       <tbody>${rows.map(r=>`<tr><td class="num mono">${r.n}</td>${hasPal?`<td class="mono">${esc(r.pal)}</td>`:''}<td class="mono">${esc(fname(r.it.feature||''))}</td><td class="mono">${esc(r.it.hole)}</td><td class="num mono">${esc(r.it.box)}${r.it.of?' / '+esc(r.it.of):''}</td><td class="num mono">${esc([outVal(r.it,'from'),outVal(r.it,'to')].filter(v=>v!=='').join(' – '))}</td><td class="mono dest">${r.dest?esc(r.dest):'<span class="pill stage">No slot</span>'}</td><td class="tick"><span class="tickbox"></span></td></tr>`).join('')}</tbody></table></div>
-    <div class="printnotes"><h2>Changes from the plan</h2><p>Write down any box that went somewhere other than its “Goes to” slot. Enter these in the planner afterwards by typing the slot in Edit → Holes &amp; boxes.</p>
-      <table><thead><tr><th>Feature</th><th>Hole ID</th><th>Box No.</th><th>Placed in (row-bay-slot)</th><th>Notes</th></tr></thead><tbody>${'<tr><td></td><td></td><td></td><td></td><td></td></tr>'.repeat(10)}</tbody></table>
-      <p><b>Slots that couldn’t be filled:</b> did you leave the slot empty, or move the next box up into it? Note which here: ______________________________________________</p></div>
-  </section>`;}
-function movesTab(p,P,M){return palletSection(p,P)+movesList(p,P,M);}
+    <div class="printnotes"><h2>Changes from the plan</h2><p>Write down every box that went somewhere other than its “Goes to” slot, and what happened to the slot it was meant for. Enter these in Move mode → After the move.</p>
+      <table><thead><tr><th>Feature</th><th>Hole ID</th><th>Box No.</th><th>Placed in (row-bay-slot)</th><th>Its planned slot was… (left empty / next box moved up)</th></tr></thead><tbody>${'<tr><td></td><td></td><td></td><td></td><td></td></tr>'.repeat(12)}</tbody></table>
+      <p style="margin-top:14px"><b>Notes:</b></p><div class="noteslines"></div></div></div>`;}
+function offlineFinish(p,P,B){const mm=mmState(p);const pr=projRec();
+  if(mm.finished)return finishPanel(p,P,B);
+  if(!S.mmFix)return `<p>Back from the move? Did everything go to plan?</p><div class="row"><button class="primary" data-act="mm-allgood">Yes, every box went where the sheet said</button><button data-act="mm-fixstart">No, some boxes went somewhere else</button></div>`;
+  const opts=B.list.map(it=>`<option value="${it.id}">${esc(boxLabel(it))} (planned ${esc(destOf(P,it)||'no slot')})</option>`).join('');
+  return `<p>Enter each box that didn’t go where the sheet said. You can copy these from the notes on the printed sheet.</p>
+    <div class="tablewrap"><table class="edit"><thead><tr><th>Box</th><th>Placed in</th><th>Its planned slot was…</th><th></th></tr></thead><tbody>
+    ${S.mmFix.map((r,i)=>`<tr><td><select id="mf_b_${i}" data-k="mmfix" data-i="${i}" data-f="id"><option value="">Choose a box…</option>${opts.replace(`value="${r.id}"`,`value="${r.id}" selected`)}</select></td>
+      <td class="w-s"><input id="mf_l_${i}" data-k="mmfix" data-i="${i}" data-f="loc" value="${esc(r.loc||'')}" placeholder="e.g. B2-4 or pallet" class="mono"></td>
+      <td><select id="mf_e_${i}" data-k="mmfix" data-i="${i}" data-f="gap"><option value="next" ${r.gap!=='empty'?'selected':''}>filled by the next box</option><option value="empty" ${r.gap==='empty'?'selected':''}>left empty</option></select></td>
+      <td><button class="icon ghost danger" data-act="mm-fixdel" data-i="${i}" aria-label="Remove row">✕</button></td></tr>`).join('')}</tbody></table></div>
+    <div class="row"><button data-act="mm-fixadd">+ Another box</button><span class="spacer"></span><button class="ghost" data-act="mm-fixcancel">Cancel</button><button class="primary" data-act="mm-fixapply">Update the plan</button></div>
+    <p class="muted small">Type “pallet” for a box that’s still on the pallet. It goes on the temporary pallet so it isn’t given a slot.</p>`;}
+function finishPanel(p,P,B){const pr=projRec();const temp=p.items.filter(it=>it.temp);
+  return `<div class="msg info"><b>Move recorded.</b> The plan now matches where the boxes went${temp.length?`, except ${plural(temp.length,'box')} still on the temporary pallet`:''}.</div>
+    <div class="row"><button class="primary" data-act="mm-save-shed">Save this move to ${esc([pr.name,pr.site].filter(Boolean).join(' – '))}</button><button class="ghost" data-act="mm-reopen">Make more changes</button></div>
+    <p class="muted small">Saving the move makes it the shed’s current layout, the same as “Save move to …” on the Projects page.</p>`;}
+function onlineRun(p,P,B,order){const mm=mmState(p);const all=mmOrdered(p,P,B,order);
+  const inList=new Set(all.map(it=>it.id));const done=all.filter(it=>mm.done[it.id]);const temp=p.items.filter(it=>it.temp);
+  const queue=all.filter(it=>!mm.done[it.id]&&!it.temp);const total=all.length;
+  const tempPanel=temp.length?`<div class="panel mmtemp"><h3>Temporary pallet <span class="muted small">${plural(temp.length,'box','boxes')}</span></h3><ul>${temp.map(it=>`<li><span class="mono">${esc(boxLabel(it))}</span><span class="row"><input id="tp_${it.id}" class="mono" placeholder="Slot e.g. B2-4" style="width:130px"><button data-act="mm-temp-place" data-id="${it.id}">Put it there</button><button class="ghost" data-act="mm-temp-back" data-id="${it.id}">Back in the queue</button></span></li>`).join('')}</ul></div>`:'';
+  const doneList=done.length?`<details class="manual" data-sec="mmdone" ${S.open.mmdone?'open':''}><summary>Placed so far <span class="muted small">${done.length}</span></summary><div class="body"><table><tbody>${done.map(it=>`<tr><td class="mono">${esc(boxLabel(it))}</td><td class="mono"><b>${esc(mm.done[it.id])}</b></td><td><button class="ghost small" data-act="mm-undo" data-id="${it.id}">Undo</button></td></tr>`).join('')}</tbody></table></div></details>`:'';
+  if(!queue.length){if(!mm.finished&&total)mm.finished=true;if((mm.step|0)<4){mm.step=4;S.mmDir='next';}return `${tempPanel}${finishPanel(p,P,B)}${doneList}`;}
+  const it=queue[0];const ps=P.pos[it.id];const dest=destOf(P,it);const R=ps?P.racks.find(x=>x.rack.id===ps.rackId):null;
+  const pct=Math.round(done.length/Math.max(1,total)*100);const alt=S.mmAlt===it.id;
+  const bayStrip=R?`<div class="mmbay"><span class="label">Bay ${esc(R.rack.name)}</span><div class="mmslots">${R.cells.map(c=>`<span class="${c.slot===ps.slot?'here':c.blocked?'blk':c.item?'full':''}" title="${esc(R.rack.name)}-${c.slot}">${c.slot}</span>`).join('')}</div></div>`:'';
+  const sug=alt?altSlots(p,P,it,ps?ps.rackId:null):null;
+  return `<div class="mmprogress"><div class="bar"><span style="width:${pct}%"></span></div><span class="small">${done.length} of ${total} placed${temp.length?` · ${temp.length} on the temporary pallet`:''}</span></div>
+    <div class="mmcard">
+      <div class="mmbox"><span class="label">${order==='pallet'?'Next off the pallet':'Next box'}</span><b>${esc(it.hole)} <span class="muted">box</span> ${esc(it.box)}${it.of?`<span class="muted"> of ${esc(it.of)}</span>`:''}</b><span>${esc(fname(it.feature||''))}${outVal(it,'from')!==''||outVal(it,'to')!==''?` · ${esc(outVal(it,'from'))}–${esc(outVal(it,'to'))} m`:''}${boxDims(it,P.DC)?` · ${esc(dimTxt(boxDims(it,P.DC)))} mm`:''}</span></div>
+      <div class="mmdest"><span class="label">Goes to</span>${dest?`<b class="mono">${esc(dest)}</b><span>Row ${esc(R.rack.rowLetter||'')} · Bay ${esc(R.rack.name.slice((R.rack.rowLetter||'').length))} · Slot ${ps.slot}</span>`:'<b>No slot</b><span>The plan has no slot for this box.</span>'}</div>
+      ${bayStrip}
+      <div class="row mmact">${dest?`<button class="primary big" id="mmPlaced" data-act="mm-placed" data-id="${it.id}">✓ Put in ${esc(dest)}</button>`:''}<button class="${alt?'on':''}" data-act="mm-alt" data-id="${it.id}">✗ It didn’t go there</button></div>
+      ${alt?`<div class="mmalt">
+        <div><h4>It went in a different slot</h4><div class="row"><input id="mmLoc" class="mono" placeholder="e.g. B2-4" style="width:140px"><button data-act="mm-elsewhere" data-id="${it.id}">Record it there</button></div></div>
+        <div><h4>It didn’t fit</h4>${sug===null?`<p class="small muted">This box has no size, so the planner can’t suggest other slots. Put it on the temporary pallet.</p>`:sug.length?`<p class="small muted">Empty slots this box fits${R&&bayDim(R.rack)?', not counting bays the same size as '+esc(R.rack.name):''}:</p><div class="row">${sug.map(l=>`<button class="mono" data-act="mm-altslot" data-id="${it.id}" data-loc="${l}">${l}</button>`).join('')}</div>`:`<p class="small muted">No empty slot fits this box. Put it on the temporary pallet.</p>`}</div>
+        ${dest?`<div><h4>The slot it was meant for (${esc(dest)})</h4><div class="seg mini-seg"><button data-act="mm-gap" data-v="next" aria-pressed="${S.mmGap!=='empty'}">Use it for the next box</button><button data-act="mm-gap" data-v="empty" aria-pressed="${S.mmGap==='empty'}">Leave it empty</button></div></div>`:''}
+        <div class="row"><button data-act="mm-temp" data-id="${it.id}">Put it on the temporary pallet</button><button class="ghost" data-act="mm-alt" data-id="">Cancel</button></div></div>`:''}
+      <p class="muted small">Press Enter to confirm. Each box you confirm is locked into its slot and saved straight away.</p>
+    </div>
+    ${queue.length>1?`<div class="mmnext"><h3>Up next</h3><ol start="${done.length+2}">${queue.slice(1,6).map(x=>`<li><span class="mono">${esc(x.hole)} box ${esc(x.box)}</span><span class="mono dest">${esc(destOf(P,x)||'no slot')}</span></li>`).join('')}</ol>${queue.length>6?`<p class="muted small">and ${queue.length-6} more</p>`:''}</div>`:''}
+    ${tempPanel}${doneList}`;}
 function movesList(p,P,M){
   const pr=projRec();
   if(!pr.plan)return `<div class="notice info"><strong>This is the first core move for ${esc(pr.name)}.</strong> There’s no saved layout to compare against yet. When you save this move to the project, later moves will list the boxes that need to shift.</div>`;
@@ -1296,6 +1471,7 @@ function mapSVG(p,P,o){
     if(o.interactive&&!isReadOnly()){const x0=g.minX*C,y0=g.minY*C,x1=g.maxX*C,y1=g.maxY*C;
       s+=`<rect class="rstretch" data-rstretch="${g.key}" data-dir="x" x="${x1-5}" y="${y0}" width="10" height="${y1-y0}"><title>Drag to stretch the bays in Row ${esc(g.letter)} sideways</title></rect><rect class="rstretch" data-rstretch="${g.key}" data-dir="y" x="${x0}" y="${y1-5}" width="${x1-x0}" height="10"><title>Drag to stretch the bays in Row ${esc(g.letter)} up or down</title></rect>`;}
     s+=`</g>`;});
+  if(B.temp)s+=`<g><rect x="${B.tx*C}" y="${2*C}" width="${5*C}" height="${3*C}" rx="6" fill="${pl.surface}" stroke="${pl.warn}" stroke-width="2" stroke-dasharray="6 4"/><text x="${(B.tx+2.5)*C}" y="${3.2*C}" text-anchor="middle" font-size="${Math.max(10,C*0.5)}" font-weight="700" fill="${pl.warn}">Temporary pallet</text><text x="${(B.tx+2.5)*C}" y="${4.1*C}" text-anchor="middle" font-size="${Math.max(9,C*0.45)}" fill="${pl.ink}">${plural(B.temp,'box','boxes')}</text></g>`;
   (p.map.labels||[]).forEach(l=>{const lsel=sel&&sel.type==='label'&&sel.id===l.id;const lw=labelW(l)*C,lh=(+l.h||1)*C,fill=l.color||pl.surface,tc=l.color?inkOn(l.color):pl.ink;const fs=Math.max(9,Math.min(lh*0.5,C*0.46*(+l.size||1)));
     s+=`<g data-label="${l.id}" ${o.interactive?'style="cursor:move"':''}><rect x="${l.x*C+1}" y="${l.y*C+2}" width="${lw-2}" height="${lh-4}" rx="4" fill="${fill}" stroke="${lsel?pl.accent:l.color?'none':pl.frame}" stroke-width="${lsel?2.5:1}" stroke-dasharray="${lsel||l.color?'':'4 3'}"/><text x="${l.x*C+lw/2}" y="${l.y*C+lh/2+fs*0.36}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${tc}">${esc(l.text)}</text>${lsel&&!isReadOnly()?`<rect data-lresize="${l.id}" x="${l.x*C+lw-hs}" y="${l.y*C+lh-hs-1}" width="${hs}" height="${hs}" rx="2" fill="${pl.accent}" stroke="${pl.surface}" stroke-width="1.5" style="cursor:nwse-resize"><title>Drag to resize</title></rect>`:''}</g>`;});
   s+=`</g>`;
@@ -1371,7 +1547,7 @@ function editTab(p,P){
 }
 function holesBody(p,P){
   const cols=p.customCols;
-  return `${p.racks.length?lockStrip(p,P,false,'edit'):''}<div class="grid2">
+  return `<div class="grid2">
     <section class="panel"><header><h3>${S.imp&&S.imp.kind==='layout'?'Import a shed layout':'Import holes from Excel or CSV'}</h3></header>${importPanel(p)}</section>
     ${S.imp?'':`<section class="panel"><header><h3>Import a shed layout</h3><span class="muted small">Replaces the bays and boxes in this move</span></header>${layoutDrop()}</section>`}
     <section class="panel"><header><h3>Add holes manually</h3><span class="muted small">Add a whole hole, or one box you missed</span></header>${addBoxForm(p,P)}</section>
@@ -1864,11 +2040,11 @@ function importPanel(p){
     <div class="stack" style="gap:8px">
       <label class="check"><input type="checkbox" id="imp_split" data-k="imp" data-f="split" ${imp.split?'checked':''}> Split combined IDs like <span class="mono">BMA1-DD100</span> into Feature and Hole</label>
       <label class="check"><input type="checkbox" id="imp_extras" data-k="imp" data-f="extras" ${imp.extras?'checked':''}> Bring in unmatched columns as custom columns</label>
-      <label class="check"><input type="checkbox" id="imp_pal" data-k="imp" data-f="pallet" ${imp.pallet||imp.mode==='pallet'?'checked':''} ${imp.mode==='pallet'?'disabled':''}> This list is in the order the boxes were stacked on the pallets (makes the pallet sheet in Moves)</label>
+      <label class="check"><input type="checkbox" id="imp_pal" data-k="imp" data-f="pallet" ${imp.pallet||imp.mode==='pallet'?'checked':''} ${imp.mode==='pallet'?'disabled':''}> This list is in the order the boxes were stacked on the pallets (for Move mode)</label>
       ${p.items.length?`<label class="check"><input type="checkbox" id="imp_dup" data-k="imp" data-f="skipDup" ${imp.skipDup?'checked':''}> Skip boxes already in the plan (same feature, hole and box)</label>
       <div class="row" style="align-items:center"><label class="check"><input type="radio" name="impmode" id="imp_mode_a" data-k="imp" data-f="mode" value="append" ${imp.mode!=='replace'?'checked':''}> Add to the ${p.items.length} existing boxes</label>
       <label class="check"><input type="radio" name="impmode" id="imp_mode_r" data-k="imp" data-f="mode" value="replace" ${imp.mode==='replace'?'checked':''}> Replace all boxes</label>
-      <label class="check"><input type="radio" name="impmode" id="imp_mode_p" data-k="imp" data-f="mode" value="pallet" ${imp.mode==='pallet'?'checked':''}> Only set the pallet order (the boxes are already in this move)</label></div>`:''}
+      <label class="check"><input type="radio" name="impmode" id="imp_mode_p" data-k="imp" data-f="mode" value="pallet" ${imp.mode==='pallet'?'checked':''}> Set the pallet order (boxes already in this move are matched; any others are added)</label></div>`:''}
     </div>
     <div><h3 style="margin-bottom:8px">Preview of boxes to add</h3>
       <div class="tablewrap"><table><thead><tr><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}</tr></thead>
@@ -1905,7 +2081,7 @@ async function readSheetFile(file,kind){
   else if(/\.(csv|txt|tsv)$/i.test(name)){imp.rows=parseCSV(new TextDecoder().decode(buf));}
   else{toast('The Excel reader isn’t available offline. Save the sheet as CSV and try again.');return;}
   imp.headerRow=detectHeader(imp.rows);S.imp=imp;autoMap(cur(),imp);
-  if(S.palletNext){S.palletNext=false;imp.pallet=true;if((cur().items||[]).length){imp.mode='pallet';imp.skipDup=true;}S.tab='edit';S.open.holes=true;}
+  if(S.palletNext){S.palletNext=false;imp.pallet=true;imp.fromMove=true;if((cur().items||[]).length){imp.mode='pallet';imp.skipDup=true;}S.tab='moves';}
   render();
 }
 function sheetRows(wb,name){return XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:false,defval:''});}
@@ -2084,18 +2260,25 @@ function exportModal(){const E=S.expPrompt;if(!E)return'';return `<div class="mo
 /* ---------- actions ---------- */
 function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true;},3200);}
 function openCtx(pid,mid){if(!S.ctx||S.ctx.pid!==pid){S.filter={q:'',conds:[],onlyMatches:true};S.filterOpen=false;}S.ctx={pid,mid:mid||null};S.view='work';S.tab='plan';S.q='';S.imp=null;S.confirm=null;S.sel=null;S.updated={};S.renaming=null;S.newMoveFor=null;
+  if(mid)startDraft();else S.draft=null;
   const p=cur();if(p){const pr=projRec();p.name=mid?pr.name+' – '+moveRec().name:pr.name;}render();window.scrollTo(0,0);}
 function gotoRack(id){S.tab='plan';render();const el=document.getElementById('rack-'+id);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
-function saveMoveToProject(pr,m,quiet){pr.plan=clone(m.plan);pr.plan.name=pr.name;pr.plan.stage='done';deriveNames(pr.plan);const now=Date.now();m.savedAt=now;m.updated=Math.min(m.updated,now);pr.updated=now;persist();if(!quiet)toast(`Saved “${m.name}” to ${[pr.name,pr.site].filter(Boolean).join(' – ')}`);}
+function saveMoveToProject(pr,m,quiet){if(draftOn()&&S.draft.mid===m.id)commitDraft(true);pr.plan=clone(m.plan);pr.plan.name=pr.name;pr.plan.stage='done';deriveNames(pr.plan);const now=Date.now();m.savedAt=now;m.updated=Math.min(m.updated,now);pr.updated=now;persist();if(!quiet)toast(`Saved “${m.name}” to ${[pr.name,pr.site].filter(Boolean).join(' – ')}`);}
 
 document.addEventListener('click',e=>{
   document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menu-pop button'))d.open=false;});
-  const b=e.target.closest('[data-act]');if(!b)return;
+  const b=e.target.closest('[data-act]');
+  if(S.pop&&!e.target.closest('.popwrap')){S.pop=null;render();}
+  if(!b)return;
   const act=b.dataset.act,id=b.dataset.id,p=cur();
   if(act!=='cancel'&&!/^(del|clear|save-move|reorg)/.test(act))S.confirm=null;
   const editable=p&&!isReadOnly();
   switch(act){
-    case 'home':S.view='home';S.imp=null;S.ctx=null;render();window.scrollTo(0,0);break;
+    case 'home':if(draftDirty()){S.leaveAsk=true;render();break;}S.view='home';S.imp=null;S.ctx=null;S.draft=null;S.leaveAsk=false;render();window.scrollTo(0,0);break;
+    case 'leave-save':commitDraft(true);S.leaveAsk=false;S.view='home';S.imp=null;S.ctx=null;S.draft=null;render();window.scrollTo(0,0);toast('Core move saved');break;
+    case 'leave-discard':S.leaveAsk=false;S.draft=null;S.view='home';S.imp=null;S.ctx=null;render();window.scrollTo(0,0);toast('Changes since the last save were discarded');break;
+    case 'leave-stay':S.leaveAsk=false;render();break;
+    case 'draft-save':commitDraft(false);updateSaveState();break;
     case 'open-project':openCtx(id,null);break;
     case 'open-move':openCtx(b.dataset.pid,id);break;
     case 'new-move':S.view='home';S.ctx=null;S.newMoveFor=id;S.homeOpen[id]=true;S.focusAfter='nm_name';render();break;
@@ -2156,15 +2339,50 @@ document.addEventListener('click',e=>{
     case 'space-dismiss':{const sg=(S.spaceList||[])[+b.dataset.i];if(sg){p.spaceDismissed=(p.spaceDismissed||[]).concat(sg.key);touch(p);render();}break;}
     case 'noop':break;
     case 'pick-pallet':S.palletNext=true;S.pickKind='holes';{const fi=$('#fileSheet');if(fi){fi.value='';fi.click();}}break;
-    case 'pallet-clear':delete p.pallet;touch(p);render();toast('Pallet order cleared');break;
-    case 'pallet-print':document.body.classList.add('print-pallet');setTimeout(()=>{window.print();},50);break;
-    case 'pallet-export':{const P=computePlan(p);const rows=palletRows(p,P);const hasPal=rows.some(r=>r.pal);
-      const head=['Off pallet',...(hasPal?['Pallet']:[]),'Feature','Hole ID','Box','Of','From (m)','To (m)','Goes to (row-bay-slot)','Done','Notes'];
+    case 'pallet-clear':delete p.pallet;if(p.mm){p.mm.step=0;if(p.mm.order==='pallet')p.mm.order='slot';}touch(p);render();toast('Pallet order cleared');break;
+    case 'mm-print':document.body.classList.add('print-pallet');setTimeout(()=>{window.print();},50);break;
+    case 'mm-mode':{const mm=mmState(p);mm.mode=b.dataset.v;const hp=!!(p.pallet&&p.pallet.list&&p.pallet.list.length);if(!hp)mm.order='slot';mm.step=hp?2:3;S.mmAlt=null;S.mmDir='next';touch(p);render();window.scrollTo(0,0);break;}
+    case 'mm-order':{const mm=mmState(p);mm.order=b.dataset.v;mm.step=3;S.mmDir='next';touch(p);render();window.scrollTo(0,0);break;}
+    case 'mm-go':{const mm=mmState(p);mm.step=+b.dataset.v;S.mmDir='next';touch(p);render();window.scrollTo(0,0);break;}
+    case 'mm-skip':{const mm=mmState(p);mm.step=1;S.mmDir='next';touch(p);render();break;}
+    case 'mm-back':{const mm=mmState(p);const hp=!!(p.pallet&&p.pallet.list&&p.pallet.list.length);let st=mmStep(p);st=st===3&&!hp?1:st-1;mm.step=Math.max(0,st);S.mmFix=null;S.mmAlt=null;S.mmDir='back';touch(p);render();window.scrollTo(0,0);break;}
+    case 'mm-placed':{const it=p.items.find(x=>x.id=== id);if(!it)break;const where=pinHere(p,id);if(!where)break;mmState(p).done[id]=where;S.mmAlt=null;commitDraft(true);render();toast(`${it.hole} box ${it.box} placed in ${where}`);break;}
+    case 'mm-alt':S.mmAlt=id||null;S.mmGap='next';render();if(id){const el=$('#mmLoc');if(el)el.focus();}break;
+    case 'mm-gap':S.mmGap=b.dataset.v;render();break;
+    case 'mm-elsewhere':case 'mm-altslot':{const it=p.items.find(x=>x.id===id);if(!it)break;const txt=act==='mm-altslot'?b.dataset.loc:($('#mmLoc')||{}).value;
+      if(/^\s*pallet\s*$/i.test(txt||'')){it.temp=true;S.mmAlt=null;commitDraft(true);render();break;}
+      const L=parseSlotRef(p,txt);if(!L||L.bad){toast(!L?'Type a slot like B2-4.':`There’s no bay ${L.bad} in this shed.`);break;}
+      const P0=computePlan(p);const before=P0.pos[id];let where;
+      if(before&&before.rackId===L.r.id&&before.slot===L.slot)where=pinHere(p,id);
+      else{if(moveItemTo(p,id,txt)===false&&!computePlan(p).pos[id])break;where=L.r.name+'-'+L.slot;if(S.mmGap==='empty')keepEmpty(p,before);}
+      mmState(p).done[id]=where;S.mmAlt=null;commitDraft(true);render();break;}
+    case 'mm-temp':{const it=p.items.find(x=>x.id===id);if(it){unpinItem(p,id);it.temp=true;S.mmAlt=null;commitDraft(true);render();toast(`${it.hole} box ${it.box} is on the temporary pallet`);}break;}
+    case 'mm-temp-back':{const it=p.items.find(x=>x.id===id);if(it){delete it.temp;commitDraft(true);render();}break;}
+    case 'mm-temp-place':{const it=p.items.find(x=>x.id===id);const txt=($('#tp_'+id)||{}).value;const L=parseSlotRef(p,txt);if(!it||!L||L.bad){toast('Type a slot like B2-4.');break;}
+      delete it.temp;moveItemTo(p,id,txt);mmState(p).done[id]=L.r.name+'-'+L.slot;commitDraft(true);render();break;}
+    case 'mm-undo':{const mm=mmState(p);delete mm.done[id];unpinItem(p,id);mm.finished=false;commitDraft(true);render();break;}
+    case 'mm-allgood':{const mm=mmState(p);const B=mmBoxes(p,computePlan(p),computeMoves(p,computePlan(p)));B.list.forEach(it=>{if(!mm.done[it.id]){const w=pinHere(p,it.id);if(w)mm.done[it.id]=w;}});mm.finished=true;commitDraft(true);render();toast('Move recorded and saved');break;}
+    case 'mm-fixstart':S.mmFix=[{id:'',loc:'',gap:'next'}];render();break;
+    case 'mm-fixadd':S.mmFix=(S.mmFix||[]).concat({id:'',loc:'',gap:'next'});render();break;
+    case 'mm-fixdel':S.mmFix.splice(+b.dataset.i,1);if(!S.mmFix.length)S.mmFix=null;render();break;
+    case 'mm-fixcancel':S.mmFix=null;render();break;
+    case 'mm-fixapply':{const rows=(S.mmFix||[]).filter(r=>r.id&&r.loc);const bad=rows.find(r=>!/^\s*pallet\s*$/i.test(r.loc)&&!((L)=>L&&!L.bad)(parseSlotRef(p,r.loc)));
+      if(bad){toast(`“${bad.loc}” isn’t a slot in this shed. Use a slot like B2-4, or “pallet”.`);break;}
+      const mm=mmState(p);rows.forEach(r=>{const it=p.items.find(x=>x.id===r.id);if(!it)return;const before=computePlan(p).pos[r.id];
+        if(/^\s*pallet\s*$/i.test(r.loc)){unpinItem(p,r.id);it.temp=true;}else{moveItemTo(p,r.id,r.loc);const L=parseSlotRef(p,r.loc);mm.done[r.id]=L.r.name+'-'+L.slot;}
+        if(r.gap==='empty')keepEmpty(p,before);});
+      const B=mmBoxes(p,computePlan(p),computeMoves(p,computePlan(p)));B.list.forEach(it=>{if(!mm.done[it.id]&&!it.temp){const w=pinHere(p,it.id);if(w)mm.done[it.id]=w;}});
+      mm.finished=true;S.mmFix=null;commitDraft(true);render();toast(`Plan updated with ${plural(rows.length,'change')} and saved`);break;}
+    case 'mm-reopen':{const mm=mmState(p);mm.finished=false;mm.step=3;S.mmDir='back';touch(p);render();break;}
+    case 'mm-save-shed':{const pr=projRec(),m=moveRec();commitDraft(true);saveMoveToProject(pr,m);render();break;}
+    case 'mm-export':{const P=computePlan(p);const mm=mmState(p);const B=mmBoxes(p,P,computeMoves(p,P));const ord=mm.order==='pallet'&&B.src==='pallet'?'pallet':'slot';const rows=mmSheetRows(p,P,B,ord);const hasPal=rows.some(r=>r.pal);
+      const head=[ord==='pallet'?'Off pallet':'Step',...(hasPal?['Pallet']:[]),'Feature','Hole ID','Box','Of','From (m)','To (m)','Goes to (row-bay-slot)','Done','Notes'];
       const aoa=[head,...rows.map(r=>[r.n,...(hasPal?[r.pal]:[]),r.it.feature||'',outVal(r.it,'hole'),numOr(outVal(r.it,'box')),numOr(outVal(r.it,'of')),numOr(outVal(r.it,'from')),numOr(outVal(r.it,'to')),r.dest||'No slot','',''])];
-      const name=safeName([projRec().name,(moveRec()||{}).name,'pallet sheet'].filter(Boolean).join(' - '));
+      const name=safeName([projRec().name,(moveRec()||{}).name,ord==='pallet'?'pallet sheet':'slot sheet'].filter(Boolean).join(' - '));
       if(window.XLSX){const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=head.map(h=>({wch:Math.max(9,h.length+2)}));XLSX.utils.book_append_sheet(wb,ws,'Pallet sheet');XLSX.writeFile(wb,name+'.xlsx');}
       else{const csv=aoa.map(r=>r.map(v=>{const x=String(v??'');return /[",\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x;}).join(',')).join('\r\n');download(name+'.csv',new Blob(['\ufeff'+csv],{type:'text/csv'}));}
-      toast('Pallet sheet exported');break;}
+      toast('Move sheet exported');break;}
+    case 'pop':S.pop=b.dataset.pop&&S.pop!==b.dataset.pop?b.dataset.pop:null;render();break;
     case 'item-del':p.items=p.items.filter(it=>it.id!==id);touch(p);render();break;
     case 'clear':S.confirm='clear';render();break;
     case 'clear-yes':p.items=[];S.confirm=null;touch(p);render();toast('All boxes removed');break;
@@ -2180,7 +2398,7 @@ document.addEventListener('click',e=>{
     case 'feat-reset':p.options.featureOrder=[];p.options.useCustomOrder=false;touch(p);render();break;
     case 'col-del':S.confirm='col:'+id;render();break;
     case 'col-del-yes':p.customCols=p.customCols.filter(c=>c.id!==id);p.items.forEach(it=>{if(it.custom)delete it.custom[id];});S.confirm=null;touch(p);render();break;
-    case 'skip-holes':p.stage='done';S.imp=null;S.tab='edit';S.open={racks:true};if(!p.racks.length){p.setup.defaultRows=p.setup.defaultRows||'12';setBayCount(p,4);}finishFirstMove();touch(p);render();window.scrollTo(0,0);break;
+    case 'skip-holes':p.stage='done';S.imp=null;S.tab='edit';S.open={racks:true};if(!p.racks.length){p.setup.defaultRows=p.setup.defaultRows||'12';setBayCount(p,4);}touch(p);finishFirstMove();render();window.scrollTo(0,0);break;
     case 'to-racks':p.stage='racks';S.imp=null;if(p.setup.autoCount===undefined)p.setup.autoCount=true;syncWizardRacks(p);touch(p);S.focusAfter='wz_rows';render();window.scrollTo(0,0);break;
     case 'back-holes':p.stage='holes';touch(p);render();window.scrollTo(0,0);break;
     case 'auto-count':p.setup.autoCount=true;syncWizardRacks(p);touch(p);render();break;
@@ -2213,7 +2431,7 @@ document.addEventListener('click',e=>{
     case 'clear-updated':S.updated={};render();break;
   }
 });
-function finishFirstMove(){const pr=projRec(),m=moveRec();if(pr&&m&&!pr.plan&&m.plan.stage==='done'){saveMoveToProject(pr,m,true);return true;}return false;}
+function finishFirstMove(){const pr=projRec(),m=moveRec();if(pr&&m&&!pr.plan&&cur()&&cur().stage==='done'){saveMoveToProject(pr,m,true);return true;}return false;}
 
 document.addEventListener('submit',e=>{
   e.preventDefault();const f=e.target;
@@ -2294,6 +2512,7 @@ document.addEventListener('change',e=>{
       if(f==='text')l.text=val.trim()||l.text;else if(f==='w')l.w=clamp(int(val,labelW(l)),1,200);else if(f==='h')l.h=clamp(int(val,1),1,200);else if(f==='size')l.size=+val||1;else if(f==='color')l.color=val;
       touch(p);render();}return;}
   if(k==='map'){if(f==='title'){p.map.title=val;touch(p);return;}p.map[f]=Math.max(0,int(val,0));touch(p);render();return;}
+  if(k==='mmfix'){const r=(S.mmFix||[])[+t.dataset.i];if(r)r[f]=val;return;}
   if(k==='itemloc'){moveItemTo(p,t.dataset.id,val);render();return;}
   if(k==='item'){const it=p.items.find(x=>x.id===t.dataset.id);if(!it)return;if(t.dataset.c){it.custom=it.custom||{};it.custom[t.dataset.c]=t.value.trim();}else{it[f]=t.value.trim();if(f==='from'||f==='to'){const was=it.missing;it.missing=false;cleanItem(it);if(!it.missing&&was&&!(it.from||it.to))it.missing=was;t.value=it[f];}}touch(p);S.dirty=true;refreshSummary();return;}
   if(k==='col'){const c=p.customCols.find(x=>x.id===t.dataset.id);if(c){c.name=t.value.trim()||c.name;touch(p);S.dirty=true;}return;}
@@ -2415,27 +2634,31 @@ document.addEventListener('pointercancel',e=>endDrag(e,true));
 /* drop a spreadsheet */
 ['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{const z=e.target.closest&&e.target.closest('.dropzone');if(!z||!e.dataTransfer||![...(e.dataTransfer.types||[])].includes('Files'))return;e.preventDefault();z.classList.add('over');}));
 document.addEventListener('dragleave',e=>{const z=e.target.closest&&e.target.closest('.dropzone');if(z&&!z.contains(e.relatedTarget))z.classList.remove('over');});
-document.addEventListener('drop',e=>{const z=e.target.closest&&e.target.closest('.dropzone');if(!z)return;e.preventDefault();z.classList.remove('over');const file=e.dataTransfer.files&&e.dataTransfer.files[0];if(file)readSheetFile(file,z.dataset.kind).catch(()=>toast('Couldn’t read that file. Try saving it as .xlsx or .csv.'));});
+document.addEventListener('drop',e=>{const z=e.target.closest&&e.target.closest('.dropzone');if(!z)return;e.preventDefault();z.classList.remove('over');const file=e.dataTransfer.files&&e.dataTransfer.files[0];if(file&&z.dataset.pallet)S.palletNext=true;if(file)readSheetFile(file,z.dataset.kind).catch(()=>toast('Couldn’t read that file. Try saving it as .xlsx or .csv.'));});
 /* drag to reorder features */
 document.addEventListener('dragstart',e=>{const li=e.target.closest&&e.target.closest('#featlist li');if(!li)return;S.drag=li.dataset.feat;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',S.drag);}catch(_){}});
 document.addEventListener('dragover',e=>{const li=e.target.closest&&e.target.closest('#featlist li');if(!li||S.drag==null)return;e.preventDefault();document.querySelectorAll('#featlist li.dragover').forEach(x=>x.classList.remove('dragover'));li.classList.add('dragover');});
 document.addEventListener('drop',e=>{const li=e.target.closest&&e.target.closest('#featlist li');if(!li||S.drag==null)return;e.preventDefault();const p=cur();const order=featureOrder(p);
   const from=order.indexOf(S.drag),to=order.indexOf(li.dataset.feat);if(from>=0&&to>=0&&from!==to){const [x]=order.splice(from,1);order.splice(to,0,x);p.options.featureOrder=order;touch(p);}S.drag=null;render();});
 document.addEventListener('dragend',()=>{S.drag=null;document.querySelectorAll('#featlist li.dragover').forEach(x=>x.classList.remove('dragover'));});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(S.modal||S.expPrompt)){S.modal=null;S.expPrompt=null;render();return;}
+addEventListener('beforeunload',e=>{if(draftDirty()){e.preventDefault();e.returnValue='';}});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&draftOn()){e.preventDefault();if(draftDirty()){commitDraft(false);updateSaveState();}return;}
+  if(e.key==='Escape'&&S.pop){S.pop=null;render();return;}
+  if(e.key==='Enter'&&S.tab==='moves'&&!S.leaveAsk){const a=document.activeElement;if(!a||!/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(a.tagName)){const bt=$('#mmPlaced');if(bt){e.preventDefault();bt.click();return;}}}
+  if(e.key==='Escape'&&S.leaveAsk){S.leaveAsk=false;render();return;}
+  if(e.key==='Escape'&&(S.modal||S.expPrompt)){S.modal=null;S.expPrompt=null;render();return;}
   if(e.key==='Escape'&&e.target.id==='gsearch'&&S.filter.q){e.preventDefault();S.filter.q='';liveRender('gsearch');}
   if(e.key==='Enter'&&e.target.id==='gsearch'){e.preventDefault();clearTimeout(LIVE);liveRender('gsearch');}});
 
 function runImport(p){
   const imp=S.imp;const data=dataRows(imp);
   if(!(imp.map.hole>=0)){toast('Match Hole ID to a column first.');return;}
-  const{items,extraCols}=buildImport(p,imp,data);
+  let{items,extraCols}=buildImport(p,imp,data);
   const stack=[];/* pallet stacking order: the Order column if there is one, else the sheet order */
   const ordKey=it=>{const n=parseFloat(it._ord);return isNaN(n)?Infinity:n;};
   if(imp.mode==='pallet'){const key2=it=>[(it.feature||'').toLowerCase(),(it.hole||'').toLowerCase(),String(it.box||'').toLowerCase()].join('|');const byKey=new Map(p.items.map(it=>[key2(it),it]));let miss=0;
-    items.forEach(it=>{const m=byKey.get(key2(it))||(!it.feature?p.items.find(x=>(x.hole||'').toLowerCase()===(it.hole||'').toLowerCase()&&String(x.box)===String(it.box)):null);if(m)stack.push({id:m.id,o:ordKey(it),r:it._row,pal:it._pal});else miss++;});
-    stack.sort((a,b)=>a.o-b.o||a.r-b.r);p.pallet={list:stack.map(x=>({id:x.id,pal:x.pal||''})),file:imp.fileName,when:Date.now()};
-    S.imp=null;touch(p);S.tab='moves';render();window.scrollTo(0,0);toast(`Pallet order set for ${plural(stack.length,'box','boxes')}${miss?`. ${miss} row${miss===1?'':'s'} didn’t match a box in this move`:''}. See the pallet sheet in Moves.`);return;}
+    const rest=[];items.forEach(it=>{const m=byKey.get(key2(it))||(!it.feature?p.items.find(x=>(x.hole||'').toLowerCase()===(it.hole||'').toLowerCase()&&String(x.box)===String(it.box)):null);if(m)stack.push({id:m.id,o:ordKey(it),r:it._row,pal:it._pal});else{rest.push(it);miss++;}});
+    items=rest;imp.pallet=true;imp.skipDup=false;imp._matched=stack.length;}
   if(imp.mode==='replace')p.items=[];
   const colIds={};extraCols.forEach(e=>{let c=p.customCols.find(x=>x.name.toLowerCase()===e.name.toLowerCase());if(!c){c={id:uid(),name:e.name};p.customCols.push(c);}colIds[e.name]=c.id;});
   const key=it=>[(it.feature||'').toLowerCase(),(it.hole||'').toLowerCase(),String(it.box||'').toLowerCase()].join('|');
@@ -2446,7 +2669,10 @@ function runImport(p){
   if(imp.pallet&&stack.length){stack.sort((a,b)=>a.o-b.o||a.r-b.r);p.pallet={list:stack.map(x=>({id:x.id,pal:x.pal||''})),file:imp.fileName,when:Date.now()};}
   S.imp=null;
   if(p.stage==='holes'&&added){p.stage='racks';if(p.setup.autoCount===undefined)p.setup.autoCount=true;syncWizardRacks(p);window.scrollTo(0,0);S.focusAfter='wz_rows';}
-  touch(p);render();toast(`Imported ${added} box${added===1?'':'es'}${skipped?`, skipped ${skipped} already in the plan`:''}${imp.pallet&&stack.length?'. Pallet sheet ready in Moves':''}`);
+  if(imp.fromMove){S.tab='moves';const mm=mmState(p);mm.step=1;S.mmDir='next';window.scrollTo(0,0);}
+  touch(p);render();
+  if(imp.mode==='pallet')toast(`Pallet order set for ${plural(stack.length,'box','boxes')}${added?` (${added} new ${added===1?'box':'boxes'} added to the move)`:''}`);
+  else toast(`Imported ${added} box${added===1?'':'es'}${skipped?`, skipped ${skipped} already in the plan`:''}${imp.pallet&&stack.length?'. Pallet order ready in Move mode':''}`);
 }
 
 
