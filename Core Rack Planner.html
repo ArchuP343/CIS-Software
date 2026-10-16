@@ -760,6 +760,9 @@ function spaceSuggestions(p,P){
   const byF=new Map();P.sorted.forEach(it=>{const f=it.feature||('hole:'+it.hole);if(!byF.has(f))byF.set(f,[]);byF.get(f).push(it);});
   const used=new Set(),out=[];
   const take=(cells,n,fromEnd)=>fromEnd?cells.slice(cells.length-n):cells.slice(0,n);
+  /* every box must fit the bay of the slot it would go into */
+  const fitsAll=(cells,its)=>cells&&its.every((it,i)=>cells[i]&&!fitIssue(p,it,cells[i].R.rack,P.DC));
+  const tryTake=(cells,its,fromEnd)=>{const c=take(cells,its.length,fromEnd);return fitsAll(c,its)?c:null;};
   byF.forEach((all,f)=>{const loose=all.filter(it=>!pinnedIds.has(it.id));const n=loose.length;if(!n||n===0)return;
     const label=f.startsWith('hole:')?`hole ${f.slice(5)}`:fname(f);
     /* A: loose boxes of a feature that already sits in a locked bay, with room right next to it */
@@ -767,15 +770,17 @@ function spaceSuggestions(p,P){
     let pick=null,kind='';
     if(anchor.length){const ai=anchor.map(c=>idx.get(c)).filter(v=>v!==undefined);const lo=Math.min(...ai),hi=Math.max(...ai);
       for(const run of runs){const free=run.cells.filter(x=>!used.has(x.c));if(free.length<n)continue;const first=idx.get(free[0].c),last=idx.get(free[free.length-1].c);
-        if(first===hi+1){pick=take(free,n,false);kind='join';break;}if(last===lo-1){pick=take(free,n,true);kind='join';break;}}
+        if(first===hi+1&&(pick=tryTake(free,loose,false))){kind='join';break;}if(last===lo-1&&(pick=tryTake(free,loose,true))){kind='join';break;}}
       if(!pick){/* the whole feature won't fit next to it: try whole holes of it, never splitting a hole */
         const holes=new Map();loose.forEach(it=>{if(!holes.has(it.hole))holes.set(it.hole,[]);holes.get(it.hole).push(it);});
         for(const[h,hs]of holes){for(const run of runs){const free=run.cells.filter(x=>!used.has(x.c));if(free.length<hs.length)continue;const first=idx.get(free[0].c),last=idx.get(free[free.length-1].c);
-          if(first===hi+1){pick=take(free,hs.length,false);}else if(last===lo-1){pick=take(free,hs.length,true);}
+          if(first===hi+1)pick=tryTake(free,hs,false);if(!pick&&last===lo-1)pick=tryTake(free,hs,true);
           if(pick){loose.splice(0,loose.length,...hs);kind='join';break;}}if(pick)break;}}}
     /* B: a whole feature that is all loose and fits into one gap */
-    if(!pick&&loose.length===all.length){let best=null;for(const run of runs){const free=run.cells.filter(x=>!used.has(x.c));if(free.length>=n&&(!best||free.length<best.length))best=free;}
-      if(best){pick=take(best,n,false);kind='fit';}}
+    if(!pick&&loose.length===all.length){let best=null,bestPick=null;for(const run of runs){const free=run.cells.filter(x=>!used.has(x.c));if(free.length<n||(best&&free.length>=best.length))continue;
+        /* first stretch of this gap where every box fits */
+        for(let k=0;k+n<=free.length;k++){const c=free.slice(k,k+n);if(fitsAll(c,loose)){best=free;bestPick=c;break;}}}
+      if(bestPick){pick=bestPick;kind='fit';}}
     if(!pick)return;const n2=loose.length;const key=f+'|'+pick.map(x=>x.R.rack.id+':'+x.c.slot).join(',');if(dismissed.has(key))return;
     pick.forEach(x=>used.add(x.c));const a=pick[0],z=pick[pick.length-1];
     const where=a.R===z.R?`${a.R.rack.name}-${a.c.slot}${n2>1?' to '+z.c.slot:''}`:`${a.R.rack.name}-${a.c.slot} to ${z.R.rack.name}-${z.c.slot}`;
@@ -783,7 +788,7 @@ function spaceSuggestions(p,P){
     out.push({key,kind,f,label,n:n2,items:loose,cells:pick,where,from,
       text:kind==='join'?`Move ${plural(n2,'box','boxes')} of ${loose.length<all.filter(it=>!pinnedIds.has(it.id)).length?`${label} hole ${loose[0].hole}`:label} from ${from} into the empty slots ${where}, right next to the rest of ${label}.`:`All of ${label} (${plural(n,'box','boxes')}, now in ${from}) fits into the empty slots ${where} in a locked bay. Moving it frees up space without splitting it.`});});
   return out.sort((a,b)=>(a.kind==='join'?0:1)-(b.kind==='join'?0:1)||a.n-b.n).slice(0,8);}
-function applySuggestion(p,sg){sg.items.forEach((it,i)=>{const x=sg.cells[i];if(!x)return;unpinItem(p,it.id);const r=x.R.rack;r.fixed=r.fixed||{};r.fixed[x.c.slot]=it.id;});}
+function applySuggestion(p,sg){if(sg.items.some((it,i)=>!sg.cells[i]||fitIssue(p,it,sg.cells[i].R.rack)))return false;sg.items.forEach((it,i)=>{const x=sg.cells[i];if(!x)return;unpinItem(p,it.id);const r=x.R.rack;r.fixed=r.fixed||{};r.fixed[x.c.slot]=it.id;});}
 function spaceNotice(p,P){const list=spaceSuggestions(p,P);if(!list.length)return'';S.spaceList=list;
   return `<details class="msg info spacesave" ${S.open.space?'open':''} data-sec="space"><summary><b>Space saving:</b> ${plural(list.length,'suggestion')} to keep core together in empty slots of locked bays.</summary>
     <ul>${list.map((sg,i)=>`<li><span>${esc(sg.text)}</span><span class="row"><button class="primary" data-act="space-accept" data-i="${i}">Move</button><button class="ghost" data-act="space-dismiss" data-i="${i}">Dismiss</button></span></li>`).join('')}</ul>
@@ -851,7 +856,7 @@ function computePlan(p){
   }
   let usable=0,gaps=0,free=0,lockedEmpty=0;racks.forEach(R=>R.cells.forEach(c=>{if(c.blocked)return;usable++;if(c.gap)gaps++;else if(!c.item&&!c.closed)free++;else if(!c.item&&c.closed)lockedEmpty++;}));
   const rowList=p._rows.map(g=>({row:g,racks:g.bays.map(b=>racks.find(R=>R.rack.id===b.id)).filter(Boolean)}));
-  return{sorted,racks,rowList,pos,unplaced,hue,feats,usable,gaps,placed:sorted.length-unplaced.length,free,lockedEmpty,noFit,DC,pinned:pinned.size,held};
+  return{sorted,racks,rowList,pos,unplaced,hue,feats,usable,gaps,placed:sorted.length-unplaced.length,free,lockedEmpty,noFit,DC,tooBig:anyDim?unplaced.filter(it=>boxDims(it,DC)&&!racks.some(R=>bayDim(R.rack)&&!fitIssue(p,it,R.rack,DC))):[],pinned:pinned.size,held};
 }
 
 /* moves = differences between this core move and the saved project */
@@ -1169,8 +1174,9 @@ function planTab(p,P,M,ro){
   const counts=new Map();P.sorted.forEach(it=>counts.set(it.feature||'',(counts.get(it.feature||'')||0)+1));
   const cols=p.customCols;
   return `${lockStrip(p,P,ro,'plan')}${sizePanel(p,P)}
-  ${P.noFit.length?`<div class="notice"><strong>${plural(P.noFit.length,'box doesn’t','boxes don’t')} fit any open bay.</strong> First one: <span class="mono">${esc(P.noFit[0].hole)} box ${esc(P.noFit[0].box)}</span> (${esc(dimTxt(boxDims(P.noFit[0],P.DC)))} mm). Check the box sizes, or the bay sizes in Edit Bay Settings.</div>`:''}
-  ${P.unplaced.length>P.noFit.length?`<div class="notice"><strong>${plural(P.unplaced.length-P.noFit.length,'box','boxes')} don't fit.</strong> ${ro?'Plan more bays in a core move.':'Add bays or slots in Edit, unlock a bay, or reduce spare slots.'} First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
+  ${P.tooBig.length?`<div class="notice"><strong>${plural(P.tooBig.length,'box is','boxes are')} the wrong size for every bay in the shed</strong>, so ${P.tooBig.length===1?'it hasn’t':'they haven’t'} been given a slot: ${P.tooBig.slice(0,4).map(it=>`<span class="mono">${esc(it.hole)} box ${esc(it.box)}</span> (${esc(dimTxt(boxDims(it,P.DC)))} mm)`).join(', ')}${P.tooBig.length>4?' …':''}. Check the box sizes, or add a bay of the right size.</div>`:''}
+  ${P.noFit.length>P.noFit.filter(it=>P.tooBig.includes(it)).length?`<div class="notice"><strong>${plural(P.noFit.length-P.noFit.filter(it=>P.tooBig.includes(it)).length,'box doesn’t','boxes don’t')} fit any open bay.</strong> Bays of the right size are full or locked. Unlock one, or add a bay of the right size.</div>`:''}
+  ${P.unplaced.filter(it=>!P.noFit.includes(it)&&!P.tooBig.includes(it)).length?`<div class="notice"><strong>${plural(P.unplaced.filter(it=>!P.noFit.includes(it)&&!P.tooBig.includes(it)).length,'box','boxes')} don't fit.</strong> ${ro?'Plan more bays in a core move.':'Add bays or slots in Edit, unlock a bay, or reduce spare slots.'} First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
   <section class="panel">
     <header><div class="row" style="align-items:center;gap:12px"><h2>Shed overview</h2>${P.rowList.length>1?`<select id="jumprow" data-k="ui" data-f="jumprow" aria-label="Jump to a row"><option value="">Jump to row…</option>${P.rowList.map(G=>`<option value="${G.row.key}">Row ${esc(G.row.letter)} · ${plural(G.racks.length,'bay')}</option>`).join('')}</select>`:''}</div>
       <div class="legend small">${P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span> <span class="muted">${counts.get(f)||0}</span></span>`).join('')}
