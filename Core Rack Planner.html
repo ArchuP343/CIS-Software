@@ -249,6 +249,36 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 .cell.pinned{outline:1.5px solid var(--ink);outline-offset:-1.5px}
 .rowgroup{display:flex;flex-direction:column;gap:8px;padding-right:16px;border-right:1px dashed var(--line);flex:0 0 auto}
 .rowgroup:last-child{border-right:0;padding-right:0}
+.printhead,.printnotes{display:none}
+table.palt td.dest{font-weight:700;font-size:1rem}
+.tick{width:56px;text-align:center}.tickbox{display:inline-block;width:16px;height:16px;border:1.5px solid var(--muted);border-radius:3px}
+@media print{
+  body.print-pallet *{visibility:hidden}
+  body.print-pallet #palletSheet,body.print-pallet #palletSheet *{visibility:visible}
+  body.print-pallet #palletSheet{position:absolute;left:0;top:0;width:100%;border:0;box-shadow:none;padding:0;background:#fff;color:#000}
+  body.print-pallet #palletSheet .noprint,body.print-pallet #palletSheet>header,body.print-pallet #palletSheet .msg{display:none}
+  body.print-pallet .printhead,body.print-pallet .printnotes{display:block}
+  body.print-pallet .printhead h1{font-size:18pt;margin:0}body.print-pallet .printhead p{margin:2px 0 10px;font-size:10pt}
+  body.print-pallet table{width:100%;border-collapse:collapse;font-size:10pt}body.print-pallet th,body.print-pallet td{border:1px solid #888;padding:4px 6px;color:#000;background:#fff}
+  body.print-pallet .tablewrap{overflow:visible;border:0}body.print-pallet tr{break-inside:avoid}
+  body.print-pallet .printnotes{break-before:page}body.print-pallet .printnotes td{height:24px}
+}
+.lockstrip{padding:10px 14px}.lockstrip>summary{display:flex;flex-wrap:wrap;align-items:center;gap:14px;cursor:pointer;list-style:none}
+.lockstrip>summary::-webkit-details-marker{display:none}.lockstrip>summary::after{content:'+';margin-left:auto;font-weight:700;color:var(--muted)}.lockstrip[open]>summary::after{content:'−'}
+.lockcount{display:inline-flex;align-items:center;gap:6px;font-size:.85rem}
+.lk{display:inline-block;width:12px;height:12px;border-radius:3px;border:1.5px solid var(--ink)}.lk.on{background:var(--ink)}.lk.part{background:repeating-linear-gradient(-45deg,var(--ink) 0 2px,transparent 2px 5px)}.lk.off{background:var(--surface)}
+.lockrows{display:flex;flex-direction:column;gap:6px;margin:12px 0 8px}.lockrow{display:flex;flex-wrap:wrap;align-items:center;gap:5px}.lockrow .rl{font-weight:700;min-width:58px}
+.lk-chip{font-family:var(--f-mono);font-size:.75rem;padding:3px 8px;border-radius:6px;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);min-width:38px;text-align:center}
+.lk-chip.on{background:var(--ink);color:var(--surface)}.lk-chip.part{background:repeating-linear-gradient(-45deg,var(--accent-soft) 0 4px,var(--surface) 4px 8px)}
+button.lk-chip:hover{outline:2px solid var(--accent);outline-offset:1px}
+.spacesave>summary{cursor:pointer}.spacesave ul{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.spacesave li{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid color-mix(in srgb,var(--accent) 25%,transparent)}
+.baytable tr.rowhead td{background:var(--surface-2);border-top:2px solid var(--line)}
+.rowbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:6px 4px}.rowbar .rl{font-family:var(--f-display);font-size:1rem}
+label.mini{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted);font-weight:600}label.mini input{padding:4px 6px;height:30px;border:1px solid var(--line);background:var(--surface);border-radius:6px}
+.mini-seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.mini-seg button{border:0;border-radius:0;padding:4px 10px;font-size:.8rem;background:var(--surface)}
+.mini-seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+td.locin input{font-family:var(--f-mono);width:84px}
 .hsbar{position:sticky;bottom:0;z-index:6;display:flex;align-items:center;gap:6px;padding:6px 8px;margin-top:-1px;background:var(--surface);border:1px solid var(--line);border-radius:0 0 var(--r) var(--r);box-shadow:0 -4px 12px rgba(10,31,46,.08)}
 .hsbar[hidden]{display:none}
 .hstrack{flex:1;overflow-x:auto;overflow-y:hidden;height:18px;scrollbar-width:auto}
@@ -546,7 +576,7 @@ function migrateRecord(r){
 function normalisePlan(p){const d=defaultsPlan();p.setup=Object.assign(d.setup,p.setup||{});p.options=Object.assign(d.options,p.options||{});
   const hadXY=(p.racks||[]).every(r=>typeof r.x==='number'&&typeof r.y==='number');
   p.racks=(p.racks||[]).map(r=>({id:r.id||uid(),name:r.name||'',rows:+r.rows||0,blocked:Array.isArray(r.blocked)?r.blocked:parseRows(r.blocked),x:+r.x||0,y:+r.y||0,
-    locked:!!r.locked,fixed:r.fixed||r.lock||{},slotLocks:r.slotLocks||{},hold:r.hold||{},...(r.letterFix?{letterFix:r.letterFix}:{}),...(r.numMode?{numMode:r.numMode}:{}),...(r.orient==='h'?{orient:'h'}:{}),...(+r.sw>0?{sw:+r.sw}:{}),...(+r.sh>0?{sh:+r.sh}:{})}));
+    locked:!!r.locked,fixed:r.fixed||r.lock||{},slotLocks:r.slotLocks||{},hold:r.hold||{},...(r.letterFix?{letterFix:r.letterFix}:{}),...(r.numMode?{numMode:r.numMode}:{}),...(r.orient==='h'?{orient:'h'}:{}),...(r.dim?{dim:r.dim}:{}),...(+r.sw>0?{sw:+r.sw}:{}),...(+r.sh>0?{sh:+r.sh}:{})}));
   if(!hadXY||p.layout){ // old row-based layout → bay positions
     const rows=(p.layout&&Array.isArray(p.layout.rows))?p.layout.rows:[{x:2,y:2,width:1,rackIds:p.racks.map(r=>r.id)}];const byId=new Map(p.racks.map(r=>[r.id,r]));
     rows.forEach(row=>{const n=row.rackIds.length,cols=row.width===2?2:1,len=Math.max(1,Math.ceil(n/cols));row.rackIds.forEach((id,k)=>{const r=byId.get(id);if(!r)return;const col=cols===2&&k>=len?1:0;r.x=row.x+col*RW;r.y=row.y+(col?k-len:k)*RL;});});
@@ -570,6 +600,39 @@ function fmtRows(arr){if(!arr||!arr.length)return'';const a=[...arr].sort((x,y)=
 function letterAdd(L,i){let code=0;for(const ch of L)code=code*26+(ch.charCodeAt(0)-64);code+=i;let s='';while(code>0){const r=(code-1)%26;s=String.fromCharCode(65+r)+s;code=Math.floor((code-1)/26);}return s;}
 function rackName(setup,i){const L=(String(setup.letter||'A').toUpperCase().replace(/[^A-Z]/g,''))||'A';const n=parseInt(setup.startNum,10);const start=isNaN(n)?1:n;
   return setup.pattern==='letter'?letterAdd(L,i)+start:L+(start+i);}
+/* ---------- box and bay sizes (mm) ----------
+   Box sizes come from custom columns named like the template's Box Length/Width/Height.
+   Bay sizes are set per bay (Edit Bay Settings) or read from a shed-layout import. */
+const DIMSYN={bl:['boxlength','boxlengthmm','boxsizemmlength','boxsizelength','boxlen'],bw:['boxwidth','boxwidthmm','boxsizemmwidth','boxsizewidth'],bh:['boxheight','boxheightmm','boxsizemmheight','boxsizeheight'],
+  yl:['baylength','baylengthmm','baysizemmlength','baysizelength'],yw:['baywidth','baywidthmm','baysizemmwidth','baysizewidth'],yh:['bayheight','bayheightmm','baysizemmheight','baysizeheight','slotheight','slotheightmm']};
+function dimCols(p){const o={};Object.entries(DIMSYN).forEach(([k,syn])=>{const c=(p.customCols||[]).find(c=>syn.includes(normH(c.name)));if(c)o[k]=c.id;});return o;}
+const mm=v=>{const n=parseFloat(String(v??'').replace(/[^0-9.]/g,''));return n>0?Math.round(n):0;};
+function boxDims(it,DC){if(!DC.bl&&!DC.bw&&!DC.bh)return null;const c=it.custom||{};const d={l:mm(c[DC.bl]),w:mm(c[DC.bw]),h:mm(c[DC.bh])};return d.l||d.w||d.h?d:null;}
+const bayDim=r=>r&&r.dim&&(r.dim.l||r.dim.w||r.dim.h)?r.dim:null;
+const dimTxt=d=>d?[d.l||'?',d.w||'?',d.h||'?'].join(' × '):'';
+/* why a box won't fit a bay ('' = fits or sizes unknown). Upright bays: the box length must match the bay length to within the tolerance (it sits on the rests);
+   width and height can be smaller. Sideways bays: the width must match instead, and length and height can be smaller. */
+function fitIssue(p,it,r,DC){const d=bayDim(r);if(!d)return'';const b=boxDims(it,DC||dimCols(p));if(!b)return'';
+  const tol=p.options.fitTol===undefined||p.options.fitTol===''?10:+p.options.fitTol;const out=[];
+  const exact=(bv,dv,word)=>{if(!bv||!dv)return;if(bv>dv)out.push(`box ${word} ${bv} mm is more than the bay’s ${dv} mm`);else if(dv-bv>tol)out.push(`box ${word} ${bv} mm is ${dv-bv} mm short of the bay’s ${dv} mm, so it won’t sit on the rests`);};
+  const maxi=(bv,dv,word)=>{if(bv&&dv&&bv>dv)out.push(`box ${word} ${bv} mm is more than the bay’s ${dv} mm`);};
+  if(isH(r)){exact(b.w,d.w,'width');maxi(b.l,d.l,'length');}else{exact(b.l,d.l,'length');maxi(b.w,d.w,'width');}
+  maxi(b.h,d.h,'height');return out.join('; ');}
+function bayDimsFromItems(p){const DC=dimCols(p);if(!DC.yl&&!DC.yw&&!DC.yh)return 0;const P=computePlan(p);let n=0;
+  P.racks.forEach(R=>{if(bayDim(R.rack))return;for(const c of R.cells){const it=c.item;if(!it)continue;const cu=it.custom||{};const d={l:mm(cu[DC.yl]),w:mm(cu[DC.yw]),h:mm(cu[DC.yh])};if(d.l||d.w||d.h){R.rack.dim=d;n++;break;}}});return n;}
+function sizePanel(p,P){const DC=P.DC;const bays=P.racks.filter(R=>bayDim(R.rack));const anyBox=p.items.some(it=>boxDims(it,DC));if(!bays.length&&!anyBox)return'';
+  const bs=new Map();p.items.forEach(it=>{const d=boxDims(it,DC);const k=d?dimTxt(d):'';if(!bs.has(k))bs.set(k,{d,n:0,it});bs.get(k).n++;});
+  const ys=new Map();P.racks.forEach(R=>{const d=bayDim(R.rack);const k=d?dimTxt(d)+(isH(R.rack)?' sideways':''):'';if(!ys.has(k))ys.set(k,{d,n:0,names:[]});const y=ys.get(k);y.n++;y.names.push(R.rack.name);});
+  const fitN=e=>e.d?P.racks.filter(R=>bayDim(R.rack)&&!fitIssue(p,e.it,R.rack,DC)).length:null;
+  const k='sizes';
+  return `<details class="panel lockstrip" data-sec="${k}" ${S.open[k]?'open':''}><summary><span class="label">Sizes</span><span class="lockcount">${plural(bs.size-(bs.has('')?1:0),'box size')}</span><span class="lockcount">${plural(ys.size-(ys.has('')?1:0),'bay size')}</span>${P.noFit.length?`<span class="lockcount" style="color:var(--bad)">${P.noFit.length} don’t fit</span>`:''}</summary>
+    <div class="grid2" style="margin-top:10px">
+      <div><h3 style="margin-bottom:6px">Boxes by size <span class="muted small">L × W × H mm</span></h3><table><thead><tr><th>Size</th><th class="num">Boxes</th><th class="num">Bays it fits</th></tr></thead><tbody>
+        ${[...bs.entries()].sort((a,b)=>b[1].n-a[1].n).map(([k2,e])=>`<tr><td class="mono">${k2||'<span class="muted">No size given</span>'}</td><td class="num mono">${e.n}</td><td class="num mono">${e.d?fitN(e):'<span class="muted">any</span>'}</td></tr>`).join('')}</tbody></table></div>
+      <div><h3 style="margin-bottom:6px">Bays by size</h3><table><thead><tr><th>Size</th><th class="num">Bays</th><th>Bays</th></tr></thead><tbody>
+        ${[...ys.entries()].map(([k2,y])=>`<tr><td class="mono">${k2||'<span class="muted">No size set</span>'}</td><td class="num mono">${y.n}</td><td class="mono small">${esc(y.names.slice(0,12).join(', '))}${y.names.length>12?' …':''}</td></tr>`).join('')}</tbody></table></div>
+    </div>
+    <p class="muted small">A box fits an upright bay when its length is within ${p.options.fitTol===undefined?10:+p.options.fitTol||0} mm of the bay length (never longer), and its width and height are no bigger. In sideways bays the width has to match instead. Boxes already in a slot, such as an imported shed, are never moved for size. Box sizes come from the Box Length, Width and Height columns; set bay sizes in Edit Bay Settings.</p></details>`;}
 function featureOrder(p){
   const feats=[...new Set(p.items.map(i=>i.feature||''))].sort((a,b)=>(a===''?1:0)-(b===''?1:0)||nat(a,b));
   if(!p.options.useCustomOrder)return feats;
@@ -659,6 +722,84 @@ function mapBounds(p){let w=0,h=0;p.racks.forEach(r=>{w=Math.max(w,r.x+dw(r));h=
 function lockBays(p,ids,on){const P=computePlan(p);ids.forEach(id=>{const r=p.racks.find(x=>x.id===id);if(!r)return;
   if(on){const R=P.racks.find(x=>x.rack.id===id);r.fixed={};if(R)R.cells.forEach(c=>{if(c.item)r.fixed[c.slot]=slotIds(c);});r.locked=true;r.hold={};}
   else{r.hold=Object.assign({},r.fixed);r.fixed={};r.locked=false;}});}
+/* ---------- put a box in a slot the user types ---------- */
+function parseSlotRef(p,t){const m=/^\s*([A-Za-z]{1,3}\s*\d+)\s*[-–\s]\s*(\d+)\s*$/.exec(String(t||''));if(!m)return null;const name=m[1].replace(/\s+/g,'').toUpperCase();
+  const r=p.racks.find(x=>String(x.name).toUpperCase()===name);return r?{r,slot:+m[2]}:{bad:name};}
+function unpinItem(p,id){p.racks.forEach(r=>['fixed','slotLocks','hold'].forEach(k=>{const M=r[k];if(!M)return;Object.keys(M).forEach(sl=>{const v=M[sl];
+  const keep=Array.isArray(v)?v.filter(x=>x!==id):(v===id?[]:null);if(keep===null||(Array.isArray(v)&&keep.length===v.length))return;
+  if(keep.length)M[sl]=keep.length===1?keep[0]:keep;else if(k==='slotLocks')M[sl]='';else delete M[sl];});}));}
+function moveItemTo(p,id,text){
+  const it=p.items.find(x=>x.id===id);if(!it)return;const L=parseSlotRef(p,text);
+  if(!L){toast('Type a location like A1-5 (row, bay, slot).');return false;}if(L.bad){toast(`There’s no bay ${L.bad} in this shed.`);return false;}
+  const{r,slot}=L;if(slot<1||slot>r.rows){toast(`Bay ${r.name} has slots 1 to ${r.rows}.`);return false;}
+  if((r.blocked||[]).includes(slot)){toast(`${r.name}-${slot} is a blocked slot.`);return false;}
+  const was=computePlan(p).pos[id];if(was&&was.rackId===r.id&&was.slot===slot)return false;
+  unpinItem(p,id);
+  /* boxes pinned at and below the slot shift down one, until a slot that isn't pinned; anything pushed off the end of the bay is released to the plan */
+  const kinds=r.locked?['fixed']:['slotLocks','hold'];const list=[];for(let s2=slot;s2<=r.rows;s2++)if(!(r.blocked||[]).includes(s2))list.push(s2);
+  const pinnedAt=s2=>{for(const k of kinds){const v=(r[k]||{})[s2];if(v!==undefined&&v!=='')return k;}return null;};
+  const chain=[];for(const s2 of list){const k=pinnedAt(s2);if(!k)break;chain.push([s2,k,r[k][s2]]);}
+  let released=0;
+  for(let i=chain.length-1;i>=0;i--){const[s2,k,v]=chain[i];delete r[k][s2];const nx=list[list.indexOf(s2)+1];
+    if(nx===undefined){released+=Array.isArray(v)?v.length:1;continue;}
+    const kk=k==='hold'&&(r.slotLocks||{})[nx]!==undefined?'slotLocks':k;(r[kk]=r[kk]||{})[nx]=v;if(kk!=='hold')delete (r.hold||{})[nx];}
+  if(r.locked)r.fixed[slot]=id;else{r.slotLocks[slot]=id;delete r.hold[slot];}
+  touch(p);const now=computePlan(p).pos[id];const bad=fitIssue(p,it,r);
+  if(bad){toast(`Warning: box ${it.hole} ${it.box} may not fit ${r.name}-${slot}: ${bad}. It has been put there anyway; check before moving it.`);return !!now;}
+  toast(`Box ${it.hole} ${it.box} is now in ${r.name}-${slot}${was?` (was ${was.rackName}-${was.slot})`:''}.${chain.length?' Boxes below it moved down a slot.':''}${r.locked?'':' That slot is now locked so it stays there.'}${released?` ${plural(released,'box','boxes')} pushed past the end of the bay went back into the plan.`:''}`);
+  return !!now;}
+/* ---------- space saving: whole features that fit into empty slots of locked bays ---------- */
+function spaceSuggestions(p,P){
+  const dismissed=new Set(p.spaceDismissed||[]);
+  const runs=[];P.rowList.forEach(G=>{let cur=null;G.racks.forEach(R=>R.cells.forEach(c=>{if(c.blocked)return;
+    if(R.locked&&!c.item){if(!cur){cur={cells:[]};runs.push(cur);}cur.cells.push({R,c});}else cur=null;}));});
+  if(!runs.length)return[];
+  const order=[];P.rowList.forEach(G=>G.racks.forEach(R=>R.cells.forEach(c=>{if(!c.blocked)order.push({R,c});})));
+  const idx=new Map(order.map((o,i)=>[o.c,i]));
+  const pinnedIds=new Set();P.racks.forEach(R=>R.cells.forEach(c=>{if(c.pin)slotBoxes(c).forEach(it=>pinnedIds.add(it.id));}));
+  const byF=new Map();P.sorted.forEach(it=>{const f=it.feature||('hole:'+it.hole);if(!byF.has(f))byF.set(f,[]);byF.get(f).push(it);});
+  const used=new Set(),out=[];
+  const take=(cells,n,fromEnd)=>fromEnd?cells.slice(cells.length-n):cells.slice(0,n);
+  byF.forEach((all,f)=>{const loose=all.filter(it=>!pinnedIds.has(it.id));const n=loose.length;if(!n||n===0)return;
+    const label=f.startsWith('hole:')?`hole ${f.slice(5)}`:fname(f);
+    /* A: loose boxes of a feature that already sits in a locked bay, with room right next to it */
+    const anchor=all.filter(it=>pinnedIds.has(it.id)&&P.pos[it.id]).map(it=>{const ps=P.pos[it.id];const R=P.racks.find(x=>x.rack.id===ps.rackId);return R&&R.locked?R.cells[ps.slot-1]:null;}).filter(Boolean);
+    let pick=null,kind='';
+    if(anchor.length){const ai=anchor.map(c=>idx.get(c)).filter(v=>v!==undefined);const lo=Math.min(...ai),hi=Math.max(...ai);
+      for(const run of runs){const free=run.cells.filter(x=>!used.has(x.c));if(free.length<n)continue;const first=idx.get(free[0].c),last=idx.get(free[free.length-1].c);
+        if(first===hi+1){pick=take(free,n,false);kind='join';break;}if(last===lo-1){pick=take(free,n,true);kind='join';break;}}
+      if(!pick){/* the whole feature won't fit next to it: try whole holes of it, never splitting a hole */
+        const holes=new Map();loose.forEach(it=>{if(!holes.has(it.hole))holes.set(it.hole,[]);holes.get(it.hole).push(it);});
+        for(const[h,hs]of holes){for(const run of runs){const free=run.cells.filter(x=>!used.has(x.c));if(free.length<hs.length)continue;const first=idx.get(free[0].c),last=idx.get(free[free.length-1].c);
+          if(first===hi+1){pick=take(free,hs.length,false);}else if(last===lo-1){pick=take(free,hs.length,true);}
+          if(pick){loose.splice(0,loose.length,...hs);kind='join';break;}}if(pick)break;}}}
+    /* B: a whole feature that is all loose and fits into one gap */
+    if(!pick&&loose.length===all.length){let best=null;for(const run of runs){const free=run.cells.filter(x=>!used.has(x.c));if(free.length>=n&&(!best||free.length<best.length))best=free;}
+      if(best){pick=take(best,n,false);kind='fit';}}
+    if(!pick)return;const n2=loose.length;const key=f+'|'+pick.map(x=>x.R.rack.id+':'+x.c.slot).join(',');if(dismissed.has(key))return;
+    pick.forEach(x=>used.add(x.c));const a=pick[0],z=pick[pick.length-1];
+    const where=a.R===z.R?`${a.R.rack.name}-${a.c.slot}${n2>1?' to '+z.c.slot:''}`:`${a.R.rack.name}-${a.c.slot} to ${z.R.rack.name}-${z.c.slot}`;
+    const from=[...new Set(loose.map(it=>P.pos[it.id]?P.pos[it.id].rackName:'no space'))].join(', ');
+    out.push({key,kind,f,label,n:n2,items:loose,cells:pick,where,from,
+      text:kind==='join'?`Move ${plural(n2,'box','boxes')} of ${loose.length<all.filter(it=>!pinnedIds.has(it.id)).length?`${label} hole ${loose[0].hole}`:label} from ${from} into the empty slots ${where}, right next to the rest of ${label}.`:`All of ${label} (${plural(n,'box','boxes')}, now in ${from}) fits into the empty slots ${where} in a locked bay. Moving it frees up space without splitting it.`});});
+  return out.sort((a,b)=>(a.kind==='join'?0:1)-(b.kind==='join'?0:1)||a.n-b.n).slice(0,8);}
+function applySuggestion(p,sg){sg.items.forEach((it,i)=>{const x=sg.cells[i];if(!x)return;unpinItem(p,it.id);const r=x.R.rack;r.fixed=r.fixed||{};r.fixed[x.c.slot]=it.id;});}
+function spaceNotice(p,P){const list=spaceSuggestions(p,P);if(!list.length)return'';S.spaceList=list;
+  return `<details class="msg info spacesave" ${S.open.space?'open':''} data-sec="space"><summary><b>Space saving:</b> ${plural(list.length,'suggestion')} to keep core together in empty slots of locked bays.</summary>
+    <ul>${list.map((sg,i)=>`<li><span>${esc(sg.text)}</span><span class="row"><button class="primary" data-act="space-accept" data-i="${i}">Move</button><button class="ghost" data-act="space-dismiss" data-i="${i}">Dismiss</button></span></li>`).join('')}</ul>
+    ${list.length>1?`<div class="row"><button data-act="space-accept-all">Move all ${list.length}</button></div>`:''}</details>`;}
+/* ---------- quick view of which bays are locked ---------- */
+function lockStrip(p,P,ro,where){
+  const st=R=>R.locked?'on':(Object.values(R.rack.slotLocks||{}).length||Object.keys(R.rack.hold||{}).length)?'part':'off';
+  const all=P.racks.map(st);const n={on:all.filter(x=>x==='on').length,part:all.filter(x=>x==='part').length,off:all.filter(x=>x==='off').length};
+  const k='locks-'+where;
+  return `<details class="panel lockstrip" data-sec="${k}" ${S.open[k]?'open':''}><summary><span class="label">Bay locks</span>
+      <span class="lockcount"><span class="lk on"></span>${n.on} locked</span>${n.part?`<span class="lockcount"><span class="lk part"></span>${n.part} partly locked</span>`:''}<span class="lockcount"><span class="lk off"></span>${n.off} unlocked</span></summary>
+    <div class="lockrows">${P.rowList.map(G=>`<div class="lockrow"><span class="rl">Row ${esc(G.row.letter)}</span>${G.racks.map(R=>{const s2=st(R);
+      const tip=s2==='on'?'locked: nothing in it moves':s2==='part'?'unlocked, with some slots locked or boxes kept in place':'unlocked: the plan can fill and move boxes here';
+      return ro?`<span class="lk-chip ${s2}" title="${esc(R.rack.name)} ${tip}">${esc(R.rack.name)}</span>`:`<button class="lk-chip ${s2}" data-act="lock-rack" data-id="${R.rack.id}" title="${esc(R.rack.name)} ${tip}. Click to ${R.locked?'unlock':'lock'}.">${esc(R.rack.name)}</button>`;}).join('')}
+      ${ro?'':`<button class="ghost small" data-act="lock-row" data-id="${G.row.key}">${G.racks.every(R=>R.locked)?'Unlock row':'Lock row'}</button>`}</div>`).join('')}</div>
+    <p class="muted small">${ro?'Locked bays keep their boxes where they are.':'Click a bay to lock or unlock it. Before importing new boxes, lock the bays that are already full so nothing in them moves.'}</p></details>`;}
 function lockSlot(p,id,slot){const r=p.racks.find(x=>x.id===id);if(!r)return;const P=computePlan(p);const R=P.racks.find(x=>x.rack.id===id);const c=R&&R.cells[slot-1];
   if(r.slotLocks[slot]!==undefined){const it=r.slotLocks[slot];delete r.slotLocks[slot];if(it)r.hold[slot]=it;return false;}
   r.slotLocks[slot]=c&&c.item?slotIds(c):'';delete r.hold[slot];return true;}
@@ -692,7 +833,8 @@ function computePlan(p){
     Object.entries(r.hold||{}).forEach(([s,id])=>{const c=R.cells[(+s)-1];if(!c||c.closed||c.blocked)return;const ids=(Array.isArray(id)?id:[id]).filter(x=>byId.has(x)&&!pinned.has(x));if(ids.length)pin(R,s,ids,'held');});});
   const pool=sorted.filter(it=>!pinned.has(it.id));
   let ri=0,si=0;
-  const next=()=>{while(ri<racks.length){if(racks[ri].locked){ri++;si=0;continue;}const c=racks[ri].cells;while(si<c.length&&(c[si].blocked||c[si].closed))si++;if(si<c.length)return c[si];ri++;si=0;}return null;};
+  const DC=dimCols(p),anyDim=p.racks.some(r=>bayDim(r));const noFit=[];
+  const next=()=>{while(ri<racks.length){if(racks[ri].locked){ri++;si=0;continue;}const c=racks[ri].cells;while(si<c.length&&(c[si].blocked||c[si].closed||c[si].item))si++;if(si<c.length)return c[si];ri++;si=0;}return null;};
   const skip=n=>{for(let k=0;k<n;k++){const c=next();if(!c)return;c.gap=true;si++;}};
   const unplaced=[];let prev=null;
   for(const it of pool){
@@ -702,11 +844,14 @@ function computePlan(p){
       else if(nh)skip(+o.gapAfterHole||0);}
     prev=it;
     const c=next();if(!c){unplaced.push(it);continue;}
+    if(anyDim&&fitIssue(p,it,racks[ri].rack,DC)){/* this bay is the wrong size for the box: use the next slot that fits, and leave this one for later boxes */
+      let alt=null,altR=null;for(let r2=ri;r2<racks.length&&!alt;r2++){const R2=racks[r2];if(R2.locked||fitIssue(p,it,R2.rack,DC))continue;for(let s2=(r2===ri?si:0);s2<R2.cells.length;s2++){const c2=R2.cells[s2];if(!c2.blocked&&!c2.closed&&!c2.item&&!c2.gap){alt=c2;altR=R2;break;}}}
+      if(alt){place(altR,alt,it);}else{unplaced.push(it);noFit.push(it);}continue;}
     place(racks[ri],c,it);si++;
   }
-  let usable=0,gaps=0,free=0;racks.forEach(R=>R.cells.forEach(c=>{if(c.blocked)return;usable++;if(c.gap)gaps++;else if(!c.item&&!c.closed)free++;}));
+  let usable=0,gaps=0,free=0,lockedEmpty=0;racks.forEach(R=>R.cells.forEach(c=>{if(c.blocked)return;usable++;if(c.gap)gaps++;else if(!c.item&&!c.closed)free++;else if(!c.item&&c.closed)lockedEmpty++;}));
   const rowList=p._rows.map(g=>({row:g,racks:g.bays.map(b=>racks.find(R=>R.rack.id===b.id)).filter(Boolean)}));
-  return{sorted,racks,rowList,pos,unplaced,hue,feats,usable,gaps,placed:sorted.length-unplaced.length,free,pinned:pinned.size,held};
+  return{sorted,racks,rowList,pos,unplaced,hue,feats,usable,gaps,placed:sorted.length-unplaced.length,free,lockedEmpty,noFit,DC,pinned:pinned.size,held};
 }
 
 /* moves = differences between this core move and the saved project */
@@ -922,6 +1067,7 @@ function moveView(){
     <div class="stack">
       ${conflictBanner()}${filterPanel(p)}${S.tab!=='edit'?searchPanel(p,P):''}
       ${P.held&&p.heldIgnore!==P.held?`<div class="msg info row" style="align-items:center;justify-content:space-between"><span>${plural(P.held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked, so the rest of the plan isn’t disturbed.</span><div class="row"><button class="primary" data-act="reoptimise">Update unlocked bays to best positions</button><button class="ghost" data-act="held-ignore">Ignore</button></div></div>`:''}
+      ${S.tab==='plan'||S.tab==='edit'?spaceNotice(p,P):''}
       ${body}
     </div>
     <footer class="foot">IDs read Row, Bay, Slot: A1-3 is Row A, Bay 1, Slot 3. Fill order: feature, then hole ID, then box number, then From depth. When the move is ready, go back to Projects and press “Save move to project”.</footer>
@@ -937,7 +1083,8 @@ function summary(p,P){
     <div class="stat"><span class="label">Placed</span><b>${P.placed}</b></div>
     ${P.pinned?`<div class="stat"><span class="label">Locked or held</span><b>${P.pinned}</b></div>`:''}
     ${P.gaps?`<div class="stat"><span class="label">Spare (reserved)</span><b>${P.gaps}</b></div>`:''}
-    <div class="stat"><span class="label">Free slots</span><b>${Math.max(0,P.free)}</b></div>
+    <div class="stat" title="Empty slots that new boxes can go into. Empty slots in locked bays, and locked slots, aren’t counted."><span class="label">Free slots</span><b>${Math.max(0,P.free)}</b></div>
+    ${P.lockedEmpty?`<div class="stat" title="Empty slots in locked bays or locked slots. Nothing is planned into these."><span class="label">Empty, locked</span><b>${P.lockedEmpty}</b></div>`:''}
     ${P.unplaced.length?`<div class="stat warn"><span class="label">Don't fit</span><b>${P.unplaced.length}</b></div>`:''}
   </div>`;
 }
@@ -953,7 +1100,9 @@ function rackElev(R,P,M,small){
       return `<div class="cell filled${pin}${hl}${it.missing?' missing':''} ${moved?'moved':''}" style="--h:${P.hue.get(it.feature||'')}" title="${esc(r.name)}-${c.slot}: ${esc(fname(it.feature))} ${esc(it.hole)} box ${esc(it.box)}${it.of?' of '+esc(it.of):''}${it.missing?' (missing)':''}${c.pin?` (${c.pin==='held'?'held':'locked'})`:''}">${small?'':`<span class="n">${c.slot}</span><span>${esc(it.hole)}·${esc(it.box)}${c.extra&&c.extra.length?' +'+c.extra.length:''}</span>`}</div>`;}
     return `<div class="cell${pin}" title="${esc(r.name)}-${c.slot}: empty${c.pin?' (locked)':''}">${small?'':`<span class="n">${c.slot}</span>`}</div>`;
   }).join('');
-  return `<button class="rackcol" data-act="goto-rack" data-id="${r.id}" aria-label="Bay ${esc(r.name)}"><span class="rname">${esc(r.name)}</span><div class="rack ${small?'small':''} ${R.locked?'locked':''}">${cells||'<div class="cell">no slots</div>'}</div>${small?'':`<span class="rmeta">${R.used}/${R.cells.filter(c=>!c.blocked).length}${R.locked?' · locked':''}${S.updated[r.id]?' · moved':''}</span>`}</button>`;
+  const d=bayDim(r);const maxL=Math.max(0,...P.racks.map(x=>{const dd=bayDim(x.rack);return dd?(isH(x.rack)?dd.w:dd.l)||0:0;}));const ln=d?(isH(r)?d.w:d.l):0;
+  const wcss=!small&&ln&&maxL?`style="width:${Math.round(Math.max(72,112*ln/maxL))}px"`:'';
+  return `<button class="rackcol" data-act="goto-rack" data-id="${r.id}" aria-label="Bay ${esc(r.name)}" ${d?`title="${esc(dimTxt(d))} mm"`:''}><span class="rname">${esc(r.name)}</span><div class="rack ${small?'small':''} ${R.locked?'locked':''}" ${wcss}>${cells||'<div class="cell">no slots</div>'}</div>${small?'':`<span class="rmeta">${R.used}/${R.cells.filter(c=>!c.blocked).length}${R.locked?' · locked':''}${S.updated[r.id]?' · moved':''}</span>${d?`<span class="rmeta">${esc(dimTxt(d))}</span>`:''}`}</button>`;
 }
 
 /* search and filters */
@@ -1019,8 +1168,9 @@ function planTab(p,P,M,ro){
   if(!p.racks.length)return `<div class="empty">No bays yet. Open <b>Edit</b> and set up the bays under Edit Bay Settings.</div>`;
   const counts=new Map();P.sorted.forEach(it=>counts.set(it.feature||'',(counts.get(it.feature||'')||0)+1));
   const cols=p.customCols;
-  return `
-  ${P.unplaced.length?`<div class="notice"><strong>${plural(P.unplaced.length,'box','boxes')} don't fit.</strong> ${ro?'Plan more bays in a core move.':'Add bays or slots in Edit, unlock a bay, or reduce spare slots.'} First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
+  return `${lockStrip(p,P,ro,'plan')}${sizePanel(p,P)}
+  ${P.noFit.length?`<div class="notice"><strong>${plural(P.noFit.length,'box doesn’t','boxes don’t')} fit any open bay.</strong> First one: <span class="mono">${esc(P.noFit[0].hole)} box ${esc(P.noFit[0].box)}</span> (${esc(dimTxt(boxDims(P.noFit[0],P.DC)))} mm). Check the box sizes, or the bay sizes in Edit Bay Settings.</div>`:''}
+  ${P.unplaced.length>P.noFit.length?`<div class="notice"><strong>${plural(P.unplaced.length-P.noFit.length,'box','boxes')} don't fit.</strong> ${ro?'Plan more bays in a core move.':'Add bays or slots in Edit, unlock a bay, or reduce spare slots.'} First one that doesn't fit: <span class="mono">${esc(fname(P.unplaced[0].feature))} ${esc(P.unplaced[0].hole)} box ${esc(P.unplaced[0].box)}</span>.</div>`:''}
   <section class="panel">
     <header><div class="row" style="align-items:center;gap:12px"><h2>Shed overview</h2>${P.rowList.length>1?`<select id="jumprow" data-k="ui" data-f="jumprow" aria-label="Jump to a row"><option value="">Jump to row…</option>${P.rowList.map(G=>`<option value="${G.row.key}">Row ${esc(G.row.letter)} · ${plural(G.racks.length,'bay')}</option>`).join('')}</select>`:''}</div>
       <div class="legend small">${P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span> <span class="muted">${counts.get(f)||0}</span></span>`).join('')}
@@ -1058,7 +1208,26 @@ function planTab(p,P,M,ro){
 }
 
 /* moves tab */
-function movesTab(p,P,M){
+function palletRows(p,P){if(!p.pallet||!p.pallet.list)return[];const byId=new Map(p.items.map(it=>[it.id,it]));
+  return p.pallet.list.filter(x=>byId.has(x.id)).map(x=>({it:byId.get(x.id),pal:x.pal})).reverse().map((x,i)=>{const ps=P.pos[x.it.id];return{n:i+1,it:x.it,pal:x.pal,dest:ps?ps.rackName+'-'+ps.slot:'',fitWarn:''};});}
+function palletSection(p,P){const rows=palletRows(p,P);
+  if(!rows.length)return `<section class="panel"><header><h2>Pallet sheet</h2></header>
+    <p class="muted small" style="max-width:75ch">Import the inventory list of the boxes in the order they were stacked onto the pallets. The sheet then lists them in the order they come off (last on, first off) with the slot each one goes to, ready to print.</p>
+    <div class="row"><button class="primary" data-act="pick-pallet">Import pallet order…</button><span class="muted small">Excel or CSV. A numbered order column is used if there is one, otherwise the row order.</span></div></section>`;
+  const noDest=rows.filter(r=>!r.dest).length;const hasPal=rows.some(r=>r.pal);
+  return `<section class="panel" id="palletSheet"><header class="row" style="justify-content:space-between;align-items:baseline"><h2>Pallet sheet</h2><span class="muted small">${plural(rows.length,'box','boxes')} in the order they come off the pallets${p.pallet.file?` · from ${esc(p.pallet.file)}`:''}</span></header>
+    <div class="row noprint"><button class="primary" data-act="pallet-print">Print pallet sheet</button><button data-act="pallet-export">Export to Excel</button><button class="ghost" data-act="pick-pallet">Import a new pallet order…</button><button class="ghost danger" data-act="pallet-clear">Clear</button></div>
+    ${noDest?`<div class="msg warn">${plural(noDest,'box has','boxes have')} no slot in the plan yet. Add bays or slots, or check sizes.</div>`:''}
+    <div class="printhead"><h1>${esc([projRec().name,projRec().site].filter(Boolean).join(' – '))}</h1><p>Pallet sheet · core move “${esc((moveRec()||{}).name||'')}” · printed ${new Date().toLocaleDateString()}</p></div>
+    <div class="tablewrap"><table class="palt">
+      <thead><tr><th class="num">Off</th>${hasPal?'<th>Pallet</th>':''}<th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Depth (m)</th><th>Goes to</th><th class="tick">Done</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr><td class="num mono">${r.n}</td>${hasPal?`<td class="mono">${esc(r.pal)}</td>`:''}<td class="mono">${esc(fname(r.it.feature||''))}</td><td class="mono">${esc(r.it.hole)}</td><td class="num mono">${esc(r.it.box)}${r.it.of?' / '+esc(r.it.of):''}</td><td class="num mono">${esc([outVal(r.it,'from'),outVal(r.it,'to')].filter(v=>v!=='').join(' – '))}</td><td class="mono dest">${r.dest?esc(r.dest):'<span class="pill stage">No slot</span>'}</td><td class="tick"><span class="tickbox"></span></td></tr>`).join('')}</tbody></table></div>
+    <div class="printnotes"><h2>Changes from the plan</h2><p>Write down any box that went somewhere other than its “Goes to” slot. Enter these in the planner afterwards by typing the slot in Edit → Holes &amp; boxes.</p>
+      <table><thead><tr><th>Feature</th><th>Hole ID</th><th>Box No.</th><th>Placed in (row-bay-slot)</th><th>Notes</th></tr></thead><tbody>${'<tr><td></td><td></td><td></td><td></td><td></td></tr>'.repeat(10)}</tbody></table>
+      <p><b>Slots that couldn’t be filled:</b> did you leave the slot empty, or move the next box up into it? Note which here: ______________________________________________</p></div>
+  </section>`;}
+function movesTab(p,P,M){return palletSection(p,P)+movesList(p,P,M);}
+function movesList(p,P,M){
   const pr=projRec();
   if(!pr.plan)return `<div class="notice info"><strong>This is the first core move for ${esc(pr.name)}.</strong> There’s no saved layout to compare against yet. When you save this move to the project, later moves will list the boxes that need to shift.</div>`;
   if(!M.steps.length&&!M.noSpace.length)return `<div class="notice info"><strong>No moves needed.</strong> This plan matches the saved project layout.</div>`;
@@ -1196,7 +1365,7 @@ function editTab(p,P){
 }
 function holesBody(p,P){
   const cols=p.customCols;
-  return `<div class="grid2">
+  return `${p.racks.length?lockStrip(p,P,false,'edit'):''}<div class="grid2">
     <section class="panel"><header><h3>${S.imp&&S.imp.kind==='layout'?'Import a shed layout':'Import holes from Excel or CSV'}</h3></header>${importPanel(p)}</section>
     ${S.imp?'':`<section class="panel"><header><h3>Import a shed layout</h3><span class="muted small">Replaces the bays and boxes in this move</span></header>${layoutDrop()}</section>`}
     <section class="panel"><header><h3>Add holes manually</h3><span class="muted small">Add a whole hole, or one box you missed</span></header>${addBoxForm(p,P)}</section>
@@ -1208,50 +1377,69 @@ function holesBody(p,P){
       ${p.items.length?(S.confirm==='clear'?`<span class="small">Remove all ${p.items.length} boxes?</span><button class="danger solid" data-act="clear-yes">Remove all</button><button data-act="cancel">Cancel</button>`:`<button class="ghost danger" data-act="clear">Remove all</button>`):''}
     </div>
   </div>
-  <p class="muted small">Listed in fill order. Edit any cell; locations update when you leave the table. Drag <span class="mono">⠿</span> to put a box in a different place in the order.${S.match?` <b>Showing ${S.match.list.length} of ${p.items.length} boxes that match the search and filters.</b>`:' Use the search bar and Filters above to narrow the list.'}</p>
+  <p class="muted small">Listed in fill order. Edit any cell; locations update when you leave the table. Drag <span class="mono">⠿</span> to put a box in a different place in the order, or type a slot like A1-5 to put it exactly there (boxes below it move down).${S.match?` <b>Showing ${S.match.list.length} of ${p.items.length} boxes that match the search and filters.</b>`:' Use the search bar and Filters above to narrow the list.'}</p>
   ${p.items.length?`<div class="tablewrap" data-live data-hs id="coreWrap"><table class="edit">
     <thead><tr><th class="lead"></th><th>Planned slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}</tr></thead>
     <tbody id="coreBody">${coreRows(p,P)}</tbody></table></div>${hsBar('coreWrap')}`:`<div class="empty">No boxes yet. Import a spreadsheet or add a hole above.</div>`}`;
 }
 function rackSettings(p,P){
-  const s=p.setup;const slotsShown=s.defaultRows||(p.racks[0]?p.racks[0].rows:'');const need=racksNeeded(p);
+  const s=p.setup;const need=racksNeeded(p);
+  const rowsIn=G=>{const v=[...new Set(G.racks.map(R=>R.rack.rows))];return v.length===1?v[0]:'';};
+  const blkIn=G=>{const v=[...new Set(G.racks.map(R=>fmtRows(R.rack.blocked)))];return v.length===1?v[0]:'';};
   return `<div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr))">
-      <div class="field"><label class="label" for="st_rows">Slots per bay</label><input id="st_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="${esc(slotsShown)}"><span class="hint">Applies to every bay</span></div>
-      <div class="field"><label class="label" for="st_block">Blocked slots</label><input id="st_block" data-k="setup" data-f="defaultBlocked" value="${esc(s.defaultBlocked)}" placeholder="e.g. 1-2"><span class="hint">Shown on the plan, never filled</span></div>
-      <div class="field"><label class="label" for="st_count">Number of bays</label><input id="st_count" type="number" min="1" max="500" data-k="setup" data-f="rackCount" value="${p.racks.length}"><span class="hint">${need?`${need} needed for all boxes`:'&nbsp;'}</span></div>
       <div class="field"><label class="label" for="st_letter">First row letter</label><input id="st_letter" maxlength="3" data-k="setup" data-f="letter" value="${esc(s.letter)}"></div>
       <div class="field"><label class="label" for="st_start">First bay number</label><input id="st_start" type="number" min="0" data-k="setup" data-f="startNum" value="${esc(s.startNum)}"></div>
+      <div class="field" style="grid-column:span 2"><label class="label" for="st_num">Bay numbering in back-to-back rows</label><select id="st_num" data-k="setup" data-f="numbering">
+          <option value="down" ${s.numbering!=='across'?'selected':''}>Sequential: down one side, then the next</option>
+          <option value="across" ${s.numbering==='across'?'selected':''}>Alternating: across, then down</option></select></div>
     </div>
-    <div class="row"><button data-act="fit-racks">Fit number of bays to boxes</button><button data-act="rack-add">+ Add bay</button></div>
-    <div class="panel" style="padding:14px">
-      <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr))">
-        <div class="field"><label class="label" for="st_rowsct">Rows</label><input id="st_rowsct" type="number" min="1" max="50" value="${p._rows.length||1}"><span class="hint">Bays are split evenly</span></div>
-      </div>
-      <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));margin-top:10px"><div class="field"><label class="label" for="st_num">Bay numbering</label><select id="st_num" data-k="setup" data-f="numbering">
-          <option value="down" ${p.setup.numbering!=='across'?'selected':''}>Sequential: down one side, then the next</option>
-          <option value="across" ${p.setup.numbering==='across'?'selected':''}>Alternating: across, then down</option></select>
-          <span class="hint">${p.setup.numbering==='across'?'1 is back to back with 2, then 3 and 4…':'1, 2, 3… down one side, then carries on down the next'}</span></div></div>
-      <label class="check" style="margin-top:8px"><input type="checkbox" id="st_b2b" ${s.backToBack?'checked':''}> Bays in each row are back to back (rows are 2 bays wide)</label>
-      <div class="field" style="max-width:420px;margin-top:10px"><label class="label" for="st_orient">Row direction</label><select id="st_orient" ><option value="" ${s.orient!=='h'?'selected':''}>Upright: bays run top to bottom</option><option value="h" ${s.orient==='h'?'selected':''}>Sideways: bays run left to right (half-height bays)</option></select><span class="hint">Use sideways for rack types that are installed the other way round. You can turn single rows on the Shed map later.</span></div>
-      <div class="row" style="margin-top:10px;align-items:center"><button data-act="rebuild-rows">Rebuild shed map with these rows</button><span class="muted small">Replaces the current bay positions on the shed map.</span></div>
+    <div class="row" style="align-items:flex-end;gap:12px">
+      <span class="label" style="align-self:center">Every bay</span>
+      <div class="field" style="width:120px"><label class="label" for="st_rows">Slots</label><input id="st_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="" placeholder="e.g. 21"></div>
+      <div class="field" style="width:150px"><label class="label" for="st_block">Blocked slots</label><input id="st_block" data-k="setup" data-f="defaultBlocked" value="" placeholder="e.g. 1-2"></div>
+      <span class="muted small" style="align-self:center">Type a value to apply it to every bay. Use a row’s own line below to change just that row.</span>
     </div>
-    <p class="muted small">Bay IDs come from the shed map: the row letter (A is furthest left) and the bay’s position from the top. To move single bays or rows, use the Shed map tab.</p>
     <div class="tablewrap" data-live>
-      <table class="edit">
-        <thead><tr><th>Bay ID</th><th>Row</th><th class="num">Slots</th><th>Blocked slots</th><th class="num">Usable</th><th class="num">Planned</th><th>Locked</th><th></th></tr></thead>
-        <tbody>${P.rowList.map(G=>G.racks.map(R=>{const r=R.rack;const usable=R.cells.filter(c=>!c.blocked).length;return `
+      <table class="edit baytable">
+        <thead><tr><th>Bay</th><th class="num">Slots</th><th>Blocked slots</th><th class="num" title="Bay length in mm">Length</th><th class="num" title="Bay width in mm">Width</th><th class="num" title="Slot height in mm">Height</th><th class="num">Usable</th><th class="num">Planned</th><th>Locked</th><th></th></tr></thead>
+        <tbody>${P.rowList.map(G=>{const g=G.row;const all=G.racks.every(R=>R.locked);return `
+          <tr class="rowhead"><td colspan="10"><div class="rowbar">
+            <b class="rl">Row ${esc(g.letter)}</b><span class="muted small">${plural(G.racks.length,'bay')}</span>
+            <label class="mini">Letter<input id="rh_l_${g.key}" data-k="rowcfg" data-id="${g.key}" data-f="letter" value="${esc(g.ov||'')}" placeholder="${esc(g.letter)}" maxlength="3" style="text-transform:uppercase;width:52px"></label>
+            <label class="mini">Slots<input id="rh_r_${g.key}" data-k="rowset" data-id="${g.key}" data-f="rows" inputmode="numeric" value="${rowsIn(G)}" placeholder="mixed" style="width:64px;text-align:right"></label>
+            <label class="mini">Blocked<input id="rh_b_${g.key}" data-k="rowset" data-id="${g.key}" data-f="blocked" value="${esc(blkIn(G))}" placeholder="${blkIn(G)===''&&G.racks.some(R=>R.rack.blocked.length)?'mixed':'none'}" style="width:80px"></label>
+            <label class="mini" title="Bay size in mm: length × width × height. Applies to every bay in the row.">Size mm${['l','w','h'].map(x=>`<input id="rh_d${x}_${g.key}" data-k="rowset" data-id="${g.key}" data-f="d${x}" inputmode="numeric" value="${(()=>{const v=[...new Set(G.racks.map(R=>(R.rack.dim||{})[x]||''))];return v.length===1?v[0]:'';})()}" placeholder="${x==='l'?'L':x==='w'?'W':'H'}" style="width:62px;text-align:right">`).join('')}</label>
+            <span class="seg mini-seg" role="group" aria-label="Direction of row ${esc(g.letter)}"><button data-act="${g.horiz?'row-orient':'noop'}" data-id="${g.key}" aria-pressed="${!g.horiz}" title="Bays run top to bottom">↕ Upright</button><button data-act="${g.horiz?'noop':'row-orient'}" data-id="${g.key}" aria-pressed="${!!g.horiz}" title="Bays run left to right, at half height">↔ Sideways</button></span>
+            ${lockBtn('lock-row',g.key,all,'Lock row',false)}
+            <span class="spacer"></span>
+            <button class="icon ghost" data-act="row-del-rack" data-id="${g.key}" ${p.racks.length<=1?'disabled':''} aria-label="Remove last bay from row ${esc(g.letter)}" title="Remove the last bay">−</button>
+            <button data-act="row-add-rack" data-id="${g.key}" title="Add a bay to the end of this row">+ Bay</button>
+          </div></td></tr>
+          ${G.racks.map(R=>{const r=R.rack;const usable=R.cells.filter(c=>!c.blocked).length;return `
           <tr>
-            <td class="mono" style="padding-left:10px"><b>${esc(r.name)}</b>${S.updated[r.id]!==undefined?` <span class="pill upd">was ${esc(S.updated[r.id])}</span>`:''}</td>
-            <td class="mono muted">${esc(G.row.letter)}</td>
-            <td class="w-s"><input id="rk_r_${r.id}" data-k="rack" data-id="${r.id}" data-f="rows" inputmode="numeric" value="${r.rows}" aria-label="Slots" style="text-align:right"></td>
-            <td class="w-m"><input id="rk_b_${r.id}" data-k="rack" data-id="${r.id}" data-f="blocked" value="${esc(fmtRows(r.blocked))}" placeholder="none" aria-label="Blocked slots"></td>
+            <td class="mono" style="padding-left:18px"><b>${esc(r.name)}</b>${S.updated[r.id]!==undefined?` <span class="pill upd">was ${esc(S.updated[r.id])}</span>`:''}</td>
+            <td class="w-s"><input id="rk_r_${r.id}" data-k="rack" data-id="${r.id}" data-f="rows" inputmode="numeric" value="${r.rows}" aria-label="Slots in ${esc(r.name)}" style="text-align:right"></td>
+            <td class="w-m"><input id="rk_b_${r.id}" data-k="rack" data-id="${r.id}" data-f="blocked" value="${esc(fmtRows(r.blocked))}" placeholder="none" aria-label="Blocked slots in ${esc(r.name)}"></td>
+            ${['l','w','h'].map(x=>`<td class="w-s"><input id="rk_d${x}_${r.id}" data-k="rack" data-id="${r.id}" data-f="d${x}" inputmode="numeric" value="${(r.dim||{})[x]||''}" placeholder="–" style="text-align:right" aria-label="Bay ${x==='l'?'length':x==='w'?'width':'height'} in mm"></td>`).join('')}
             <td class="num mono">${usable}</td>
             <td class="num mono">${R.used}</td>
             <td style="padding-left:10px"><input type="checkbox" id="rk_l_${r.id}" data-k="rack" data-id="${r.id}" data-f="locked" ${R.locked?'checked':''} aria-label="Lock bay ${esc(r.name)}"></td>
-            <td style="text-align:right"><button class="icon ghost danger" data-act="rack-del" data-id="${r.id}" ${p.racks.length<=1?'disabled':''} aria-label="Remove bay">✕</button></td>
-          </tr>`;}).join('')).join('')}</tbody>
+            <td style="text-align:right"><button class="icon ghost danger" data-act="rack-del" data-id="${r.id}" ${p.racks.length<=1?'disabled':''} aria-label="Remove bay ${esc(r.name)}" title="Remove this bay">✕</button></td>
+          </tr>`;}).join('')}`;}).join('')}
+          <tr class="rowhead"><td colspan="10"><div class="rowbar"><button data-act="map-add-row">+ Add a row</button><button data-act="fit-racks" title="${need?`${need} bays are needed for all boxes`:''}">Fit number of bays to the boxes${need?` (${need})`:''}</button><span class="muted small">New rows go to the right of the others on the Shed map.</span></div></td></tr>
+        </tbody>
       </table>
-    </div>`;
+    </div>
+    <p class="muted small">Bay IDs come from the Shed map: rows are lettered left to right and bays numbered along the row. To move bays or rows around, use the Shed map tab.</p>
+    <details class="manual" data-sec="relayout" ${S.open.relayout?'open':''}><summary>Start the shed map again</summary><div class="body stack">
+      <p class="muted small">Puts every bay back into evenly split rows, side by side. Boxes, slots and locks stay with their bays, but bays may get new IDs and any positions you set on the Shed map are lost.</p>
+      <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))">
+        <div class="field"><label class="label" for="st_rowsct">Number of rows</label><input id="st_rowsct" type="number" min="1" max="50" value="${p._rows.length||1}"></div>
+        <div class="field"><label class="label" for="st_orient">Row direction</label><select id="st_orient"><option value="" ${s.orient!=='h'?'selected':''}>Upright: bays run top to bottom</option><option value="h" ${s.orient==='h'?'selected':''}>Sideways: bays run left to right</option></select></div>
+      </div>
+      <label class="check"><input type="checkbox" id="st_b2b" ${s.backToBack?'checked':''}> Bays in each row are back to back (rows are 2 bays wide)</label>
+      <div class="row"><button data-act="rebuild-rows">Reset the shed map to these rows</button></div>
+    </div></details>`;
 }
 
 /* import, manual entry and wizard step 1 (shared) */
@@ -1290,7 +1478,7 @@ function coreRows(p,P){
   const inp=(it,f,cls,num)=>`<td class="${cls||''}"><input id="it_${f}_${it.id}" data-k="item" data-id="${it.id}" data-f="${f}" value="${esc(it[f])}" ${num?'inputmode="decimal" style="text-align:right"':''} aria-label="${f}"></td>`;
   return rows.map(it=>{const ps=P.pos[it.id];return `<tr data-row="${it.id}">
     <td class="lead"><span class="draghandle" draggable="true" data-drag="${it.id}" title="Drag to reorder" aria-label="Drag to reorder">⠿</span><button class="icon ghost danger" data-act="item-del" data-id="${it.id}" aria-label="Remove box" title="Remove box">✕</button></td>
-    <td class="mono" style="padding-left:6px">${ps?esc(ps.rackName+'-'+ps.slot):'<span class="pill stage">No space</span>'}${it.missing?' <span class="pill missing">missing</span>':''}</td>
+    <td class="w-s locin"><input id="it_loc_${it.id}" data-k="itemloc" data-id="${it.id}" value="${ps?esc(ps.rackName+'-'+ps.slot):''}" placeholder="No space" title="Type a slot like A1-5 to put this box there" aria-label="Slot for box ${esc(it.hole)} ${esc(it.box)}" class="mono">${it.missing?' <span class="pill missing">missing</span>':''}</td>
     ${inp(it,'feature','w-m')}${inp(it,'hole','w-m')}${inp(it,'box','w-s',1)}${inp(it,'of','w-s',1)}${inp(it,'from','w-s',1)}${inp(it,'to','w-s',1)}
     ${p.customCols.map(c=>`<td class="w-m"><input id="it_c_${c.id}_${it.id}" data-k="item" data-id="${it.id}" data-c="${c.id}" value="${esc((it.custom||{})[c.id])}" aria-label="${esc(c.name)}"></td>`).join('')}
     </tr>`;}).join('');
@@ -1444,7 +1632,8 @@ const LAYOUT_FIELDS=[['location','Location (e.g. A1-3)',['location','loc','posit
   ['row','Row',['row','rackrow','rowletter','aisle','line']],
   ['bay','Bay',['bay','rack','bayno','baynumber','rackno','racknumber','bay#','rack#']],
   ['slot','Slot',['slot','shelf','level','slotno','slotnumber','shelfno','tier','shelfnumber']]];
-const fieldsFor=imp=>imp&&imp.kind==='layout'?LAYOUT_FIELDS.concat(FIELDS):FIELDS;
+const PALLET_FIELDS=[['order','Pallet order (No.)',['no','#','order','stackorder','palletorder','sequence','seq','itemno','stackno','orderno','loadorder']],['pallet','Pallet',['pallet','palletno','palletnumber','palletid']]];
+const fieldsFor=imp=>imp&&imp.kind==='layout'?LAYOUT_FIELDS.concat(FIELDS):FIELDS.concat(PALLET_FIELDS);
 function parseLoc(R,B,Sl,loc){
   R=String(R||'').trim().toUpperCase();B=String(B||'').trim().toUpperCase();Sl=String(Sl||'').trim();
   if(loc){const m=String(loc).trim().toUpperCase().match(/^([A-Z]+)\s*[-_ ]?\s*(\d+)\s*[-_\/. ]\s*(\d+)$/);if(m){R=R||m[1];B=B||m[2];Sl=Sl||m[3];}}
@@ -1466,6 +1655,9 @@ function buildLayout(p,imp,rows){
   const xcols=layoutExtraCols(p,imp);
   const m=imp.map;const get=(row,k)=>{const i=m[k];return i>=0&&row[i]!=null?String(row[i]).trim():'';};
   const cells=[],seen=new Map();let noLoc=0,dupes=0,empty=0,missing=0,unknown=0;
+  /* bay sizes are read from every row, including EMPTY ones */
+  const dIdx={};['yl','yw','yh'].forEach(k=>{const x=xcols.find(e=>DIMSYN[k].includes(normH(e.name)));if(x)dIdx[k]=x.i;else{const c=p.customCols.find(c=>DIMSYN[k].includes(normH(c.name)));if(c&&m['c:'+c.id]>=0)dIdx[k]=m['c:'+c.id];}});
+  const dimOf=row=>{const d={l:mm(row[dIdx.yl]),w:mm(row[dIdx.yw]),h:mm(row[dIdx.yh])};return d.l||d.w||d.h?d:null;};
   for(const row of rows){
     const L=parseLoc(get(row,'row'),get(row,'bay'),get(row,'slot'),get(row,'location'));if(!L){if(['feature','hole','box','from','to'].some(k=>get(row,k)))noLoc++;continue;}
     const key=L.row+'|'+L.bay+'|'+L.slot;const dupe=seen.has(key);if(dupe)dupes++;
@@ -1478,7 +1670,7 @@ function buildLayout(p,imp,rows){
       const fr=get(row,'from'),to=get(row,'to');if(isWord(fr,'unknown')||isWord(to,'unknown'))unknown++;
       item=cleanItem({id:uid(),feature,hole,box,of,from:fr,to,custom});
       const ex={};xcols.forEach(e=>{const v=row[e.i]!=null?String(row[e.i]).trim():'';if(v)ex[e.name]=v;});if(Object.keys(ex).length)item._extras=ex;if(item.missing)missing++;}
-    const cell=Object.assign({},L,{item});if(!dupe)seen.set(key,cell);cells.push(cell);}
+    const cell=Object.assign({},L,{item,dim:dimOf(row)});if(!dupe)seen.set(key,cell);cells.push(cell);}
   const letters=[...new Set(cells.map(c=>c.row))];const bays=new Set(cells.map(c=>c.row+c.bay));
   return{cells,noLoc,dupes,empty,missing,unknown,boxes:cells.filter(c=>c.item).length,letters,bayCount:bays.size,xcols};
 }
@@ -1502,7 +1694,7 @@ function applyLayout(p,Lay,opts){
     if(horiz){x+=1;placeRow(list,x,2,true,cols,R.style==='across');x+=Math.ceil(n/cols)*HW+AISLE;}
     else{placeRow(list,x,2,false,cols,R.style==='across');x+=cols*RW+AISLE;}bays.push(...list);});
   const items=[];
-  cells.forEach(c=>{const b=byKey.get(c.row+'|'+c.bay);if(!b)return;if(c.item){items.push(c.item);const tg=opts.lock?b.fixed:b.hold;const ex=tg[c.slot];tg[c.slot]=ex===undefined?c.item.id:[].concat(ex,c.item.id);}});
+  cells.forEach(c=>{const b=byKey.get(c.row+'|'+c.bay);if(!b)return;if(c.dim&&!b.dim)b.dim=c.dim;if(c.item){items.push(c.item);const tg=opts.lock?b.fixed:b.hold;const ex=tg[c.slot];tg[c.slot]=ex===undefined?c.item.id:[].concat(ex,c.item.id);}});
   bays.forEach(b=>{if(opts.lock&&b._has)b.locked=true;delete b._has;});
   const cnt={};bays.forEach(b=>{cnt[b.rows]=(cnt[b.rows]||0)+1;});const common=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
   p.racks=bays;p.items=items;
@@ -1601,6 +1793,7 @@ function runLayoutImport(p){
   const info=applyLayout(p,res,{rows:arrangeRows(imp,res),lock:imp.lockAll!==false});
   const ids={};(res.xcols||[]).forEach(e=>{let c=p.customCols.find(x=>normH(x.name)===normH(e.name));if(!c){c={id:uid(),name:e.name};p.customCols.push(c);}ids[e.name]=c.id;});
   p.items.forEach(it=>{if(it._extras){Object.entries(it._extras).forEach(([n,v])=>{if(ids[n])it.custom[ids[n]]=v;});delete it._extras;}});
+  const nd=bayDimsFromItems(p);
   S.imp=null;S.confirm=null;S.updated={};
   const first=p.stage!=='done';p.stage='done';S.tab='plan';touch(p);const saved=first&&finishFirstMove();
   render();window.scrollTo(0,0);
@@ -1635,7 +1828,7 @@ function importPanel(p){
   const data=dataRows(imp);const res=buildImport(p,imp,data);
   const opts=sel=>`<option value="-1"${sel<0?' selected':''}>Not imported</option>`+Array.from({length:ncols},(_,i)=>`<option value="${i}"${sel===i?' selected':''}>Column ${colLetter(i)}${hdr[i]!==undefined&&String(hdr[i]).trim()!==''?' · '+esc(String(hdr[i]).slice(0,28)):''}</option>`).join('');
   const sample=i=>i<0?'':data.slice(0,3).map(r=>r[i]).filter(v=>String(v??'').trim()!=='').map(v=>esc(String(v).slice(0,16))).join(', ');
-  const fields=FIELDS.map(f=>[f[0],f[1]]).concat(p.customCols.map(c=>['c:'+c.id,c.name]));
+  const fields=fieldsFor(imp).map(f=>[f[0],f[1]]).concat(p.customCols.map(c=>['c:'+c.id,c.name]));
   const m=imp.map;const msgs=[];
   if(!(m.hole>=0))msgs.push(['err','Hole ID isn’t matched to a column. Pick the column that holds hole IDs.']);
   if(!(m.box>=0))msgs.push(['warn','Box isn’t matched, so boxes will be added without box numbers.']);
@@ -1665,15 +1858,17 @@ function importPanel(p){
     <div class="stack" style="gap:8px">
       <label class="check"><input type="checkbox" id="imp_split" data-k="imp" data-f="split" ${imp.split?'checked':''}> Split combined IDs like <span class="mono">BMA1-DD100</span> into Feature and Hole</label>
       <label class="check"><input type="checkbox" id="imp_extras" data-k="imp" data-f="extras" ${imp.extras?'checked':''}> Bring in unmatched columns as custom columns</label>
+      <label class="check"><input type="checkbox" id="imp_pal" data-k="imp" data-f="pallet" ${imp.pallet||imp.mode==='pallet'?'checked':''} ${imp.mode==='pallet'?'disabled':''}> This list is in the order the boxes were stacked on the pallets (makes the pallet sheet in Moves)</label>
       ${p.items.length?`<label class="check"><input type="checkbox" id="imp_dup" data-k="imp" data-f="skipDup" ${imp.skipDup?'checked':''}> Skip boxes already in the plan (same feature, hole and box)</label>
       <div class="row" style="align-items:center"><label class="check"><input type="radio" name="impmode" id="imp_mode_a" data-k="imp" data-f="mode" value="append" ${imp.mode!=='replace'?'checked':''}> Add to the ${p.items.length} existing boxes</label>
-      <label class="check"><input type="radio" name="impmode" id="imp_mode_r" data-k="imp" data-f="mode" value="replace" ${imp.mode==='replace'?'checked':''}> Replace all boxes</label></div>`:''}
+      <label class="check"><input type="radio" name="impmode" id="imp_mode_r" data-k="imp" data-f="mode" value="replace" ${imp.mode==='replace'?'checked':''}> Replace all boxes</label>
+      <label class="check"><input type="radio" name="impmode" id="imp_mode_p" data-k="imp" data-f="mode" value="pallet" ${imp.mode==='pallet'?'checked':''}> Only set the pallet order (the boxes are already in this move)</label></div>`:''}
     </div>
     <div><h3 style="margin-bottom:8px">Preview of boxes to add</h3>
       <div class="tablewrap"><table><thead><tr><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}</tr></thead>
       <tbody>${res.items.length?res.items.slice(0,PREV).map(it=>`<tr><td class="mono">${esc(it.feature)||'<span class="muted">–</span>'}</td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}</td><td class="num mono">${esc(it.of)}</td><td class="num mono">${esc(it.from)}</td><td class="num mono">${esc(it.to)}</td>${cols.map(c=>`<td>${esc(it.custom[c.id])}</td>`).join('')}</tr>`).join('')+(res.items.length>PREV?`<tr><td colspan="${6+cols.length}" class="muted">and ${res.items.length-PREV} more</td></tr>`:''):`<tr><td colspan="${6+cols.length}" class="muted">Nothing to import yet. Match Hole ID to a column.</td></tr>`}</tbody></table></div>
     </div>
-    <div class="row"><button class="primary" data-act="imp-run" ${ok?'':'disabled'}>Import ${res.items.length} box${res.items.length===1?'':'es'}</button></div>
+    <div class="row"><button class="primary" data-act="imp-run" ${ok?'':'disabled'}>${imp.mode==='pallet'?`Set pallet order for ${res.items.length} box${res.items.length===1?'':'es'}`:`Import ${res.items.length} box${res.items.length===1?'':'es'}`}</button></div>
   </div>`;
 }
 function buildImport(p,imp,rows){
@@ -1692,7 +1887,8 @@ function buildImport(p,imp,rows){
     const extras={};extraCols.forEach(e=>{const v=row[e.i]!=null?String(row[e.i]).trim():'';if(v)extras[e.name]=v;});
     let boxes=[box];
     if(/^\d+\s*-\s*\d+(\s*,\s*\d+(\s*-\s*\d+)?)*$/.test(box)){const list=parseRows(box);if(list.length>1&&list.length<=1000){boxes=list.map(String);expanded++;}}
-    boxes.forEach(b=>items.push(cleanItem({id:uid(),feature,hole,box:b,of,from:boxes.length>1?'':get(row,'from'),to:boxes.length>1?'':get(row,'to'),custom:Object.assign({},custom),_extras:extras})));
+    const ord=get(row,'order'),pal=get(row,'pallet');
+    boxes.forEach(b=>items.push(cleanItem({_ord:ord,_pal:pal,_row:items.length,id:uid(),feature,hole,box:b,of,from:boxes.length>1?'':get(row,'from'),to:boxes.length>1?'':get(row,'to'),custom:Object.assign({},custom),_extras:extras})));
   }
   return{items,extraCols,skipped,expanded};
 }
@@ -1702,7 +1898,9 @@ async function readSheetFile(file,kind){
   if(window.XLSX){const wb=XLSX.read(buf,{type:'array'});imp.wb=wb;imp.sheets=wb.SheetNames;imp.sheet=wb.SheetNames[0];imp.rows=sheetRows(wb,imp.sheet);}
   else if(/\.(csv|txt|tsv)$/i.test(name)){imp.rows=parseCSV(new TextDecoder().decode(buf));}
   else{toast('The Excel reader isn’t available offline. Save the sheet as CSV and try again.');return;}
-  imp.headerRow=detectHeader(imp.rows);S.imp=imp;autoMap(cur(),imp);render();
+  imp.headerRow=detectHeader(imp.rows);S.imp=imp;autoMap(cur(),imp);
+  if(S.palletNext){S.palletNext=false;imp.pallet=true;if((cur().items||[]).length){imp.mode='pallet';imp.skipDup=true;}S.tab='edit';S.open.holes=true;}
+  render();
 }
 function sheetRows(wb,name){return XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:false,defval:''});}
 function parseCSV(text){
@@ -1745,6 +1943,7 @@ function advancedTab(p,P){
         <div class="field"><label class="label" for="opt_gf">Spare slots after each feature</label><input id="opt_gf" type="number" min="0" max="50" data-k="opt" data-f="gapAfterFeature" value="${+o.gapAfterFeature||0}"></div>
       </div>
       <label class="check"><input type="checkbox" id="opt_nr" data-k="opt" data-f="newRackPerFeature" ${o.newRackPerFeature?'checked':''}> Start each feature in a new bay</label>
+      <div class="field" style="max-width:320px"><label class="label" for="opt_tol">Box length tolerance (mm)</label><input id="opt_tol" type="number" min="0" max="50" data-k="opt" data-f="fitTol" value="${o.fitTol===undefined?10:+o.fitTol}"><span class="hint">How much shorter than the bay a box can be and still sit on the rests</span></div>
     </div>
   </section>
   <section class="panel">
@@ -1809,7 +2008,7 @@ function templateMap(p){const map=new Map(),extras=[];
   return{map,extras};}
 function templateRows(p,P){
   const{map}=templateMap(p);const rows=[];
-  const one=(row,bay,slot,it,note)=>{const cv=col=>{const id=map.get(col);return id&&it?((it.custom||{})[id]||''):'';};
+  let curBay=null;const one=(row,bay,slot,it,note)=>{const cv=col=>{const d=bayDim(curBay);if(d&&(col==='U'||col==='V'||col==='W'))return String(d[{U:'l',V:'w',W:'h'}[col]]||'');const id=map.get(col);return id&&it?((it.custom||{})[id]||''):'';};
     return TPL.map(([col,,key])=>{
       if(key==='row')return row;if(key==='bay')return bay;if(key==='slot')return slot;
       if(key==='borehole')return it?([it.feature,outVal(it,'hole')].filter(Boolean).join('-')||'?'):'EMPTY';
@@ -1818,10 +2017,10 @@ function templateRows(p,P){
       if(col==='Y')return [cv('Y'),note].filter(Boolean).join('; ');
       return cv(col);});};
   /* every bay and every slot, in shed order, so empty bays and blocked slots keep their place */
-  P.racks.forEach(R=>{const r=R.rack;const L=r.rowLetter||'';const bay=r.name.slice(L.length);
+  P.racks.forEach(R=>{const r=R.rack;curBay=r;const L=r.rowLetter||'';const bay=r.name.slice(L.length);
     if(!R.cells.length){rows.push(one(L,bay,'',null,'Bay has no slots'));return;}
     R.cells.forEach(c=>{if(c.blocked){rows.push(one(L,bay,c.slot,null,'Blocked slot'));return;}if(!c.item){rows.push(one(L,bay,c.slot,null,''));return;}slotBoxes(c).forEach(it=>rows.push(one(L,bay,c.slot,it,'')));});});
-  P.unplaced.forEach(it=>rows.push(one('','','',it,'Not placed: no space in the plan')));
+  curBay=null;P.unplaced.forEach(it=>rows.push(one('','','',it,'Not placed: no space in the plan')));
   return rows;}
 function exportContext(){const pr=projRec(),m=moveRec();return{title:[pr.name,pr.site].filter(Boolean).join(' – '),detail:`Exported from Core Rack Planner on ${new Date().toLocaleDateString()}: ${m?`core move “${m.name}”`:'saved shed layout'}`,file:safeName([pr.name,pr.site,m&&m.name].filter(Boolean).join(' - '))};}
 function exportTemplateCSV(p){const P=computePlan(p);const rows=templateRows(p,P);const cx=exportContext();
@@ -1945,6 +2144,21 @@ document.addEventListener('click',e=>{
     case 'rebuild-rows':{const R=clamp(int($('#st_rowsct').value,1),1,50);const b2b=$('#st_b2b').checked;const orient=$('#st_orient').value;p.setup.rowCount=R;p.setup.backToBack=b2b;p.setup.orient=orient;autoLayout(p.racks,R,b2b,orient,p.setup.numbering==='across');S.updated={};deriveNames(p);touch(p);render();toast(`Shed map rebuilt with ${plural(p._rows.length,'row')}`);break;}
     case 'order-reset':delete p.manualOrder;touch(p);render();toast('Back to the automatic order');break;
     case 'hs-step':{const w=document.getElementById(b.dataset.for);if(w)w.scrollBy({left:(+b.dataset.d)*Math.max(200,w.clientWidth*0.6),behavior:'smooth'});break;}
+    case 'space-accept':case 'space-accept-all':{const list=S.spaceList||[];const pick=act==='space-accept-all'?list:[list[+b.dataset.i]].filter(Boolean);if(!pick.length)break;
+      const before=computePlan(p).pos;pick.forEach(sg=>applySuggestion(p,sg));touch(p);render();
+      toast(pick.length===1?`Moved ${plural(pick[0].n,'box','boxes')} of ${pick[0].label} to ${pick[0].where}.`:`Applied ${pick.length} space-saving moves.`);break;}
+    case 'space-dismiss':{const sg=(S.spaceList||[])[+b.dataset.i];if(sg){p.spaceDismissed=(p.spaceDismissed||[]).concat(sg.key);touch(p);render();}break;}
+    case 'noop':break;
+    case 'pick-pallet':S.palletNext=true;S.pickKind='holes';{const fi=$('#fileSheet');if(fi){fi.value='';fi.click();}}break;
+    case 'pallet-clear':delete p.pallet;touch(p);render();toast('Pallet order cleared');break;
+    case 'pallet-print':document.body.classList.add('print-pallet');setTimeout(()=>{window.print();},50);break;
+    case 'pallet-export':{const P=computePlan(p);const rows=palletRows(p,P);const hasPal=rows.some(r=>r.pal);
+      const head=['Off pallet',...(hasPal?['Pallet']:[]),'Feature','Hole ID','Box','Of','From (m)','To (m)','Goes to (row-bay-slot)','Done','Notes'];
+      const aoa=[head,...rows.map(r=>[r.n,...(hasPal?[r.pal]:[]),r.it.feature||'',outVal(r.it,'hole'),numOr(outVal(r.it,'box')),numOr(outVal(r.it,'of')),numOr(outVal(r.it,'from')),numOr(outVal(r.it,'to')),r.dest||'No slot','',''])];
+      const name=safeName([projRec().name,(moveRec()||{}).name,'pallet sheet'].filter(Boolean).join(' - '));
+      if(window.XLSX){const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=head.map(h=>({wch:Math.max(9,h.length+2)}));XLSX.utils.book_append_sheet(wb,ws,'Pallet sheet');XLSX.writeFile(wb,name+'.xlsx');}
+      else{const csv=aoa.map(r=>r.map(v=>{const x=String(v??'');return /[",\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x;}).join(',')).join('\r\n');download(name+'.csv',new Blob(['\ufeff'+csv],{type:'text/csv'}));}
+      toast('Pallet sheet exported');break;}
     case 'item-del':p.items=p.items.filter(it=>it.id!==id);touch(p);render();break;
     case 'clear':S.confirm='clear';render();break;
     case 'clear-yes':p.items=[];S.confirm=null;touch(p);render();toast('All boxes removed');break;
@@ -1971,7 +2185,7 @@ document.addEventListener('click',e=>{
     case 'lock-row':{const g=groupOfBay(p,id);if(g){const all=g.bays.every(x=>x.locked);lockBays(p,g.bays.map(x=>x.id),!all);touch(p);render();toast(all?`Row ${g.letter} unlocked. Its boxes stay put until you update to best positions.`:`Row ${g.letter} locked`);}break;}
     case 'lock-slot':{const r=p.racks.find(x=>x.id===id);const sl=+b.dataset.slot;const on=lockSlot(p,id,sl);touch(p);render();toast(on?`Slot ${r.name}-${sl} locked`:`Slot ${r.name}-${sl} unlocked. Its box stays put until you update to best positions.`);break;}
     case 'reoptimise':{const n=heldCount(p);reoptimise(p);touch(p);render();toast(`${plural(n,'held box','held boxes')} moved into the best order`);break;}
-    case 'row-add-rack':{const g=groupOfBay(p,id);if(g){const r=makeRack(p);appendBayToRow(p,r,g);p.racks.push(r);deriveNames(p);p.setup.rackCount=p.racks.length;touch(p);render();}break;}
+    case 'row-add-rack':{const g=groupOfBay(p,id);if(g){const r=makeRack(p);const lastB=g.bays[g.bays.length-1];if(lastB){r.rows=lastB.rows;r.blocked=(lastB.blocked||[]).slice();}appendBayToRow(p,r,g);p.racks.push(r);deriveNames(p);p.setup.rackCount=p.racks.length;touch(p);render();}break;}
     case 'row-del-rack':{const g=groupOfBay(p,id);if(g&&p.racks.length>1){const last=g.bays[g.bays.length-1];p.racks=p.racks.filter(r=>r.id!==last.id);deriveNames(p);if(!groupOfBay(p,S.sel&&S.sel.id))S.sel=null;p.setup.rackCount=p.racks.length;touch(p);render();}break;}
     case 'map-add-row':{const gs=p._rows||deriveNames(p);const last=gs[gs.length-1];const n=last?last.bays.length:4;const cols=last?new Set(last.bays.map(b=>b.x)).size:1;
       const horiz=!!(last&&last.horiz);const lines=last?new Set(last.bays.map(b=>horiz?b.y:b.x)).size:1;
@@ -2045,8 +2259,8 @@ document.addEventListener('change',e=>{
     else p.setup[f]=val;
     syncWizardRacks(p);touch(p);render();const el=document.getElementById(t.id);if(el)el.focus();return;}
   if(k==='setup'){const s=p.setup;
-    if(f==='defaultRows'){s.defaultRows=val;const n=int(val,0);if(n>0)p.racks.forEach(r=>r.rows=n);toast('Slots applied to every bay');}
-    else if(f==='defaultBlocked'){s.defaultBlocked=val;const bl=parseRows(val);p.racks.forEach(r=>r.blocked=bl.slice());toast('Blocked slots applied to every bay');}
+    if(f==='defaultRows'){const n=int(val,0);if(n>0){s.defaultRows=String(n);p.racks.forEach(r=>r.rows=n);toast(`Every bay now has ${n} slots`);}}
+    else if(f==='defaultBlocked'){s.defaultBlocked=val;const bl=parseRows(val);p.racks.forEach(r=>r.blocked=bl.slice());toast(bl.length?`Slots ${fmtRows(bl)} blocked in every bay`:'No blocked slots in any bay');}
     else if(f==='rackCount')setBayCount(p,clamp(int(val,1),1,500));
     else if(f==='numbering'){const before=nameSnapshot(p);s.numbering=val;p.racks.forEach(r=>delete r.numMode);markUpdated(p,before);toast(val==='across'?'Bays now numbered across, then down':'Bays now numbered down one side, then the next');}
     else{s[f]=val;deriveNames(p);}
@@ -2054,10 +2268,16 @@ document.addEventListener('change',e=>{
   if(k==='rack'){const r=p.racks.find(x=>x.id===t.dataset.id);if(!r)return;
     if(f==='locked'){lockBays(p,[r.id],val);touch(p);render();return;}
     if(f==='rows')r.rows=clamp(int(val,0),0,500);else if(f==='blocked'){r.blocked=parseRows(val);t.value=fmtRows(r.blocked);}
+    else if(/^d[lwh]$/.test(f)){r.dim=Object.assign({},r.dim||{});const v=mm(val);if(v)r.dim[f[1]]=v;else delete r.dim[f[1]];if(!bayDim(r))delete r.dim;t.value=v||'';}
     touch(p);S.dirty=true;refreshSummary();return;}
   if(k==='arr'&&S.imp&&S.imp.arr){const r=S.imp.arr[+t.dataset.i];if(r){r[f]=f==='letter'?String(val).toUpperCase().replace(/[^A-Z]/g,'').slice(0,3):val;render();if(f==='letter'){const el=document.getElementById(t.id);}}return;}
   if(k==='arrallo'&&S.imp&&S.imp.arr){if(val)S.imp.arr.forEach(r=>r.orient=val==='h'?'h':'');render();return;}
   if(k==='arrall'&&S.imp&&S.imp.arr){if(val)S.imp.arr.forEach(r=>r.style=val);render();return;}
+  if(k==='rowset'){const g=groupOfBay(p,t.dataset.id);if(!g)return;
+    if(/^d[lwh]$/.test(f)){const v=mm(val);g.bays.forEach(b=>{b.dim=Object.assign({},b.dim||{});if(v)b.dim[f[1]]=v;else delete b.dim[f[1]];if(!bayDim(b))delete b.dim;});toast(`Row ${g.letter}: bay ${f==='dl'?'length':f==='dw'?'width':'height'} ${v?`set to ${v} mm`:'cleared'}`);}
+    else if(f==='rows'){const n=int(val,0);if(n<1){render();return;}g.bays.forEach(b=>b.rows=clamp(n,1,500));toast(`Row ${g.letter}: every bay now has ${n} slots`);}
+    else{const bl=parseRows(val);g.bays.forEach(b=>b.blocked=bl.slice());toast(bl.length?`Row ${g.letter}: slots ${fmtRows(bl)} blocked in every bay`:`Row ${g.letter}: no blocked slots`);}
+    touch(p);render();return;}
   if(k==='rowcfg'){const g=groupOfBay(p,t.dataset.id);if(!g)return;const before=nameSnapshot(p);
     if(f==='letter'){const L=String(val).toUpperCase().replace(/[^A-Z]/g,'').slice(0,3);
       if(L&&(p._rows||[]).some(o=>o!==g&&o.ov===L)){toast(`Row ${L} is already set on another row.`);render();return;}
@@ -2068,6 +2288,7 @@ document.addEventListener('change',e=>{
       if(f==='text')l.text=val.trim()||l.text;else if(f==='w')l.w=clamp(int(val,labelW(l)),1,200);else if(f==='h')l.h=clamp(int(val,1),1,200);else if(f==='size')l.size=+val||1;else if(f==='color')l.color=val;
       touch(p);render();}return;}
   if(k==='map'){if(f==='title'){p.map.title=val;touch(p);return;}p.map[f]=Math.max(0,int(val,0));touch(p);render();return;}
+  if(k==='itemloc'){moveItemTo(p,t.dataset.id,val);render();return;}
   if(k==='item'){const it=p.items.find(x=>x.id===t.dataset.id);if(!it)return;if(t.dataset.c){it.custom=it.custom||{};it.custom[t.dataset.c]=t.value.trim();}else{it[f]=t.value.trim();if(f==='from'||f==='to'){const was=it.missing;it.missing=false;cleanItem(it);if(!it.missing&&was&&!(it.from||it.to))it.missing=was;t.value=it[f];}}touch(p);S.dirty=true;refreshSummary();return;}
   if(k==='col'){const c=p.customCols.find(x=>x.id===t.dataset.id);if(c){c.name=t.value.trim()||c.name;touch(p);S.dirty=true;}return;}
   if(k==='opt'){if(t.type==='checkbox'){p.options[f]=t.checked;if(f==='useCustomOrder'&&t.checked&&!(p.options.featureOrder||[]).length)p.options.featureOrder=featureOrder(Object.assign({},p,{options:Object.assign({},p.options,{useCustomOrder:false})}));}
@@ -2182,6 +2403,7 @@ function endDrag(e,cancel){
   else if(r&&before.get(r.id)!==r.name)toast(`This bay is now ${r.name}; the rack plan has been updated.`);
 }
 document.addEventListener('pointerup',e=>endDrag(e,false));
+addEventListener('afterprint',()=>document.body.classList.remove('print-pallet'));
 document.addEventListener('pointercancel',e=>endDrag(e,true));
 
 /* drop a spreadsheet */
@@ -2202,15 +2424,23 @@ function runImport(p){
   const imp=S.imp;const data=dataRows(imp);
   if(!(imp.map.hole>=0)){toast('Match Hole ID to a column first.');return;}
   const{items,extraCols}=buildImport(p,imp,data);
+  const stack=[];/* pallet stacking order: the Order column if there is one, else the sheet order */
+  const ordKey=it=>{const n=parseFloat(it._ord);return isNaN(n)?Infinity:n;};
+  if(imp.mode==='pallet'){const key2=it=>[(it.feature||'').toLowerCase(),(it.hole||'').toLowerCase(),String(it.box||'').toLowerCase()].join('|');const byKey=new Map(p.items.map(it=>[key2(it),it]));let miss=0;
+    items.forEach(it=>{const m=byKey.get(key2(it))||(!it.feature?p.items.find(x=>(x.hole||'').toLowerCase()===(it.hole||'').toLowerCase()&&String(x.box)===String(it.box)):null);if(m)stack.push({id:m.id,o:ordKey(it),r:it._row,pal:it._pal});else miss++;});
+    stack.sort((a,b)=>a.o-b.o||a.r-b.r);p.pallet={list:stack.map(x=>({id:x.id,pal:x.pal||''})),file:imp.fileName,when:Date.now()};
+    S.imp=null;touch(p);S.tab='moves';render();window.scrollTo(0,0);toast(`Pallet order set for ${plural(stack.length,'box','boxes')}${miss?`. ${miss} row${miss===1?'':'s'} didn’t match a box in this move`:''}. See the pallet sheet in Moves.`);return;}
   if(imp.mode==='replace')p.items=[];
   const colIds={};extraCols.forEach(e=>{let c=p.customCols.find(x=>x.name.toLowerCase()===e.name.toLowerCase());if(!c){c={id:uid(),name:e.name};p.customCols.push(c);}colIds[e.name]=c.id;});
   const key=it=>[(it.feature||'').toLowerCase(),(it.hole||'').toLowerCase(),String(it.box||'').toLowerCase()].join('|');
   const have=new Set(p.items.map(key));let added=0,skipped=0;
   items.forEach(it=>{Object.entries(it._extras).forEach(([n,v])=>{it.custom[colIds[n]]=v;});delete it._extras;
-    if(imp.skipDup&&it.box!==''&&have.has(key(it))){skipped++;return;}have.add(key(it));p.items.push(it);added++;});
+    const o={id:it.id,o:ordKey(it),r:it._row,pal:it._pal};delete it._ord;delete it._pal;delete it._row;
+    if(imp.skipDup&&it.box!==''&&have.has(key(it))){skipped++;return;}have.add(key(it));p.items.push(it);added++;stack.push(o);});
+  if(imp.pallet&&stack.length){stack.sort((a,b)=>a.o-b.o||a.r-b.r);p.pallet={list:stack.map(x=>({id:x.id,pal:x.pal||''})),file:imp.fileName,when:Date.now()};}
   S.imp=null;
   if(p.stage==='holes'&&added){p.stage='racks';if(p.setup.autoCount===undefined)p.setup.autoCount=true;syncWizardRacks(p);window.scrollTo(0,0);S.focusAfter='wz_rows';}
-  touch(p);render();toast(`Imported ${added} box${added===1?'':'es'}${skipped?`, skipped ${skipped} already in the plan`:''}`);
+  touch(p);render();toast(`Imported ${added} box${added===1?'':'es'}${skipped?`, skipped ${skipped} already in the plan`:''}${imp.pallet&&stack.length?'. Pallet sheet ready in Moves':''}`);
 }
 
 
