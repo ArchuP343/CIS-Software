@@ -253,7 +253,7 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 .modal .savewarn{width:min(520px,100%);display:flex;flex-direction:column;gap:12px;border-top:6px solid var(--warn)}
 .swhead{display:flex;align-items:center;gap:12px}.swhead h2{margin:0}.swicon{display:grid;place-items:center;width:46px;height:46px;flex:none;border-radius:12px;background:var(--warn-soft);color:var(--warn)}
 .savewarn p{margin:0}.savewarn ul{margin:0;padding:12px 12px 12px 32px;border-radius:10px;background:var(--surface-2);display:flex;flex-direction:column;gap:6px;font-size:1rem}
-.savemenu>summary{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;background:var(--brand);border:1px solid var(--brand);color:var(--brand-ink);font-weight:700}.savemenu>summary:hover{filter:brightness(1.08)}.savemenu>summary::after{color:inherit;opacity:.85}
+.savemenu>summary{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;background:var(--brand);border:1px solid var(--brand);color:var(--brand-ink);font-weight:700}.savemenu>summary:hover{filter:brightness(1.08)}.menu.savemenu>summary::after{color:var(--brand-ink);opacity:1;font-size:.9em;margin-left:4px}
 .savemenu .menu-pop{left:0;right:auto;min-width:260px}.savemenu .menu-pop button{flex-direction:column;align-items:flex-start;gap:2px;font-weight:600}.savemenu .menu-pop .hint{margin-left:0}.savemenu .menu-pop button:disabled{opacity:.5}
 .palsec>summary{display:flex;align-items:baseline;gap:12px;cursor:pointer;list-style:none}.palsec>summary::-webkit-details-marker{display:none}.palsec>summary::after{content:'+';margin-left:auto;font-weight:700;color:var(--muted)}.palsec[open]>summary::after{content:'−'}
 .palname{font-family:var(--f-display);font-weight:700;font-size:1.05rem}
@@ -1496,6 +1496,8 @@ function pickerResults(p,P,q){if(!String(q||'').trim())return '<p class="muted s
   return `<div class="pickres">${hits.slice(0,40).map(it=>`<div class="pickrow"><span class="mono">${esc(boxLabel(it))}</span><span class="muted small">${esc(locText(p,P,it))}</span><button class="small" data-act="mm-extra-add" data-id="${it.id}">+ Add</button></div>`).join('')}</div>
     ${hits.length>1?`<div class="row"><button class="ghost small" data-act="mm-extra-addall">+ Add all ${Math.min(hits.length,200)} matches</button>${hits.length>40?`<span class="muted small">showing 40 of ${hits.length}</span>`:''}</div>`:''}`;}
 const boxLabel=it=>[fname(it.feature||''),it.hole].filter(Boolean).join(' · ')+' · box '+it.box+(it.of?' of '+it.of:'');
+/* a finished move is kept as-is; only the Move mode workflow is cleared so a new move can start at step 1 */
+function mmCloseOut(p){delete p.mm;delete p.pallet;Object.assign(S,{mmReturn:null,mmPick:null,mmPicker:false,palConf:null,mmFix:null,mmAlt:null,mmJust:false,mmSaveAsk:false,mmZoom:false,mmDir:'out'});}
 function mmState(p){p.mm=p.mm||{};p.mm.done=p.mm.done||{};return p.mm;}
 function pinHere(p,id){const P=computePlan(p);const ps=P.pos[id];if(!ps)return false;const r=p.racks.find(x=>x.id===ps.rackId);if(!r)return false;
   if(r.locked){const ex=r.fixed[ps.slot];if(ex===undefined)r.fixed[ps.slot]=id;else if(ex!==id&&!(Array.isArray(ex)&&ex.includes(id)))r.fixed[ps.slot]=[].concat(ex,id);}
@@ -1574,7 +1576,7 @@ function finishPanel(p,P,B){const pr=projRec();const keptF=new Set(pallets(p).fi
     <div class="mmbtns center"><button class="primary" data-act="mm-reset">Start a new move</button><button data-act="home">Back to Projects</button></div>`;
   return `<div class="msg info"><b>Move recorded.</b> The plan now matches where the boxes went${temp.length?`, except ${plural(temp.length,'box')} still on the temporary pallet`:''}.</div>
     <div class="mmbtns"><details class="menu savemenu" id="mmSaveMenu"><summary>Save</summary><div class="menu-pop" role="menu">
-        <button role="menuitem" data-act="mm-save-move" ${draftDirty()?'':'disabled'}>Save to move <span class="hint">${draftDirty()?'keep progress in this core move':'already saved'}</span></button>
+        <button role="menuitem" data-act="mm-save-move">Save to move <span class="hint">keep it in this core move</span></button>
         <button role="menuitem" data-act="mm-save-ask">Save to project… <span class="hint">make it the shed’s saved layout</span></button></div></details>
       <button data-act="mm-reopen">Make more changes</button><span class="spacer"></span><button class="ghost" data-act="mm-reset">Start over</button></div>
     ${S.mmSaveAsk?saveSummary(p,shed):''}`;}
@@ -2740,10 +2742,10 @@ document.addEventListener('click',e=>{
     case 'issue-fix':{S.open.holes=true;S.filter.q='';S.filter.conds=[];render();const f=b.dataset.f||'hole';const el=document.getElementById(`it_${f}_${id}`)||document.getElementById(`it_hole_${id}`);
       if(el){const tr=el.closest('tr');el.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});setTimeout(()=>el.focus({preventScroll:true}),300);if(tr){tr.classList.add('flashrow');setTimeout(()=>tr.classList.remove('flashrow'),2200);}}break;}
     case 'mm-reset':{S.mmReturn=null;S.mmPick=null;S.mmPicker=false;S.palConf=null;((p.mm&&p.mm.extra)||[]).forEach(x=>unpickForMove(p,x));delete p.mm;delete p.pallet;S.mmFix=null;S.mmAlt=null;S.mmJust=false;S.mmZoom=false;S.mmDir='out';touch(p);render();window.scrollTo(0,0);toast('Move mode started over');break;}
-    case 'mm-save-move':commitDraft(false);render();break;
+    case 'mm-save-move':{mmCloseOut(p);touch(p);commitDraft(true);render();window.scrollTo(0,0);toast('Saved to this core move. Ready for the next move.');break;}
     case 'mm-save-ask':S.mmSaveAsk=true;render();break;
     case 'mm-save-cancel':S.mmSaveAsk=false;render();break;
-    case 'mm-save-shed':{S.mmSaveAsk=false;const pr=projRec(),m=moveRec();mmState(p).saved=true;commitDraft(true);saveMoveToProject(pr,m);render();window.scrollTo(0,0);break;}
+    case 'mm-save-shed':{const pr=projRec(),m=moveRec();mmCloseOut(p);touch(p);commitDraft(true);saveMoveToProject(pr,m,true);render();window.scrollTo(0,0);toast(`Saved to ${[pr.name,pr.site].filter(Boolean).join(' – ')}. Ready for the next move.`);break;}
     case 'mm-export':{const P=computePlan(p);const mm=mmState(p);const B=mmBoxes(p,P,computeMoves(p,P));const ord=mm.order==='pallet'&&B.src==='pallet'?'pallet':'slot';const rows=mmSheetRows(p,P,B,ord);const hasPal=rows.some(r=>r.pal);
       const head=[ord==='pallet'?'Off pallet':'Step',...(hasPal?['Pallet']:[]),'Feature','Hole ID','Box','Of','From (m)','To (m)','Goes to (row-bay-slot)','Done','Notes'];
       const aoa=[head,...rows.map(r=>[r.n,...(hasPal?[r.pal]:[]),r.it.feature||'',outVal(r.it,'hole'),numOr(outVal(r.it,'box')),numOr(outVal(r.it,'of')),numOr(outVal(r.it,'from')),numOr(outVal(r.it,'to')),r.dest||'No slot','',''])];
