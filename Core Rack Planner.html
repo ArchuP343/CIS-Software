@@ -250,8 +250,11 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 .rowgroup{display:flex;flex-direction:column;gap:8px;padding-right:16px;border-right:1px dashed var(--line);flex:0 0 auto}
 .rowgroup:last-child{border-right:0;padding-right:0}
 .printhead,.printnotes{display:none}
-.savewarn{display:flex;flex-direction:column;gap:10px;padding:16px 18px;border:2px solid var(--warn);border-radius:14px;background:var(--warn-soft)}
-.savewarn h3{margin:0;color:var(--warn)}.savewarn p{margin:0}.savewarn ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:1rem}
+.modal .savewarn{width:min(520px,100%);display:flex;flex-direction:column;gap:12px;border-top:6px solid var(--warn)}
+.swhead{display:flex;align-items:center;gap:12px}.swhead h2{margin:0}.swicon{display:grid;place-items:center;width:46px;height:46px;flex:none;border-radius:12px;background:var(--warn-soft);color:var(--warn)}
+.savewarn p{margin:0}.savewarn ul{margin:0;padding:12px 12px 12px 32px;border-radius:10px;background:var(--surface-2);display:flex;flex-direction:column;gap:6px;font-size:1rem}
+.savemenu>summary{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;background:var(--brand);border:1px solid var(--brand);color:var(--brand-ink);font-weight:700}.savemenu>summary:hover{filter:brightness(1.08)}.savemenu>summary::after{color:inherit;opacity:.85}
+.savemenu .menu-pop{left:0;right:auto;min-width:260px}.savemenu .menu-pop button{flex-direction:column;align-items:flex-start;gap:2px;font-weight:600}.savemenu .menu-pop .hint{margin-left:0}.savemenu .menu-pop button:disabled{opacity:.5}
 .palsec>summary{display:flex;align-items:baseline;gap:12px;cursor:pointer;list-style:none}.palsec>summary::-webkit-details-marker{display:none}.palsec>summary::after{content:'+';margin-left:auto;font-weight:700;color:var(--muted)}.palsec[open]>summary::after{content:'−'}
 .palname{font-family:var(--f-display);font-weight:700;font-size:1.05rem}
 .picker{display:flex;flex-direction:column;gap:12px;padding:16px;border:1.5px dashed var(--line);border-radius:14px;background:var(--surface-2)}
@@ -1570,8 +1573,11 @@ function finishPanel(p,P,B){const pr=projRec();const keptF=new Set(pallets(p).fi
   if(mm.saved)return `<div class="msg info"><b>✓ Saved to ${shed}.</b> This move is now the shed’s current layout.</div>
     <div class="mmbtns center"><button class="primary" data-act="mm-reset">Start a new move</button><button data-act="home">Back to Projects</button></div>`;
   return `<div class="msg info"><b>Move recorded.</b> The plan now matches where the boxes went${temp.length?`, except ${plural(temp.length,'box')} still on the temporary pallet`:''}.</div>
-    ${S.mmSaveAsk?saveSummary(p,shed):`<div class="mmbtns"><button class="primary" data-act="mm-save-move" ${draftDirty()?'':'disabled'} title="Keep your progress in this core move">${draftDirty()?'Save to move':'Saved to move ✓'}</button><button class="primary" data-act="mm-save-ask" title="Make this the shed’s saved layout">Save to project</button><button data-act="mm-reopen">Make more changes</button><span class="spacer"></span><button class="ghost" data-act="mm-reset">Start over</button></div>
-    <p class="muted small"><b>Save to move</b> keeps your progress in this core move. <b>Save to project</b> makes it the shed’s saved layout.</p>`}`;}
+    <div class="mmbtns"><details class="menu savemenu" id="mmSaveMenu"><summary>Save</summary><div class="menu-pop" role="menu">
+        <button role="menuitem" data-act="mm-save-move" ${draftDirty()?'':'disabled'}>Save to move <span class="hint">${draftDirty()?'keep progress in this core move':'already saved'}</span></button>
+        <button role="menuitem" data-act="mm-save-ask">Save to project… <span class="hint">make it the shed’s saved layout</span></button></div></details>
+      <button data-act="mm-reopen">Make more changes</button><span class="spacer"></span><button class="ghost" data-act="mm-reset">Start over</button></div>
+    ${S.mmSaveAsk?saveSummary(p,shed):''}`;}
 /* what changed compared with the shed's saved layout, in plain numbers */
 function moveSummary(p){const pr=projRec();const P=computePlan(p);const base=pr&&pr.plan;const BP=base?computePlan(base):null;
   const bItems=new Map(base?base.items.map(i=>[i.id,i]):[]);const k=ps=>ps.rackId+'|'+ps.slot;const o={newIn:0,newSlots:new Set(),moved:0,movedSlots:new Set(),fromStore:0,storeSlots:new Set(),toPallet:0,newOnPallet:0,removed:0,noSlot:0};
@@ -1586,8 +1592,10 @@ function saveSummary(p,shed){const o=moveSummary(p);const li=(n,t)=>n?`<li>${t}<
     li(o.fromStore,`<b>${o.fromStore}</b> box${o.fromStore===1?'':'es'} moved from non-rack storage (pallets) into <b>${o.storeSlots.size}</b> slot${o.storeSlots.size===1?'':'s'}`),
     li(o.toPallet,`<b>${o.toPallet}</b> box${o.toPallet===1?'':'es'} moved out of a slot onto a pallet`),li(o.newOnPallet,`<b>${o.newOnPallet}</b> new box${o.newOnPallet===1?'':'es'} put on a pallet`),
     li(o.removed,`<b>${o.removed}</b> box${o.removed===1?'':'es'} removed from the shed`),li(o.noSlot,`<b>${o.noSlot}</b> box${o.noSlot===1?' has':'es have'} no slot`)].join('');
-  return `<div class="savewarn"><h3>Save to ${shed}?</h3><p>This replaces the shed’s saved layout with this move. Check the numbers match what you moved:</p><ul>${lines}</ul>
-    <div class="mmbtns"><span class="spacer"></span><button class="ghost" data-act="mm-save-cancel">Cancel</button><button class="danger solid" data-act="mm-save-shed">Yes, save to the project</button></div></div>`;}
+  return `<div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="swTitle"><div class="box savewarn">
+    <div class="swhead"><span class="swicon" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><h2 id="swTitle">Save to ${shed}?</h2></div>
+    <p>This replaces the shed’s saved layout with this move. Check the numbers match what you moved:</p><ul>${lines}</ul>
+    <div class="row" style="justify-content:flex-end"><button class="ghost" data-act="mm-save-cancel">Cancel</button><button class="danger solid" data-act="mm-save-shed">Yes, save to the project</button></div></div></div>`;}
 function onlineRun(p,P,B,order){const mm=mmState(p);const all=mmOrdered(p,P,B,order);
   const inList=new Set(all.map(it=>it.id));const done=all.filter(it=>mm.done[it.id]);const temp=p.items.filter(it=>it.temp);
   const queue=all.filter(it=>!mm.done[it.id]&&!it.temp);const total=all.length;
@@ -3044,6 +3052,7 @@ addEventListener('beforeunload',e=>{if(draftDirty()){e.preventDefault();e.return
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&draftOn()){e.preventDefault();if(draftDirty()){commitDraft(false);updateSaveState();}return;}
   if(e.key==='Escape'&&S.pop){S.pop=null;render();return;}
   if(S.selEdit&&e.target.closest&&e.target.closest('.edfloat')){if(e.key==='Enter'&&e.target.tagName!=='TEXTAREA'){e.preventDefault();const bt=$('[data-act=sel-save]');if(bt)bt.click();return;}if(e.key==='Escape'){S.selEdit=null;render();return;}}
+  if(e.key==='Escape'&&S.mmSaveAsk){S.mmSaveAsk=false;render();return;}
   if(e.key==='Escape'&&S.pngAsk){S.pngAsk=false;render();return;}
   if(e.key==='Escape'&&S.mapPop){S.mapPop=null;render();return;}
   if(S.tab==='map'&&draftOn()&&!S.leaveAsk){const a=document.activeElement;const typing=a&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName);const p=cur();
