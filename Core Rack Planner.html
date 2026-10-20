@@ -250,6 +250,8 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 .rowgroup{display:flex;flex-direction:column;gap:8px;padding-right:16px;border-right:1px dashed var(--line);flex:0 0 auto}
 .rowgroup:last-child{border-right:0;padding-right:0}
 .printhead,.printnotes{display:none}
+.savewarn{display:flex;flex-direction:column;gap:10px;padding:16px 18px;border:2px solid var(--warn);border-radius:14px;background:var(--warn-soft)}
+.savewarn h3{margin:0;color:var(--warn)}.savewarn p{margin:0}.savewarn ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:1rem}
 .palsec>summary{display:flex;align-items:baseline;gap:12px;cursor:pointer;list-style:none}.palsec>summary::-webkit-details-marker{display:none}.palsec>summary::after{content:'+';margin-left:auto;font-weight:700;color:var(--muted)}.palsec[open]>summary::after{content:'−'}
 .palname{font-family:var(--f-display);font-weight:700;font-size:1.05rem}
 .picker{display:flex;flex-direction:column;gap:12px;padding:16px;border:1.5px dashed var(--line);border-radius:14px;background:var(--surface-2)}
@@ -1516,7 +1518,7 @@ function movesTab(p,P,M){
     const anim=S.mmDir==='out'?'mm-out':'';S.mmDir=null;
     return `<div class="mmover ${anim}">${MM_NODES.map((t,i)=>{const cur2=i===st,past=i<st;
       const inner=`<span class="nm">${t}</span>${past&&val(i)?`<small>✓ ${esc(val(i))}</small>`:''}`;
-      return `${i?'<span class="mmarrow" aria-hidden="true">→</span>':''}${cur2&&i===0?`<button class="mmnode2 cur dropzone" data-kind="holes" data-pallet="1" data-act="pick-pallet" aria-label="Upload pallet sheet"><span class="plus" aria-hidden="true">+</span>${inner}</button>`
+      return `${i?'<span class="mmarrow" aria-hidden="true">→</span>':''}${cur2&&i===0&&!hasPal&&B.src!=='pick'?`<button class="mmnode2 cur dropzone" data-kind="holes" data-pallet="1" data-act="pick-pallet" aria-label="Upload pallet sheet"><span class="plus" aria-hidden="true">+</span>${inner}</button>`
         :cur2?`<button class="mmnode2 cur" data-act="mm-open" aria-label="Open step: ${t}"><span class="plus" aria-hidden="true">→</span>${inner}</button>`:`<div class="mmnode2 ${past?'past':''}">${inner}</div>`}`;}).join('')}</div>
       ${st===0&&!hasPal?`<div class="mmbtns center"><button class="ghost small" data-act="mm-pickonly">No pallet sheet? Pick boxes from the shed</button>${B.src==='changes'&&B.list.length?`<button class="ghost small" data-act="mm-skip">Use the ${plural(B.list.length,'box','boxes')} changed in this move</button>`:''}</div>`:''}
       ${st>0||hasPal?`<div class="mmbtns center"><button class="ghost small" data-act="mm-reset">Start over</button></div>`:''}`;}
@@ -1568,8 +1570,24 @@ function finishPanel(p,P,B){const pr=projRec();const keptF=new Set(pallets(p).fi
   if(mm.saved)return `<div class="msg info"><b>✓ Saved to ${shed}.</b> This move is now the shed’s current layout.</div>
     <div class="mmbtns center"><button class="primary" data-act="mm-reset">Start a new move</button><button data-act="home">Back to Projects</button></div>`;
   return `<div class="msg info"><b>Move recorded.</b> The plan now matches where the boxes went${temp.length?`, except ${plural(temp.length,'box')} still on the temporary pallet`:''}.</div>
-    <div class="mmbtns"><button class="primary" data-act="mm-save-shed">Save this move to ${shed}</button><button data-act="mm-reopen">Make more changes</button><span class="spacer"></span><button class="ghost" data-act="mm-reset">Start over</button></div>
-    <p class="muted small">Saving the move makes it the shed’s current layout, the same as “Save move to …” on the Projects page.</p>`;}
+    ${S.mmSaveAsk?saveSummary(p,shed):`<div class="mmbtns"><button class="primary" data-act="mm-save-move" ${draftDirty()?'':'disabled'} title="Keep your progress in this core move">${draftDirty()?'Save to move':'Saved to move ✓'}</button><button class="primary" data-act="mm-save-ask" title="Make this the shed’s saved layout">Save to project</button><button data-act="mm-reopen">Make more changes</button><span class="spacer"></span><button class="ghost" data-act="mm-reset">Start over</button></div>
+    <p class="muted small"><b>Save to move</b> keeps your progress in this core move. <b>Save to project</b> makes it the shed’s saved layout.</p>`}`;}
+/* what changed compared with the shed's saved layout, in plain numbers */
+function moveSummary(p){const pr=projRec();const P=computePlan(p);const base=pr&&pr.plan;const BP=base?computePlan(base):null;
+  const bItems=new Map(base?base.items.map(i=>[i.id,i]):[]);const k=ps=>ps.rackId+'|'+ps.slot;const o={newIn:0,newSlots:new Set(),moved:0,movedSlots:new Set(),fromStore:0,storeSlots:new Set(),toPallet:0,newOnPallet:0,removed:0,noSlot:0};
+  p.items.forEach(it=>{const now=P.pos[it.id];const was=BP?BP.pos[it.id]:null;const b=bItems.get(it.id);
+    if(!b){if(now){o.newIn++;o.newSlots.add(k(now));}else if(it.temp)o.newOnPallet++;else o.noSlot++;return;}
+    if(was&&now){if(k(was)!==k(now)){o.moved++;o.movedSlots.add(k(now));}}
+    else if(!was&&now){o.fromStore++;o.storeSlots.add(k(now));}
+    else if(was&&!now){if(it.temp)o.toPallet++;else o.noSlot++;}});
+  if(base)base.items.forEach(i=>{if(!p.items.some(x=>x.id===i.id))o.removed++;});return o;}
+function saveSummary(p,shed){const o=moveSummary(p);const li=(n,t)=>n?`<li>${t}</li>`:'';
+  const lines=[li(1,`<b>${o.newIn}</b> new box${o.newIn===1?'':'es'} moved into <b>${o.newSlots.size}</b> slot${o.newSlots.size===1?'':'s'}`),li(1,`<b>${o.moved}</b> existing box${o.moved===1?'':'es'} moved from ${o.moved===1?'its':'their'} original slot`),
+    li(o.fromStore,`<b>${o.fromStore}</b> box${o.fromStore===1?'':'es'} moved from non-rack storage (pallets) into <b>${o.storeSlots.size}</b> slot${o.storeSlots.size===1?'':'s'}`),
+    li(o.toPallet,`<b>${o.toPallet}</b> box${o.toPallet===1?'':'es'} moved out of a slot onto a pallet`),li(o.newOnPallet,`<b>${o.newOnPallet}</b> new box${o.newOnPallet===1?'':'es'} put on a pallet`),
+    li(o.removed,`<b>${o.removed}</b> box${o.removed===1?'':'es'} removed from the shed`),li(o.noSlot,`<b>${o.noSlot}</b> box${o.noSlot===1?' has':'es have'} no slot`)].join('');
+  return `<div class="savewarn"><h3>Save to ${shed}?</h3><p>This replaces the shed’s saved layout with this move. Check the numbers match what you moved:</p><ul>${lines}</ul>
+    <div class="mmbtns"><span class="spacer"></span><button class="ghost" data-act="mm-save-cancel">Cancel</button><button class="danger solid" data-act="mm-save-shed">Yes, save to the project</button></div></div>`;}
 function onlineRun(p,P,B,order){const mm=mmState(p);const all=mmOrdered(p,P,B,order);
   const inList=new Set(all.map(it=>it.id));const done=all.filter(it=>mm.done[it.id]);const temp=p.items.filter(it=>it.temp);
   const queue=all.filter(it=>!mm.done[it.id]&&!it.temp);const total=all.length;
@@ -2714,7 +2732,10 @@ document.addEventListener('click',e=>{
     case 'issue-fix':{S.open.holes=true;S.filter.q='';S.filter.conds=[];render();const f=b.dataset.f||'hole';const el=document.getElementById(`it_${f}_${id}`)||document.getElementById(`it_hole_${id}`);
       if(el){const tr=el.closest('tr');el.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});setTimeout(()=>el.focus({preventScroll:true}),300);if(tr){tr.classList.add('flashrow');setTimeout(()=>tr.classList.remove('flashrow'),2200);}}break;}
     case 'mm-reset':{S.mmReturn=null;S.mmPick=null;S.mmPicker=false;S.palConf=null;((p.mm&&p.mm.extra)||[]).forEach(x=>unpickForMove(p,x));delete p.mm;delete p.pallet;S.mmFix=null;S.mmAlt=null;S.mmJust=false;S.mmZoom=false;S.mmDir='out';touch(p);render();window.scrollTo(0,0);toast('Move mode started over');break;}
-    case 'mm-save-shed':{const pr=projRec(),m=moveRec();mmState(p).saved=true;commitDraft(true);saveMoveToProject(pr,m);render();window.scrollTo(0,0);break;}
+    case 'mm-save-move':commitDraft(false);render();break;
+    case 'mm-save-ask':S.mmSaveAsk=true;render();break;
+    case 'mm-save-cancel':S.mmSaveAsk=false;render();break;
+    case 'mm-save-shed':{S.mmSaveAsk=false;const pr=projRec(),m=moveRec();mmState(p).saved=true;commitDraft(true);saveMoveToProject(pr,m);render();window.scrollTo(0,0);break;}
     case 'mm-export':{const P=computePlan(p);const mm=mmState(p);const B=mmBoxes(p,P,computeMoves(p,P));const ord=mm.order==='pallet'&&B.src==='pallet'?'pallet':'slot';const rows=mmSheetRows(p,P,B,ord);const hasPal=rows.some(r=>r.pal);
       const head=[ord==='pallet'?'Off pallet':'Step',...(hasPal?['Pallet']:[]),'Feature','Hole ID','Box','Of','From (m)','To (m)','Goes to (row-bay-slot)','Done','Notes'];
       const aoa=[head,...rows.map(r=>[r.n,...(hasPal?[r.pal]:[]),r.it.feature||'',outVal(r.it,'hole'),numOr(outVal(r.it,'box')),numOr(outVal(r.it,'of')),numOr(outVal(r.it,'from')),numOr(outVal(r.it,'to')),r.dest||'No slot','',''])];
