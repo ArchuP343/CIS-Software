@@ -250,6 +250,49 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 .rowgroup{display:flex;flex-direction:column;gap:8px;padding-right:16px;border-right:1px dashed var(--line);flex:0 0 auto}
 .rowgroup:last-child{border-right:0;padding-right:0}
 .printhead,.printnotes{display:none}
+.edfloat{position:absolute;top:14px;right:14px;z-index:6;width:min(320px,calc(100% - 28px));max-height:calc(100% - 28px);overflow:auto;padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 34px rgba(10,31,46,.18);animation:edIn .16s ease-out}
+.edfloat h2{font-size:1.1rem;margin:0}.edfloat .edclose{position:absolute;top:8px;right:8px}
+.edhead{display:flex;flex-direction:column;gap:2px;padding-right:30px}.edname{display:flex;align-items:center;gap:6px}.edpencil{width:28px;height:28px;padding:0;min-width:0;color:var(--ink);opacity:.75}.edpencil:hover{opacity:1;background:var(--surface-2)}.edpencil.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}.edpencil.on svg{stroke:var(--accent)}
+.kvs{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin:0}.kv dt{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.kv dd{margin:1px 0 0;font-size:.92rem}
+.edholes{margin:0;padding-left:16px;max-height:180px;overflow:auto}.edsave{margin-top:4px;padding-top:10px;border-top:1px solid var(--line)}
+.edfloat .formgrid{gap:8px}.edfloat .row{gap:6px}
+@keyframes edIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.edfloat{animation:none}}
+.wrap.wide{max-width:none}
+.mapeditor{display:grid;grid-template-rows:auto minmax(0,1fr);height:calc(100vh - 150px);min-height:560px;margin-top:6px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
+.edbar{padding:4px 8px;border-bottom:1px solid var(--line);background:var(--surface)}
+.edbar .edtools{margin:0;padding:0;border:0;gap:4px 10px;flex-wrap:wrap}
+.edbody{display:grid;grid-template-columns:minmax(0,1fr);min-height:0}
+@media (max-width:920px){.edbody{grid-template-columns:1fr}.edside{max-height:40vh}}
+.edstage{position:relative;min-height:0;min-width:0}
+.mapeditor .mapcanvas{position:absolute;inset:0;height:auto;max-height:none;border:0;border-radius:0;display:block;background:var(--surface-2);transform:translateZ(0);will-change:transform}
+.mapeditor .mapcanvas.rp{transform:translateZ(0.01px)}
+.mapinner{display:flex;min-width:100%;min-height:100%;width:max-content;height:max-content;padding:20px;box-sizing:border-box;background-image:radial-gradient(circle,var(--line) 1px,transparent 1.2px);background-size:22px 22px}
+.mapeditor #shedmap{margin:auto;flex:none}
+.edside{border-left:1px solid var(--line);padding:16px;overflow:auto;display:flex;flex-direction:column;gap:12px;background:var(--surface)}
+.edside h2{font-size:1.15rem;margin:0}
+.edempty{display:flex;flex-direction:column;gap:10px}
+.edstats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 0}.edstats div{padding:10px;border:1px solid var(--line);border-radius:10px}.edstats dt{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.edstats dd{margin:2px 0 0;font-family:var(--f-mono);font-size:1.1rem}
+.edcorner{position:absolute;left:14px;bottom:14px;display:flex;align-items:center;gap:8px;z-index:5}
+.iconbtn.round{width:38px;height:38px;padding:0;justify-content:center;border-radius:50%;font-weight:800;font-family:Georgia,serif;font-size:1.05rem;background:var(--surface);box-shadow:0 4px 14px rgba(10,31,46,.14)}
+.popover.up{top:auto;bottom:calc(100% + 10px);left:0;right:auto;width:min(420px,calc(100vw - 40px))}.popover.up ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:.88rem}
+.zoomtag{font-family:var(--f-mono);font-size:.75rem;padding:4px 8px;border-radius:99px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.edtoast{position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:12px;background:var(--warn-soft);color:var(--warn);font-size:.85rem;box-shadow:0 6px 18px rgba(10,31,46,.12);z-index:5;max-width:90%}
+.edhint{position:absolute;top:12px;right:14px;padding:6px 12px;border-radius:99px;background:var(--ink);color:var(--surface);font-size:.8rem;z-index:5;pointer-events:none}
+.dispmenu>summary{list-style:none}.dispmenu>summary::-webkit-details-marker{display:none}.dispmenu[open]>summary{background:var(--surface-2);border-color:var(--line)}
+.dpop{min-width:230px;padding:8px;display:flex;flex-direction:column;gap:4px}.dpop>button{justify-content:flex-start;text-align:left}.dpop .check{padding:6px 10px}.dpop select{margin:0 4px 4px}
+.tsave{color:var(--accent)}
+.mapbar{padding-bottom:10px}.maptop{align-items:flex-end}
+.edtools{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.tgroup{display:flex;flex-wrap:wrap;gap:2px;align-items:center;padding-right:8px;border-right:1px solid var(--line)}.tgroup:last-child{border-right:0}
+.tbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:34px;height:34px;padding:0 8px;font-size:.8rem;font-weight:600;border-color:transparent;background:transparent;color:var(--ink);border-radius:8px}
+.edtools .tbtn>span{display:none}.edtools .tbtn.withtext>span,.edtools .tsave>span,.edtools .dispmenu .tbtn>span{display:inline}
+.tbtn:hover:not([disabled]){background:var(--surface-2);border-color:var(--line)}.tbtn.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}.tbtn[disabled]{opacity:.35}
+.tooltip-hint{margin:8px 0 0}
+.mapcanvas.drawing,.mapcanvas.drawing #shedmap{cursor:crosshair}
+.formgrid.sp3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.edfloat textarea,.side textarea{width:100%;resize:vertical;font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.edfloat input[type=color],.side input[type=color]{width:100%;height:34px;padding:2px}
 .summary{position:relative}.summary .spacer{flex:1}
 .popwrap{position:relative;display:flex;gap:6px;align-items:center}
 .iconbtn{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;font-size:.8rem}.iconbtn.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
@@ -648,7 +691,9 @@ function normalisePlan(p){const d=defaultsPlan();p.setup=Object.assign(d.setup,p
     delete p.layout;}
   p.map=Object.assign({title:'',w:0,h:0,labels:[]},p.map||{});if(!Array.isArray(p.map.labels))p.map.labels=[];
   p.customCols=p.customCols||[];p.items=(p.items||[]).map(it=>cleanItem(Object.assign({id:uid(),feature:'',hole:'',box:'',of:'',from:'',to:'',custom:{}},it)));
-  delete p.baseline;p.stage=p.stage||'done';deriveNames(p);return p;}
+  delete p.baseline;p.stage=p.stage||'done';deriveNames(p);
+  if(p.items.some(it=>it.temp&&!(p.map.labels||[]).some(l=>l.id===it.pallet))){const dp=defaultPallet(p);p.items.forEach(it=>{if(it.temp&&!p.map.labels.some(l=>l.id===it.pallet))it.pallet=dp.id;});}
+  return p;}
 
 const projRec=()=>S.ctx&&S.projects.find(x=>x.id===S.ctx.pid);
 const moveRec=()=>{const pr=projRec();return pr&&S.ctx.mid?pr.moves.find(m=>m.id===S.ctx.mid):null;};
@@ -805,12 +850,60 @@ function flipRow(p,g){
 function nameSnapshot(p){deriveNames(p);return new Map(p.racks.map(r=>[r.id,r.name]));}
 function markUpdated(p,before){deriveNames(p);p.racks.forEach(r=>{const old=before.get(r.id);if(old===undefined||old===r.name)return;
   const orig=S.updated[r.id]!==undefined?S.updated[r.id]:old;if(orig===r.name)delete S.updated[r.id];else S.updated[r.id]=orig;});}
+/* ---------- map shapes (labels, boxes, lines, text, pallets) ---------- */
+const SHAPES={select:'Select',text:'Text',label:'Label',rect:'Rectangle',ellipse:'Ellipse',line:'Line',arrow:'Arrow',pallet:'Pallet'};
+const shType=l=>l.type||'label';const isLine=l=>{const t=shType(l);return t==='line'||t==='arrow';};
+const shLayer=l=>l.layer||(['rect','ellipse'].includes(shType(l))?'back':'front');
+const snapV=v=>S.mapSnap===false?Math.round(v*4)/4:Math.round(v);
+function shapeBox(l){if(isLine(l))return{x:Math.min(l.x,l.x2),y:Math.min(l.y,l.y2),w:Math.abs(l.x2-l.x),h:Math.abs(l.y2-l.y)};return{x:l.x,y:l.y,w:labelW(l),h:+l.h||1};}
+function renderShape(p,l,C,pl,sel,hs,o){const t=shType(l);const lsel=!!(sel&&sel.type==='label'&&sel.id===l.id);const ro=isReadOnly()||!o.interactive;
+  const dash=d=>d==='dashed'?'8 5':d==='dotted'?'2 4':'';const op=l.op!==undefined&&l.op!==''?+l.op:1;
+  let g=`<g data-label="${l.id}" ${o.interactive?'style="cursor:move"':''} ${op<1?`opacity="${op}"`:''}>`;
+  if(isLine(l)){const x1=l.x*C,y1=l.y*C,x2=l.x2*C,y2=l.y2*C;const col=l.stroke||pl.ink,sw=l.sw!==undefined?+l.sw:2.5;
+    g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="14"/><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" ${dash(l.dash)?`stroke-dasharray="${dash(l.dash)}"`:''}/>`;
+    if(t==='arrow'){const ang=Math.atan2(y2-y1,x2-x1),hl=Math.max(10,sw*4);const p1=[x2-hl*Math.cos(ang-0.42),y2-hl*Math.sin(ang-0.42)],p2=[x2-hl*Math.cos(ang+0.42),y2-hl*Math.sin(ang+0.42)];g+=`<polygon points="${x2},${y2} ${p1} ${p2}" fill="${col}"/>`;}
+    if(l.text)g+=boxText(l.text,Math.min(x1,x2),Math.min(y1,y2)-C*1.2,Math.max(Math.abs(x2-x1),C*4),C,Math.max(9,C*0.42*(+l.size||1)),`font-weight="${l.bold===false?400:700}" fill="${l.tc||col}"`);
+    if(lsel&&!ro)g+=[[x1,y1,1],[x2,y2,2]].map(([x,y,e])=>`<circle data-lend="${l.id}" data-end="${e}" cx="${x}" cy="${y}" r="${Math.max(6,hs/2)}" fill="${pl.accent}" stroke="${pl.surface}" stroke-width="2" style="cursor:crosshair"><title>Drag to move this end</title></circle>`).join('');
+    return g+'</g>';}
+  const x=l.x*C,y=l.y*C,w=labelW(l)*C,h=(+l.h||1)*C;const r=l.r!==undefined&&l.r!==''?+l.r:(t==='ellipse'?0:t==='rect'?2:6);
+  const defFill={label:pl.surface,rect:'none',ellipse:'none',text:'none',pallet:pl.surface}[t];const fill=l.color||defFill;
+  const defStroke={label:pl.frame,rect:pl.frame,ellipse:pl.frame,text:'none',pallet:pl.warn}[t];const stroke=l.stroke||(t==='label'&&l.color?'none':defStroke);
+  const sw=l.sw!==undefined&&l.sw!==''?+l.sw:(t==='pallet'?2:t==='label'?1:1.5);const ds=l.dash||(t==='label'&&!l.color||t==='pallet'?'dashed':'solid');
+  const tc=l.tc||(fill&&fill!=='none'&&fill!==pl.surface?inkOn(fill):t==='pallet'?pl.warn:pl.ink);const fs=Math.max(9,C*0.46*(+l.size||1));
+  const sAttr=`stroke="${stroke}" stroke-width="${stroke==='none'?0:sw}" ${dash(ds)&&stroke!=='none'?`stroke-dasharray="${dash(ds)}"`:''}`;
+  if(t==='ellipse')g+=`<ellipse cx="${x+w/2}" cy="${y+h/2}" rx="${Math.max(1,w/2-1)}" ry="${Math.max(1,h/2-1)}" fill="${fill}" ${sAttr}/>`;
+  else g+=`<rect x="${x+1}" y="${y+1}" width="${Math.max(1,w-2)}" height="${Math.max(1,h-2)}" rx="${r}" fill="${fill==='none'?'transparent':fill}" ${sAttr}/>`;
+  if(t==='pallet'){const n=palletItems(p,l.id).length;const body=`${l.text||'Pallet'}\n${n} box${n===1?'':'es'}${l.kept?' · stored':''}`;g+=boxText(body,x,y,w,h,fs,`font-weight="700" fill="${tc}"`,l.align);}
+  else g+=boxText(l.text,x,y,w,h,fs,`font-weight="${l.bold===false?400:700}" fill="${tc}"`,l.align);
+  if(lsel){g+=`<rect x="${x-2}" y="${y-2}" width="${w+4}" height="${h+4}" fill="none" stroke="${pl.accent}" stroke-width="2" stroke-dasharray="5 3" rx="${Math.min(10,r+2)}"/>`;
+    if(!ro)g+=`<rect data-lresize="${l.id}" x="${x+w-hs}" y="${y+h-hs-1}" width="${hs}" height="${hs}" rx="2" fill="${pl.accent}" stroke="${pl.surface}" stroke-width="1.5" style="cursor:nwse-resize"><title>Drag to resize</title></rect>`;}
+  return g+'</g>';}
+function wrapText(text,maxW,fs){const cw=fs*0.6;const maxC=Math.max(1,Math.floor(maxW/cw));const out=[];
+  String(text??'').split(/\r?\n/).forEach(par=>{let line='';par.split(/\s+/).forEach(w=>{if(!w)return;while(w.length>maxC){if(line){out.push(line);line='';}out.push(w.slice(0,maxC));w=w.slice(maxC);}
+    const t=line?line+' '+w:w;if(t.length>maxC){out.push(line);line=w;}else line=t;});out.push(line);});return out;}
+/* text that wraps inside a box and shrinks if it still doesn't fit */
+function boxText(text,x,y,w,h,fs,attrs,align){if(!String(text??'').trim())return'';let f=fs,lines=wrapText(text,w-8,f);
+  while(f>7&&lines.length*f*1.2>h-4){f-=1;lines=wrapText(text,w-8,f);}
+  const lh=f*1.2,y0=y+h/2-(lines.length-1)*lh/2+f*0.35;const ax=align==='left'?x+6:align==='right'?x+w-6:x+w/2;const anc=align==='left'?'start':align==='right'?'end':'middle';
+  return `<text ${attrs} font-size="${f}" text-anchor="${anc}">${lines.map((t,i)=>`<tspan x="${ax}" y="${y0+i*lh}">${esc(t)}</tspan>`).join('')}</text>`;}
+const palletItems=(p,id)=>(p.items||[]).filter(it=>it.temp&&it.pallet===id);
+const pallets=p=>(p.map&&p.map.labels||[]).filter(l=>shType(l)==='pallet');
+function defaultPallet(p){let pl=pallets(p).find(x=>!x.kept);if(pl)return pl;const B=mapBounds(p);
+  pl={id:uid(),type:'pallet',text:pallets(p).length?'Temporary pallet '+(pallets(p).length+1):'Temporary pallet',x:Math.max(1,B.w-1),y:2,w:5,h:3};p.map.labels.push(pl);return pl;}
+function palletByName(p,t){const q=String(t||'').trim().toLowerCase();if(!q)return null;if(q==='pallet'||q==='temp pallet'||q==='temporary pallet'&&!pallets(p).some(x=>x.text.toLowerCase()===q))return defaultPallet(p);return pallets(p).find(x=>String(x.text).trim().toLowerCase()===q)||null;}
+function putOnPallet(p,it,pid){unpinItem(p,it.id);it.temp=true;it.pallet=pid||defaultPallet(p).id;}
+/* map undo / redo */
+function mapState(p){return JSON.stringify({map:p.map,racks:p.racks});}
+function mapSnap(p){S.mapUndo=(S.mapUndo||[]).concat(mapState(p)).slice(-60);S.mapRedo=[];}
+function mapRestore(p,json){const d=JSON.parse(json);const now=new Map(p.racks.map(r=>[r.id,r]));
+  p.racks=d.racks.map(r=>{const c=now.get(r.id);return c?Object.assign({},r,{fixed:c.fixed,hold:c.hold,slotLocks:c.slotLocks,locked:c.locked,rows:c.rows,blocked:c.blocked,dim:c.dim}):r;});
+  p.map=d.map;deriveNames(p);}
 function labelW(l){return +l.w>0?+l.w:Math.max(2,Math.ceil(String(l.text).length*0.42*(+l.size||1))+1);}
 function inkOn(hex){const m=/^#?([0-9a-f]{6})$/i.exec(hex||'');if(!m)return '#0f2433';const n=parseInt(m[1],16),r=n>>16&255,g=n>>8&255,b=n&255;const L=(0.2126*r+0.7152*g+0.0722*b)/255;return L>0.6?'#0f2433':'#ffffff';}
 const LABEL_COLOURS=[['','None'],['#0a1f2e','Navy'],['#00b0c9','Sunwater cyan'],['#bfeaf1','Light cyan'],['#ffd166','Amber'],['#f4a3a3','Red'],['#b7e4c7','Green'],['#d9dee2','Grey']];
-function mapBounds(p){let w=0,h=0;const nTemp=(p.items||[]).filter(it=>it.temp).length;p.racks.forEach(r=>{w=Math.max(w,r.x+dw(r));h=Math.max(h,r.y+dh(r));});
-  (p.map.labels||[]).forEach(l=>{w=Math.max(w,l.x+labelW(l)+1);h=Math.max(h,l.y+(+l.h||1)+1);});
-  if(nTemp){w+=7;h=Math.max(h,6);}return{w:Math.max(w+2,12),h:Math.max(h+2,10),temp:nTemp,tx:w-6};}
+function mapBounds(p){let w=0,h=0;p.racks.forEach(r=>{w=Math.max(w,r.x+dw(r));h=Math.max(h,r.y+dh(r));});
+  (p.map.labels||[]).forEach(l=>{const b=shapeBox(l);w=Math.max(w,b.x+b.w+1);h=Math.max(h,b.y+b.h+1);});
+  return{w:Math.max(w+2,12),h:Math.max(h+2,10)};}
 
 /* ---------- locking ----------
    Locked bay: keeps exactly its boxes (fixed). Locked slot: keeps its box, or stays empty.
@@ -1010,6 +1103,7 @@ function render(){
   const mc2=$('#mapcanvas');if(mc2&&keep){mc2.scrollLeft=keep.l;mc2.scrollTop=keep.t;}
   if(S.focusAfter){const el=document.getElementById(S.focusAfter);S.focusAfter=null;if(el){el.focus();if(el.select)el.select();}}
   S.dirty=false;syncHS();
+  if(S.mapFitNext&&$('#mapcanvas')){S.mapFitNext=false;requestAnimationFrame(()=>mapFit());}
 }
 function leaveModal(){if(!S.leaveAsk||!draftDirty())return'';return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="leaveTitle"><div class="box" style="width:min(480px,100%)">
   <h2 id="leaveTitle">Save this core move?</h2><p class="muted">You have changes that haven’t been saved. If you don’t save, the move goes back to how it was when you last saved it.</p>
@@ -1142,18 +1236,18 @@ function projectReadView(pr){
   </div>
   <div class="wrap tabrow"><nav class="tabs" role="tablist">${tabs.map(([k,l])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-tab="${k}">${l}</button>`).join('')}</nav>${searchBar()}</div>
   </div>
-  <main class="wrap">
-    <div id="summary">${summary(p,P)}</div>
+  <main class="wrap ${S.tab==='map'?'wide':''}">
+    ${S.tab==='map'?'':`<div id="summary">${summary(p,P)}</div>`}
     <div class="stack">
       ${conflictBanner()}${filterPanel(p)}${searchPanel(p,P)}
-      <section class="panel readonly-bar">
+      ${S.tab==='map'?'':`<section class="panel readonly-bar">
         <p class="muted" style="max-width:70ch">This is the saved layout of the shed. To change it, plan the change in a core move and save that move to the project.</p>
         <button data-act="new-move" data-id="${pr.id}">+ New core move</button>
-      </section>
+      </section>`}
       ${held&&p.heldIgnore!==held?`<div class="msg info row" style="align-items:center;justify-content:space-between"><span>${plural(held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked. To move them into the best order, open a core move and press “Update unlocked bays to best positions”.</span><button class="ghost" data-act="held-ignore">Ignore</button></div>`:''}
       ${S.tab==='map'?mapTab(p,P,true):planTab(p,P,null,true)}
     </div>
-    <footer class="foot">IDs read Row, Bay, Slot: A1-3 is Row A, Bay 1, Slot 3. Rows are lettered left to right on the shed map, bays numbered top to bottom, and slot 1 is the top of each bay.</footer>
+    ${S.tab==="map"?"":`<footer class="foot">IDs read Row, Bay, Slot: A1-3 is Row A, Bay 1, Slot 3. Rows are lettered left to right on the shed map, bays numbered top to bottom, and slot 1 is the top of each bay.</footer>`}
   </main>`;
 }
 
@@ -1180,27 +1274,27 @@ function moveView(){
   </div>
   <div class="wrap tabrow"><nav class="tabs" role="tablist">${tabs.map(([k,l,c])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-tab="${k}">${l}${c!==''?`<span class="count">${c}</span>`:''}</button>`).join('')}</nav>${searchBar()}</div>
   </div>
-  <main class="wrap">
-    ${S.tab==="moves"?"":`<div id="summary">${summary(p,P)}</div>`}
+  <main class="wrap ${S.tab==='map'?'wide':''}">
+    ${S.tab==="moves"||S.tab==="map"?"":`<div id="summary">${summary(p,P)}</div>`}
     <div class="stack">
-      ${conflictBanner()}${filterPanel(p)}${S.tab!=='edit'&&S.tab!=='moves'?searchPanel(p,P):''}
+      ${conflictBanner()}${filterPanel(p)}${S.tab!=='edit'&&S.tab!=='moves'&&S.tab!=='map'?searchPanel(p,P):''}
       ${P.held&&p.heldIgnore!==P.held?`<div class="msg info row" style="align-items:center;justify-content:space-between"><span>${plural(P.held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked, so the rest of the plan isn’t disturbed.</span><div class="row"><button class="primary" data-act="reoptimise">Update unlocked bays to best positions</button><button class="ghost" data-act="held-ignore">Ignore</button></div></div>`:''}
       ${S.tab==='plan'||S.tab==='edit'?spaceNotice(p,P):''}
       ${body}
     </div>
-    ${S.tab==="moves"?"":`<footer class="foot">IDs read Row, Bay, Slot: A1-3 is Row A, Bay 1, Slot 3. Fill order: feature, then hole ID, then box number, then From depth. When the move is ready, go back to Projects and press “Save move to project”.</footer>`}
+    ${S.tab==="moves"||S.tab==="map"?"":`<footer class="foot">IDs read Row, Bay, Slot: A1-3 is Row A, Bay 1, Slot 3. Fill order: feature, then hole ID, then box number, then From depth. When the move is ready, go back to Projects and press “Save move to project”.</footer>`}
   </main>`;
 }
 
 function summary(p,P){
-  const empty=P.racks.reduce((n,R)=>n+R.cells.filter(c=>!c.blocked&&!c.item).length,0);const waiting=P.unplaced.length+(P.temp?P.temp.length:0);
+  const empty=P.racks.reduce((n,R)=>n+R.cells.filter(c=>!c.blocked&&!c.item).length,0);const kept=new Set(pallets(p).filter(x=>x.kept).map(x=>x.id));const waitPal=(P.temp||[]).filter(it=>!kept.has(it.pallet)).length;const waiting=P.unplaced.length+waitPal;
   const nUn=P.racks.filter(R=>!R.locked).length;const ro=isReadOnly();
   return `<div class="summary">
     <div class="stat"><span class="label">Rows</span><b>${p._rows?p._rows.length:0}</b></div>
     <div class="stat"><span class="label">Bays</span><b>${p.racks.length}</b></div>
     <div class="stat"><span class="label">Boxes</span><b>${p.items.length}</b></div>
     <div class="stat" title="Empty slots, including empty slots in locked bays. Blocked slots aren’t counted."><span class="label">Free slots</span><b>${empty}</b></div>
-    ${waiting?`<div class="stat warn" title="Boxes that don’t have a slot yet${P.temp&&P.temp.length?', including boxes on the temporary pallet':''}"><span class="label">Waiting for a slot</span><b>${waiting}</b></div>`:''}
+    ${waiting?`<div class="stat warn" title="Boxes that don’t have a slot yet${waitPal?', including boxes on a temporary pallet':''}"><span class="label">Waiting for a slot</span><b>${waiting}</b></div>`:''}
     <span class="spacer"></span>
     <div class="popwrap"><button class="iconbtn ${S.pop==='locks'?'on':''}" data-act="pop" data-pop="locks" title="Bay locks: see which bays are locked" aria-label="Bay locks" aria-expanded="${S.pop==='locks'}">${ICON_LOCK}<span>${P.racks.length-nUn} locked</span></button>
       <button class="iconbtn ${S.pop==='sizes'?'on':''}" data-act="pop" data-pop="sizes" title="Sizes: box and bay dimensions" aria-label="Sizes" aria-expanded="${S.pop==='sizes'}">${ICON_TAPE}</button>
@@ -1317,6 +1411,8 @@ function planTab(p,P,M,ro){
     <div class="shed">${P.rowList.map(G=>{const all=G.racks.length&&G.racks.every(R=>R.locked);return `<div class="rowgroup" id="rg-${G.row.key}"><header><span class="rname">Row ${esc(G.row.letter)}</span>${lockBtn('lock-row',G.row.key,all,'Lock row',ro)}</header><div class="racks">${G.racks.map(R=>rackElev(R,P,M,false)).join('')}</div></div>`;}).join('')}</div>
     <p class="muted small">Slot 1 is the top of the bay. Click a bay to jump to its table.${ro?'':' Locked bays and slots keep their boxes where they are, and everything else is planned around them.'}</p>
   </section>
+  ${pallets(p).filter(x=>palletItems(p,x.id).length).map(pl0=>{const its=palletItems(p,pl0.id);return `<section class="panel"><header class="row" style="justify-content:space-between;align-items:baseline"><h3>${esc(pl0.text)}</h3><span class="muted small">${plural(its.length,'box','boxes')} · ${pl0.kept?'storage location':'waiting for a slot'}</span></header>
+    <div class="tablewrap"><table><thead><tr><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">From (m)</th><th class="num">To (m)</th></tr></thead><tbody>${its.map(it=>`<tr><td class="mono">${esc(fname(it.feature||''))}</td><td class="mono">${esc(it.hole)}</td><td class="num mono">${esc(it.box)}${it.of?' / '+esc(it.of):''}</td><td class="num mono">${esc(outVal(it,'from'))}</td><td class="num mono">${esc(outVal(it,'to'))}</td></tr>`).join('')}</tbody></table></div></section>`;}).join('')}
   <div class="rackgrid">
   ${S.match&&S.filter.onlyMatches&&!S.match.byBay.size?`<div class="empty">No bays hold boxes that match the search.</div>`:''}
   ${P.racks.filter(R=>!S.match||!S.filter.onlyMatches||S.match.byBay.has(R.rack.id)).map(R=>{const r=R.rack;return `
@@ -1424,7 +1520,7 @@ function offlineFinish(p,P,B){const mm=mmState(p);const pr=projRec();
       <td><button class="icon ghost danger" data-act="mm-fixdel" data-i="${i}" aria-label="Remove row">✕</button></td></tr>`).join('')}</tbody></table></div>
     <div class="row"><button data-act="mm-fixadd">+ Another box</button><span class="spacer"></span><button class="ghost" data-act="mm-fixcancel">Cancel</button><button class="primary" data-act="mm-fixapply">Update the plan</button></div>
     <p class="muted small">Type “pallet” for a box that’s still on the pallet. It goes on the temporary pallet so it isn’t given a slot.</p>`;}
-function finishPanel(p,P,B){const pr=projRec();const temp=p.items.filter(it=>it.temp);const mm=mmState(p);const shed=esc([pr.name,pr.site].filter(Boolean).join(' – '));
+function finishPanel(p,P,B){const pr=projRec();const keptF=new Set(pallets(p).filter(x=>x.kept).map(x=>x.id));const temp=p.items.filter(it=>it.temp&&!keptF.has(it.pallet));const mm=mmState(p);const shed=esc([pr.name,pr.site].filter(Boolean).join(' – '));
   if(mm.saved)return `<div class="msg info"><b>✓ Saved to ${shed}.</b> This move is now the shed’s current layout.</div>
     <div class="mmbtns center"><button class="primary" data-act="mm-reset">Start a new move</button><button data-act="home">Back to Projects</button></div>`;
   return `<div class="msg info"><b>Move recorded.</b> The plan now matches where the boxes went${temp.length?`, except ${plural(temp.length,'box')} still on the temporary pallet`:''}.</div>
@@ -1433,10 +1529,16 @@ function finishPanel(p,P,B){const pr=projRec();const temp=p.items.filter(it=>it.
 function onlineRun(p,P,B,order){const mm=mmState(p);const all=mmOrdered(p,P,B,order);
   const inList=new Set(all.map(it=>it.id));const done=all.filter(it=>mm.done[it.id]);const temp=p.items.filter(it=>it.temp);
   const queue=all.filter(it=>!mm.done[it.id]&&!it.temp);const total=all.length;
+  const keptIds=new Set(pallets(p).filter(x=>x.kept).map(x=>x.id));
+  const palCards=pallets(p).filter(pl0=>palletItems(p,pl0.id).length).map(pl0=>{const its=palletItems(p,pl0.id);return `<div class="panel mmtemp"><div class="row" style="justify-content:space-between;align-items:center;gap:10px">
+      <label class="mini" style="flex:1;max-width:340px">Name<input id="pn_${pl0.id}" data-k="label" data-id="${pl0.id}" data-f="text" value="${esc(pl0.text)}" style="flex:1"></label>
+      ${pl0.kept?`<span class="pill new">✓ Stored here</span><button class="ghost small" data-act="pallet-unkeep" data-id="${pl0.id}">Undo</button>`:`<button class="primary" data-act="pallet-keep" data-id="${pl0.id}" title="Make this pallet a permanent storage location">Keep on the pallet</button>`}</div>
+      <ul>${its.map(it=>`<li><span class="mono">${esc(boxLabel(it))}</span>${pl0.kept?'':`<span class="row"><input id="tp_${it.id}" class="mono" placeholder="Slot e.g. B2-4" style="width:130px"><button data-act="mm-temp-place" data-id="${it.id}">Put it there</button><button class="ghost" data-act="mm-temp-back" data-id="${it.id}">Back in the queue</button></span>`}</li>`).join('')}</ul></div>`;}).join('');
   const tempPanel=temp.length?`<div class="panel mmtemp"><h3>Temporary pallet <span class="muted small">${plural(temp.length,'box','boxes')}</span></h3><ul>${temp.map(it=>`<li><span class="mono">${esc(boxLabel(it))}</span><span class="row"><input id="tp_${it.id}" class="mono" placeholder="Slot e.g. B2-4" style="width:130px"><button data-act="mm-temp-place" data-id="${it.id}">Put it there</button><button class="ghost" data-act="mm-temp-back" data-id="${it.id}">Back in the queue</button></span></li>`).join('')}</ul></div>`:'';
   const doneList=done.length?`<details class="manual" data-sec="mmdone" ${S.open.mmdone?'open':''}><summary>Placed so far <span class="muted small">${done.length}</span></summary><div class="body"><table><tbody>${done.map(it=>`<tr><td class="mono">${esc(boxLabel(it))}</td><td class="mono"><b>${esc(mm.done[it.id])}</b></td><td><button class="ghost small" data-act="mm-undo" data-id="${it.id}">Undo</button></td></tr>`).join('')}</tbody></table></div></details>`:'';
   if(!queue.length){const just=S.mmJust;S.mmJust=false;if(!mm.finished&&total)mm.finished=true;if(just&&(mm.step|0)<4){mm.step=4;S.mmDir='next';}
-    return `<div class="msg info"><b>All ${plural(total,'box','boxes')} dealt with.</b> Use Undo below to redo any of them.</div>${tempPanel}
+    const waitT=temp.filter(it=>!keptIds.has(it.pallet)).length;
+    return `<div class="msg info"><b>All done.</b> Every box has been placed${temp.length?`, except ${plural(temp.length,'box')} on ${pallets(p).filter(x=>palletItems(p,x.id).length).length>1?'pallets':'the pallet'}`:''}.${waitT?' Keep them on the pallet to store them there, or put each one in a slot.':''}</div>${palCards}
       <div class="mmbtns"><span class="spacer"></span><button class="primary" data-act="mm-go" data-v="4">Go to Finish →</button></div>${doneList.replace('data-sec="mmdone" ','data-sec="mmdone" open ')}`;}
   if(S.mmReturn&&!queue.some(x=>x.id===S.mmReturn))S.mmReturn=null;
   /* after an out-of-order box, come back to the box that was showing when it was picked */
@@ -1498,7 +1600,9 @@ function mapSVG(p,P,o){
   const gid='grid'+C+(exp?'x':'');
   s+=`<defs><pattern id="${gid}" width="${C}" height="${C}" patternUnits="userSpaceOnUse"><path d="M ${C} 0 L 0 0 0 ${C}" fill="none" stroke="${pl.grid}" stroke-width="1"/></pattern></defs>`;
   if(exp)s+=`<rect width="${totalW}" height="${totalH}" fill="#ffffff"/><text x="16" y="32" font-size="21" font-weight="700" fill="${pl.ink}">${esc(p.map.title||o.title||'Core shed')}</text><text x="16" y="52" font-size="12" fill="${pl.muted}">${esc([o.subtitle,`${plural(p.racks.length,'bay')} in ${plural(p._rows.length,'row')}`,new Date().toLocaleDateString()].filter(Boolean).join(' · '))}</text>`;
-  s+=`<g transform="translate(${ox} ${oy})"><rect width="${W}" height="${H}" fill="${pl.bg}"/><rect width="${W}" height="${H}" fill="url(#${gid})"/><rect x="1" y="1" width="${W-2}" height="${H-2}" fill="none" stroke="${pl.frame}" stroke-width="2"/>`;
+  s+=`<g transform="translate(${ox} ${oy})"><rect width="${W}" height="${H}" fill="${pl.bg}"/>${p.map.noGrid?'':`<rect width="${W}" height="${H}" fill="url(#${gid})"/>`}<rect x="1" y="1" width="${W-2}" height="${H-2}" fill="none" stroke="${pl.frame}" stroke-width="2"/>`;
+  const shapesOf=layer=>(p.map.labels||[]).filter(l=>shLayer(l)===layer).map(l=>renderShape(p,l,C,pl,sel,hs,o)).join('');
+  s+=shapesOf('back');
   P.rowList.forEach(G=>{const g=G.row;const rsel=sel&&sel.type==='row'&&G.racks.some(R=>R.rack.id===sel.id);
     s+=`<g data-rowg="${g.key}">`;const hfill=rsel?pl.accent:pl.ink,hatt=o.interactive?`data-rowh="${g.key}" style="cursor:move"`:'';
     if(g.horiz){/* sideways row: header runs down its left-hand end */
@@ -1529,9 +1633,7 @@ function mapSVG(p,P,o){
     if(o.interactive&&!isReadOnly()){const x0=g.minX*C,y0=g.minY*C,x1=g.maxX*C,y1=g.maxY*C;
       s+=`<rect class="rstretch" data-rstretch="${g.key}" data-dir="x" x="${x1-5}" y="${y0}" width="10" height="${y1-y0}"><title>Drag to stretch the bays in Row ${esc(g.letter)} sideways</title></rect><rect class="rstretch" data-rstretch="${g.key}" data-dir="y" x="${x0}" y="${y1-5}" width="${x1-x0}" height="10"><title>Drag to stretch the bays in Row ${esc(g.letter)} up or down</title></rect>`;}
     s+=`</g>`;});
-  if(B.temp)s+=`<g><rect x="${B.tx*C}" y="${2*C}" width="${5*C}" height="${3*C}" rx="6" fill="${pl.surface}" stroke="${pl.warn}" stroke-width="2" stroke-dasharray="6 4"/><text x="${(B.tx+2.5)*C}" y="${3.2*C}" text-anchor="middle" font-size="${Math.max(10,C*0.5)}" font-weight="700" fill="${pl.warn}">Temporary pallet</text><text x="${(B.tx+2.5)*C}" y="${4.1*C}" text-anchor="middle" font-size="${Math.max(9,C*0.45)}" fill="${pl.ink}">${plural(B.temp,'box','boxes')}</text></g>`;
-  (p.map.labels||[]).forEach(l=>{const lsel=sel&&sel.type==='label'&&sel.id===l.id;const lw=labelW(l)*C,lh=(+l.h||1)*C,fill=l.color||pl.surface,tc=l.color?inkOn(l.color):pl.ink;const fs=Math.max(9,Math.min(lh*0.5,C*0.46*(+l.size||1)));
-    s+=`<g data-label="${l.id}" ${o.interactive?'style="cursor:move"':''}><rect x="${l.x*C+1}" y="${l.y*C+2}" width="${lw-2}" height="${lh-4}" rx="4" fill="${fill}" stroke="${lsel?pl.accent:l.color?'none':pl.frame}" stroke-width="${lsel?2.5:1}" stroke-dasharray="${lsel||l.color?'':'4 3'}"/><text x="${l.x*C+lw/2}" y="${l.y*C+lh/2+fs*0.36}" text-anchor="middle" font-size="${fs}" font-weight="700" fill="${tc}">${esc(l.text)}</text>${lsel&&!isReadOnly()?`<rect data-lresize="${l.id}" x="${l.x*C+lw-hs}" y="${l.y*C+lh-hs-1}" width="${hs}" height="${hs}" rx="2" fill="${pl.accent}" stroke="${pl.surface}" stroke-width="1.5" style="cursor:nwse-resize"><title>Drag to resize</title></rect>`:''}</g>`;});
+  s+=shapesOf('front');
   s+=`</g>`;
   if(exp&&legend)s+=`<g transform="translate(16 ${top+H+18})">${legend}</g>`;
   return s+`</svg>`;
@@ -1541,47 +1643,111 @@ function holesInRack(R){const out=[];R.cells.forEach(c=>slotBoxes(c).forEach(it=
 function groupOfBay(p,id){return (p._rows||deriveNames(p)).find(g=>g.bays.some(b=>b.id===id));}
 function mapSide(p,P,ro){
   const sel=S.sel;
-  if(sel&&sel.type==='rack'){const R=P.racks.find(x=>x.rack.id===sel.id);if(R){const r=R.rack;const hs=holesInRack(R);
-    return `<div><span class="label">Bay</span><h2>${esc(r.name)}</h2></div>
-      ${S.updated[r.id]!==undefined?`<span class="pill upd" style="align-self:flex-start">updated position, was ${esc(S.updated[r.id])}</span>`:''}
-      <p class="muted small">Row ${esc(r.rowLetter||'')} · ${R.used} of ${R.cells.filter(c=>!c.blocked).length} slots used</p>
-      ${hs.length?`<ul class="small">${hs.map(h=>`<li><span class="mono">${esc([h.feature,h.hole].filter(Boolean).join('-'))}</span> <span class="muted">box ${esc(boxSummary(h.items))}</span></li>`).join('')}</ul>`:'<p class="muted small">Empty in this plan.</p>'}
-      <div class="row">${lockBtn('lock-rack',r.id,R.locked,'Lock bay',ro)}<button data-act="goto-rack" data-id="${r.id}">Show in rack plan</button></div>
-      ${ro?'':`<p class="muted small">${R.locked?'Locked: its boxes stay where they are and the rest of the plan works around it.':'Drag this bay anywhere. Drop it next to another bay and it snaps on. Drop it on top of another bay to swap the two.'}</p>`}`;}}
-  if(sel&&sel.type==='row'){const g=groupOfBay(p,sel.id);if(g){const all=g.bays.every(b=>b.locked);
-    return `<div><span class="label">Row</span><h2>Row ${esc(g.letter)}</h2></div>
-      <div class="row" style="align-items:center"><span>${plural(g.bays.length,'bay')}</span>${ro?'':`<span class="spacer"></span><button class="icon" data-act="row-del-rack" data-id="${g.key}" aria-label="Remove last bay from row" ${p.racks.length<=1?'disabled':''}>−</button><button class="icon" data-act="row-add-rack" data-id="${g.key}" aria-label="Add bay to row">+</button>`}</div>
-      ${ro?'':`<div class="formgrid" style="grid-template-columns:minmax(0,1fr) minmax(0,1.5fr)">
-        <div class="field"><label class="label" for="rw_l">Row letter</label><input id="rw_l" data-k="rowcfg" data-id="${g.key}" data-f="letter" value="${esc(g.ov||'')}" placeholder="Auto (${esc(g.letter)})" maxlength="3" style="text-transform:uppercase"></div>
-        <div class="field"><label class="label" for="rw_n">Numbering</label><select id="rw_n" data-k="rowcfg" data-id="${g.key}" data-f="numMode"><option value="" ${!g.mode?'selected':''}>Same as the shed</option><option value="down" ${g.mode==='down'?'selected':''}>Sequential</option><option value="across" ${g.mode==='across'?'selected':''}>Alternating</option></select></div>
-      </div><p class="muted small" style="margin-top:-4px">Leave the letter blank to letter rows automatically from left to right. Numbering only matters when the row is two bays wide.</p>`}
-      <div class="row">${lockBtn('lock-row',g.key,all,'Lock row',ro)}${ro?'':`${rowStretched(g)?`<button data-act="row-unstretch" data-id="${g.key}" title="Put the bays in this row back to the standard size">Reset bay size</button>`:''}<button data-act="row-orient" data-id="${g.key}" title="${g.horiz?'Bays run top to bottom':'Bays run left to right, at half height'}">${g.horiz?'↕ Turn row upright':'↔ Turn row sideways'}</button>`}</div>
-      <p class="muted small">${g.horiz?'Sideways row: bays run left to right.':'Upright row: bays run top to bottom.'}${ro?'':' Turning a row keeps its bay numbers.'}</p>
-      ${ro?'':`<p class="muted small">Drag the right or bottom edge of the row to stretch its bays, so rows with different numbers of bays line up. Edges snap to other rows.</p>`}
-      ${ro?'':`<p class="muted small">Drag the row’s dark header to move the whole row. Bays that touch form a row; rows are lettered left to right.</p>`}`;}}
-  if(sel&&sel.type==='label'&&!ro){const l=p.map.labels.find(x=>x.id===sel.id);if(l)return `<div><span class="label">Label</span><h2>Map label</h2></div>
-      <div class="field"><label class="label" for="lb_text">Text</label><input id="lb_text" data-k="label" data-id="${l.id}" data-f="text" value="${esc(l.text)}"></div>
-      <div class="formgrid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
-        <div class="field"><label class="label" for="lb_w">Width</label><input id="lb_w" type="number" min="1" max="200" data-k="label" data-id="${l.id}" data-f="w" value="${labelW(l)}"></div>
-        <div class="field"><label class="label" for="lb_h">Height</label><input id="lb_h" type="number" min="1" max="200" data-k="label" data-id="${l.id}" data-f="h" value="${+l.h||1}"></div>
-        <div class="field"><label class="label" for="lb_s">Text size</label><select id="lb_s" data-k="label" data-id="${l.id}" data-f="size">${[[0.8,'Small'],[1,'Normal'],[1.4,'Large'],[2,'Extra large']].map(([v,t])=>`<option value="${v}" ${(+l.size||1)===v?'selected':''}>${t}</option>`).join('')}</select></div>
+  const editing=!ro&&S.selEdit&&sel&&S.selEdit===sel.type+':'+sel.id;
+  const pencil=ro?'':`<button class="icon ghost edpencil ${editing?'on':''}" data-act="sel-edit" title="${editing?'Stop editing':'Edit'}" aria-label="Edit" aria-pressed="${!!editing}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button>`;
+  const kv=(k,v)=>`<div class="kv"><dt>${k}</dt><dd>${v}</dd></div>`;
+  const saveRow=`<div class="row edsave"><span class="spacer"></span><button class="ghost" data-act="sel-cancel">Cancel</button><button class="primary" data-act="sel-save">Save</button></div>`;
+  if(sel&&sel.type==='rack'){const R=P.racks.find(x=>x.rack.id===sel.id);if(R){const r=R.rack;const hs=holesInRack(R);const usable=R.cells.filter(c=>!c.blocked).length;const d=bayDim(r);
+    const head=`<div class="edhead"><span class="label">Bay</span><div class="edname"><h2>${esc(r.name)}</h2>${pencil}</div></div>
+      ${S.updated[r.id]!==undefined?`<span class="pill upd" style="align-self:flex-start">new ID, was ${esc(S.updated[r.id])}</span>`:''}`;
+    if(editing)return head+`<div class="formgrid sp3"><div class="field"><label class="label" for="fb_r">Slots</label><input id="fb_r" data-k="fe" inputmode="numeric" value="${r.rows}"></div><div class="field" style="grid-column:span 2"><label class="label" for="fb_b">Blocked slots</label><input id="fb_b" data-k="fe" value="${esc(fmtRows(r.blocked))}" placeholder="none"></div></div>
+      <div class="formgrid sp3">${['l','w','h'].map(x=>`<div class="field"><label class="label" for="fb_d${x}">${x==='l'?'Length':x==='w'?'Width':'Height'} mm</label><input id="fb_d${x}" data-k="fe" inputmode="numeric" value="${(r.dim||{})[x]||''}" placeholder="–"></div>`).join('')}</div>
+      <label class="check"><input type="checkbox" id="fb_lock" data-k="fe" ${R.locked?'checked':''}> Locked</label>${saveRow}`;
+    return head+`<dl class="kvs">${kv('Row',esc(r.rowLetter||''))}${kv('Slots used',`${R.used} / ${usable}`)}${kv('Status',R.locked?'<span class="pill lock">Locked</span>':'Unlocked')}${d?kv('Size',`${esc(dimTxt(d))} mm`):''}${r.blocked.length?kv('Blocked',esc(fmtRows(r.blocked))):''}</dl>
+      ${hs.length?`<ul class="small edholes">${hs.map(h=>`<li><span class="mono">${esc([h.feature,h.hole].filter(Boolean).join('-'))}</span> <span class="muted">box ${esc(boxSummary(h.items))}</span></li>`).join('')}</ul>`:'<p class="muted small" style="margin:0">Empty</p>'}
+      <div class="row"><button class="ghost small" data-act="goto-rack" data-id="${r.id}">Show in rack plan →</button></div>`;}}
+  if(sel&&sel.type==='row'){const g=groupOfBay(p,sel.id);if(g){const all=g.bays.every(b=>b.locked),some=g.bays.some(b=>b.locked);
+    const head=`<div class="edhead"><span class="label">Row</span><div class="edname"><h2>Row ${esc(g.letter)}</h2>${pencil}</div></div>`;
+    if(editing)return head+`<div class="formgrid" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+        <div class="field"><label class="label" for="rw_l">Row letter</label><input id="rw_l" data-k="fe" value="${esc(g.ov||'')}" placeholder="Auto (${esc(g.letter)})" maxlength="3" style="text-transform:uppercase"></div>
+        <div class="field"><label class="label" for="rw_c">Bays</label><input id="rw_c" data-k="fe" type="number" min="1" max="200" value="${g.bays.length}"></div>
+        <div class="field"><label class="label" for="rw_n">Numbering</label><select id="rw_n" data-k="fe"><option value="" ${!g.mode?'selected':''}>Same as the shed</option><option value="down" ${g.mode==='down'?'selected':''}>Sequential</option><option value="across" ${g.mode==='across'?'selected':''}>Alternating</option></select></div>
+        <div class="field"><label class="label" for="rw_o">Direction</label><select id="rw_o" data-k="fe"><option value="v" ${g.horiz?'':'selected'}>Upright</option><option value="h" ${g.horiz?'selected':''}>Sideways</option></select></div>
       </div>
-      <p class="muted small" style="margin-top:-4px">Width and height are in grid squares. One bay is ${RW} × ${RL}. Drag the corner handle on the map to resize.</p>
-      <div class="field"><span class="label">Colour</span><div class="swatches">${LABEL_COLOURS.map(([c,n])=>`<button class="swatch ${(l.color||'')===c?'on':''}" data-act="label-color" data-id="${l.id}" data-color="${c}" title="${n}" aria-label="${n}" style="${c?`background:${c}`:''}">${c?'':'∅'}</button>`).join('')}<input type="color" id="lb_c" data-k="label" data-id="${l.id}" data-f="color" value="${l.color||'#ffffff'}" title="Custom colour" aria-label="Custom colour"></div></div>
-      <div class="row"><button class="ghost danger" data-act="label-del" data-id="${l.id}">Delete label</button></div>`;}
-  return `<div><span class="label">${ro?'Saved layout':'How it works'}</span><h2>Shed map</h2></div>
-    ${ro?`<p class="muted small">Click a bay or row header to see what’s in it. To rearrange the shed, open a core move.</p>`:`<ul class="small"><li>Drag a bay anywhere on the grid. Near another bay, it snaps on.</li><li>Drop a bay on top of another to swap them.</li><li>Bays that touch form a row. Rows are lettered left to right, bays numbered top to bottom.</li><li>Drag a row’s dark header to move the whole row. Select a row to turn it sideways for a different rack type.</li><li>Scroll to zoom in and out. Drag empty space to pan. <b>Fit</b> shows the whole shed.</li></ul>`}
-    <div class="legend small">${P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span></span>`).join('')}</div>`;
+      <label class="check"><input type="checkbox" id="rw_lock" data-k="fe" ${all?'checked':''}> Lock every bay in the row</label>
+      ${rowStretched(g)?`<label class="check"><input type="checkbox" id="rw_unst" data-k="fe"> Reset stretched bays to the standard size</label>`:''}${saveRow}`;
+    return head+`<dl class="kvs">${kv('Bays',g.bays.length)}${kv('Letter',g.ov?esc(g.ov):`${esc(g.letter)} <span class="muted">(auto)</span>`)}</dl>`;}}
+  if(sel&&sel.type==='label'){const l=p.map.labels.find(x=>x.id===sel.id);if(l)return shapePanel(p,l,ro);}
+  return '';
 }
+function shapePanel(p,l,ro){const t=shType(l);const ln=isLine(l);const id=l.id;
+  const sel2=(f,opts,v)=>`<select id="sp_${f}" data-k="label" data-id="${id}" data-f="${f}">${opts.map(([a,b])=>`<option value="${a}" ${String(v)===String(a)?'selected':''}>${b}</option>`).join('')}</select>`;
+  if(t==='pallet'){const its=palletItems(p,id);
+    return `<div><span class="label">Pallet</span><h2>${esc(l.text||'Pallet')}</h2></div>
+      ${ro?'':`<div class="field"><label class="label" for="lb_text">Name</label><input id="lb_text" data-k="label" data-id="${id}" data-f="text" value="${esc(l.text)}"></div>
+      <label class="check"><input type="checkbox" id="sp_kept" data-k="label" data-id="${id}" data-f="kept" ${l.kept?'checked':''}> Permanent storage location</label>`}
+      <p class="muted small">${plural(palletItems(p,id).length,'box','boxes')} · ${l.kept?'storage location':'waiting for a slot'}</p>
+      ${its.length?`<ul class="small">${its.slice(0,30).map(it=>`<li class="mono">${esc([fname(it.feature||''),it.hole].filter(Boolean).join('-'))} box ${esc(it.box)}</li>`).join('')}${its.length>30?`<li class="muted">and ${its.length-30} more</li>`:''}</ul>`:'<p class="muted small">No boxes on this pallet.</p>'}
+      ${ro?'':`<div class="row"><button class="ghost danger" data-act="shape-del" data-id="${id}">Delete pallet${its.length?' (boxes go back into the plan)':''}</button></div>`}`;}
+  if(ro)return `<div><span class="label">${SHAPES[t]}</span><h2>${esc(l.text||SHAPES[t])}</h2></div>`;
+  return `<div><span class="label">${SHAPES[t]}</span><h2>${ln?SHAPES[t]:esc(l.text||SHAPES[t])}</h2></div>
+    <div class="field"><label class="label" for="lb_text">${ln?'Label (optional)':'Text'}</label><textarea id="lb_text" rows="2" data-k="label" data-id="${id}" data-f="text">${esc(l.text||'')}</textarea></div>
+    ${ln?'':`<div class="field"><span class="label">Fill</span><div class="swatches">${LABEL_COLOURS.map(([c,n])=>`<button class="swatch ${(l.color||'')===c?'on':''}" data-act="label-color" data-id="${id}" data-color="${c}" title="${n}" aria-label="${n}" style="${c?`background:${c}`:''}">${c?'':'∅'}</button>`).join('')}<input type="color" id="lb_c" data-k="label" data-id="${id}" data-f="color" value="${l.color&&l.color!=='none'?l.color:'#ffffff'}" title="Custom fill" aria-label="Custom fill colour"></div></div>`}
+    <div class="formgrid sp3">
+      <div class="field"><label class="label" for="sp_stroke">${ln?'Colour':'Border'}</label><input type="color" id="sp_stroke" data-k="label" data-id="${id}" data-f="stroke" value="${l.stroke&&l.stroke!=='none'?l.stroke:'#6f8290'}"></div>
+      <div class="field"><label class="label" for="sp_sw">Thickness</label>${sel2('sw',[['','Default'],[0,'None'],[1,'1'],[1.5,'1.5'],[2,'2'],[3,'3'],[4,'4'],[6,'6'],[8,'8']],l.sw??'')}</div>
+      <div class="field"><label class="label" for="sp_dash">Style</label>${sel2('dash',[['','Default'],['solid','Solid'],['dashed','Dashed'],['dotted','Dotted']],l.dash||'')}</div>
+    </div>
+    ${ln?'':`<div class="formgrid sp3">
+      <div class="field"><label class="label" for="lb_w">Width</label><input id="lb_w" type="number" min="0.5" max="400" step="${S.mapSnap===false?0.25:1}" data-k="label" data-id="${id}" data-f="w" value="${labelW(l)}"></div>
+      <div class="field"><label class="label" for="lb_h">Height</label><input id="lb_h" type="number" min="0.5" max="400" step="${S.mapSnap===false?0.25:1}" data-k="label" data-id="${id}" data-f="h" value="${+l.h||1}"></div>
+      ${t==='ellipse'?'<span></span>':`<div class="field"><label class="label" for="sp_r">Corners</label><input id="sp_r" type="number" min="0" max="60" data-k="label" data-id="${id}" data-f="r" value="${l.r??''}" placeholder="auto"></div>`}
+    </div>`}
+    <div class="formgrid sp3">
+      <div class="field"><label class="label" for="lb_s">Text size</label>${sel2('size',[[0.7,'Tiny'],[0.85,'Small'],[1,'Normal'],[1.4,'Large'],[2,'Extra large'],[3,'Huge']],+l.size||1)}</div>
+      <div class="field"><label class="label" for="sp_tc">Text colour</label><input type="color" id="sp_tc" data-k="label" data-id="${id}" data-f="tc" value="${l.tc||'#0f2433'}"></div>
+      <div class="field"><label class="label" for="sp_align">Align</label>${sel2('align',[['','Centre'],['left','Left'],['right','Right']],l.align||'')}</div>
+    </div>
+    <div class="row" style="gap:16px"><label class="check"><input type="checkbox" id="sp_bold" data-k="label" data-id="${id}" data-f="bold" ${l.bold===false?'':'checked'}> Bold</label>
+      <label class="mini" style="flex:1">Opacity<input type="range" id="sp_op" min="10" max="100" step="5" data-k="label" data-id="${id}" data-f="op" value="${Math.round((l.op!==undefined&&l.op!==''?+l.op:1)*100)}" style="flex:1"></label></div>
+    <div class="row"><button data-act="shape-front" data-id="${id}" title="Bring to front">Bring to front</button><button data-act="shape-back" data-id="${id}" title="Send behind the bays">Send to back</button><button data-act="shape-dup" data-id="${id}">Duplicate</button><button class="ghost danger" data-act="shape-del" data-id="${id}">Delete</button></div>
+`;}
+const ED_ICONS={display:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',legend:'<rect x="4" y="5" width="4" height="4" rx="1"/><rect x="4" y="15" width="4" height="4" rx="1"/><path d="M11 7h9M11 17h9"/>',select:'<path d="M5 3l14 8-6 2-2 6z"/>',text:'<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',label:'<rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 12h10"/>',rect:'<rect x="4" y="6" width="16" height="12" rx="1"/>',ellipse:'<ellipse cx="12" cy="12" rx="9" ry="6"/>',line:'<path d="M4 20L20 4"/>',arrow:'<path d="M4 20L20 4M11 4h9v9"/>',pallet:'<rect x="3" y="5" width="18" height="10" rx="1"/><path d="M3 19h18M6 15v4M12 15v4M18 15v4"/>',
+  undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',redo:'<path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>',dup:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/>',del:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',front:'<rect x="9" y="9" width="11" height="11" rx="1" fill="currentColor"/><rect x="4" y="4" width="11" height="11" rx="1"/>',back:'<rect x="4" y="4" width="11" height="11" rx="1" fill="currentColor"/><rect x="9" y="9" width="11" height="11" rx="1"/>',row:'<rect x="5" y="3" width="6" height="8"/><rect x="5" y="13" width="6" height="8"/><path d="M17 9v6M14 12h6"/>'};
+const edIcon=k=>`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ED_ICONS[k]}</svg>`;
+function mapToolbar(p,disp,savePng){const tool=S.mapTool||'select';const sel=S.sel&&S.sel.type==='label'?p.map.labels.find(x=>x.id===S.sel.id):null;
+  const tb=(k,label,extra)=>`<button class="tbtn ${tool===k?'on':''}" data-act="map-tool" data-tool="${k}" title="${label}" aria-label="${label}" aria-pressed="${tool===k}" ${extra||''}>${edIcon(k)}<span>${label}</span></button>`;
+  return `<div class="edtools" role="toolbar" aria-label="Map editing tools">
+    <div class="tgroup">${tb('select','Select')}${tb('text','Text')}${tb('label','Label')}${tb('rect','Rectangle')}${tb('ellipse','Ellipse')}${tb('line','Line')}${tb('arrow','Arrow')}${tb('pallet','Pallet')}</div>
+    <div class="tgroup"><button class="tbtn" data-act="map-add-row" title="Add a row of bays">${edIcon('row')}<span>Row</span></button></div>
+    <div class="tgroup"><button class="tbtn" data-act="map-undo" title="Undo (Ctrl+Z)" ${(S.mapUndo||[]).length?'':'disabled'}>${edIcon('undo')}<span>Undo</span></button><button class="tbtn" data-act="map-redo" title="Redo (Ctrl+Shift+Z)" ${(S.mapRedo||[]).length?'':'disabled'}>${edIcon('redo')}<span>Redo</span></button></div>
+    <div class="tgroup"><button class="tbtn" data-act="shape-dup" data-id="${sel?sel.id:''}" ${sel?'':'disabled'} title="Duplicate (Ctrl+D)">${edIcon('dup')}<span>Duplicate</span></button><button class="tbtn" data-act="shape-del" data-id="${sel?sel.id:''}" ${sel?'':'disabled'} title="Delete (Del)">${edIcon('del')}<span>Delete</span></button><button class="tbtn" data-act="shape-front" data-id="${sel?sel.id:''}" ${sel?'':'disabled'} title="Bring to front">${edIcon('front')}<span>Front</span></button><button class="tbtn" data-act="shape-back" data-id="${sel?sel.id:''}" ${sel?'':'disabled'} title="Send to back">${edIcon('back')}<span>Back</span></button></div>
+    <div class="tgroup">${disp||''}</div><span class="spacer"></span>${savePng||''}
+  </div>`;}
 function mapTab(p,P,ro){
-  const B=mapBounds(p);const upd=Object.entries(S.updated).filter(([id])=>p.racks.some(r=>r.id===id));
-  return `<section class="panel"><div class="toolbar">
-      ${ro?`<div class="grow"><span class="label">Map title</span><h3>${esc(p.map.title||projRec().name)}</h3></div>`:`<div class="field grow" style="width:auto;min-width:min(220px,100%)"><label class="label" for="mp_title">Map title</label><input id="mp_title" data-k="map" data-f="title" value="${esc(p.map.title)}" placeholder="${esc(projRec().name)}"></div>
-`}
-      <div class="row"><button data-act="map-zoom" data-z="fit" title="Zoom to show the whole shed">Fit to screen</button>${ro?'':`<button data-act="map-add-row">+ Row</button><button data-act="map-add-label">+ Label</button><button data-act="map-auto">Tidy layout</button>`}${ro?'':`<select id="mp_num" data-k="setup" data-f="numbering" aria-label="Bay numbering" title="How bays are numbered in back-to-back rows"><option value="down" ${p.setup.numbering!=='across'?'selected':''}>Numbering: sequential</option><option value="across" ${p.setup.numbering==='across'?'selected':''}>Numbering: alternating</option></select>`}<label class="check small"><input type="checkbox" id="png_leg" data-k="ui" data-f="pngLegend" ${S.pngLegend?'checked':''}> Include legend</label><button class="primary" data-act="map-png">Save as PNG</button></div>
-    </div>${ro?'':`<p class="muted small" style="margin-top:8px">Scroll to zoom, drag empty space to pan.</p>`}</section>
-    ${upd.length&&!ro?`<div class="msg warn row" style="align-items:center;justify-content:space-between"><span>${plural(upd.length,'bay has','bays have')} a new ID from the map: ${upd.map(([id,old])=>`<b class="mono">${esc(nameOf(p,id,''))}</b> (was ${esc(old)})`).join(', ')}. The rack plan has been updated to match.</span><button class="ghost" data-act="clear-updated">Clear notes</button></div>`:''}
-    <div class="mapwrap"><div class="mapcanvas" id="mapcanvas">${mapSVG(p,P,{C:MAPC,pal:pal(),interactive:true})}</div><aside class="panel side">${mapSide(p,P,ro)}</aside></div>`;
+  const upd=Object.entries(S.updated).filter(([id])=>p.racks.some(r=>r.id===id));
+  const disp=`<details class="menu dispmenu" id="dispMenu" ${S.dispOpen?'open':''}><summary class="tbtn" title="Display options">${edIcon('display')}<span>Display</span></summary><div class="menu-pop dpop" role="menu">
+      <button role="menuitem" data-act="map-zoom" data-z="fit">Fit to screen</button>
+      ${ro?'':`<button role="menuitem" data-act="map-auto">Tidy layout <span class="hint">line rows up side by side</span></button>
+      <label class="check"><input type="checkbox" id="ed_snap" data-k="ui" data-f="mapSnap" ${S.mapSnap===false?'':'checked'}> Snap to grid</label>
+      <label class="check"><input type="checkbox" id="ed_grid" data-k="ui" data-f="mapGrid" ${p.map.noGrid?'':'checked'}> Show grid</label>
+      <label class="label" for="mp_num" style="margin-top:6px">Bay numbering</label><select id="mp_num" data-k="setup" data-f="numbering"><option value="down" ${p.setup.numbering!=='across'?'selected':''}>Sequential</option><option value="across" ${p.setup.numbering==='across'?'selected':''}>Alternating</option></select>`}</div></details>`;
+  const savePng=`<button class="tbtn tsave" data-act="map-png" title="Save the map as an image">${edIcon('image')}<span>Save PNG</span></button>`;
+  const legend=`<div class="legend small">${P.feats.length?P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span></span>`).join(''):'<span class="muted">No boxes yet.</span>'}${p.racks.some(r=>r.locked)?'<span><span class="sw" style="background:var(--lockfill,#e4e7e4);border:1.5px solid var(--ink)"></span>Locked bay</span>':''}</div>`;
+  const help=ro?`<ul><li>Click a bay or row header to see what’s in it.</li><li>Scroll to zoom. Drag empty space to pan.</li><li>To rearrange the shed, open a core move.</li></ul>`
+    :`<ul><li><b>Bays:</b> drag a bay anywhere. Near another bay it snaps on; drop it on a bay to swap the two.</li><li><b>Rows:</b> bays that touch form a row, lettered left to right. Drag a row’s dark header to move it; drag its right or bottom edge to stretch the bays.</li><li><b>Drawing:</b> pick a tool, then click to place it or drag to size it. Select anything to style it in the side bar.</li><li><b>View:</b> scroll to zoom, drag empty space to pan. Display → Fit to screen shows everything.</li><li><b>Keys:</b> Ctrl+Z undo · Ctrl+Shift+Z redo · Ctrl+D duplicate · Delete · arrows nudge · Esc stops drawing.</li></ul>`;
+  return `<div class="mapeditor ${ro?'ro':''}">
+    <div class="edbar">${ro?`<div class="edtools" role="toolbar"><span class="spacer"></span>${savePng}</div>`:mapToolbar(p,disp,savePng)}</div>
+    <div class="edbody">
+      <div class="edstage">
+        <div class="mapcanvas ${!ro&&S.mapTool&&S.mapTool!=='select'?'drawing':''}" id="mapcanvas"><div class="mapinner">${mapSVG(p,P,{C:MAPC,pal:pal(),interactive:true})}</div></div>
+        ${upd.length&&!ro?`<div class="edtoast"><span>${plural(upd.length,'bay has','bays have')} a new ID: ${upd.slice(0,4).map(([id,old])=>`<b class="mono">${esc(nameOf(p,id,''))}</b> (was ${esc(old)})`).join(', ')}${upd.length>4?' …':''}</span><button class="ghost small" data-act="clear-updated">OK</button></div>`:''}
+        ${!ro&&S.mapTool&&S.mapTool!=='select'?`<div class="edhint">${S.mapTool==='line'||S.mapTool==='arrow'?'Drag to draw the line':S.mapTool==='text'||S.mapTool==='label'||S.mapTool==='pallet'?'Click to place, or drag to size':'Drag to draw'} · Esc to stop</div>`:''}
+        ${(()=>{const side=mapSide(p,P,ro);return side?`<aside class="edfloat" data-live role="dialog" aria-label="Selection"><button class="icon ghost edclose" data-act="map-desel" aria-label="Close">✕</button>${side}</aside>`:'';})()}
+        <div class="edcorner">
+          <div class="popwrap"><button class="iconbtn round ${S.mapPop==='info'?'on':''}" data-act="map-pop" data-v="info" title="How to use the map" aria-label="How to use the map" aria-expanded="${S.mapPop==='info'}">i</button>
+            <button class="iconbtn round ${S.mapPop==='legend'?'on':''}" data-act="map-pop" data-v="legend" title="Legend" aria-label="Legend" aria-expanded="${S.mapPop==='legend'}">${edIcon('legend')}</button>
+            ${S.mapPop==='info'?`<div class="popover up" role="dialog" aria-label="How to use the map"><div class="pophead"><h3>Shed map</h3><button class="icon ghost" data-act="map-pop" data-v="" aria-label="Close">✕</button></div>${help}</div>`:''}
+            ${S.mapPop==='legend'?`<div class="popover up" role="dialog" aria-label="Legend"><div class="pophead"><h3>Legend</h3><button class="icon ghost" data-act="map-pop" data-v="" aria-label="Close">✕</button></div>${legend}</div>`:''}</div>
+          <span class="zoomtag" id="mp_zpct">${Math.round(mapScale()*100)}%</span>
+        </div>
+      </div>
+    </div></div>
+    ${S.pngAsk?`<div class="modal" role="dialog" aria-modal="true" aria-labelledby="pngTitle"><div class="box" style="width:min(460px,100%)">
+      <h2 id="pngTitle">Save map as PNG</h2>
+      <div class="field"><label class="label" for="mp_title">Map title</label><input id="mp_title" data-k="map" data-f="title" value="${esc(p.map.title)}" placeholder="${esc(projRec().name)}"></div>
+      <label class="check"><input type="checkbox" id="png_leg" data-k="ui" data-f="pngLegend" ${S.pngLegend?'checked':''}> Include the legend</label>
+      <div class="row" style="justify-content:flex-end"><button class="ghost" data-act="png-cancel">Cancel</button><button class="primary" data-act="png-go">Save PNG</button></div></div></div>`:''}`;
 }
 function exportPNG(p){
   const pr=projRec();const P=computePlan(p);const m=moveRec();
@@ -1719,7 +1885,7 @@ function coreRows(p,P){
   const inp=(it,f,cls,num)=>`<td class="${cls||''}"><input id="it_${f}_${it.id}" data-k="item" data-id="${it.id}" data-f="${f}" value="${esc(it[f])}" ${num?'inputmode="decimal" style="text-align:right"':''} aria-label="${f}"></td>`;
   return rows.map(it=>{const ps=P.pos[it.id];return `<tr data-row="${it.id}">
     <td class="lead"><span class="draghandle" draggable="true" data-drag="${it.id}" title="Drag to reorder" aria-label="Drag to reorder">⠿</span><button class="icon ghost danger" data-act="item-del" data-id="${it.id}" aria-label="Remove box" title="Remove box">✕</button></td>
-    <td class="w-s locin"><input id="it_loc_${it.id}" data-k="itemloc" data-id="${it.id}" value="${ps?esc(ps.rackName+'-'+ps.slot):''}" placeholder="No space" title="Type a slot like A1-5 to put this box there" aria-label="Slot for box ${esc(it.hole)} ${esc(it.box)}" class="mono">${it.missing?' <span class="pill missing">missing</span>':''}</td>
+    <td class="w-s locin"><input id="it_loc_${it.id}" data-k="itemloc" data-id="${it.id}" value="${ps?esc(ps.rackName+'-'+ps.slot):it.temp?esc((pallets(p).find(x=>x.id===it.pallet)||{}).text||'pallet'):''}" placeholder="No space" title="Type a slot like A1-5 to put this box there" aria-label="Slot for box ${esc(it.hole)} ${esc(it.box)}" class="mono">${it.missing?' <span class="pill missing">missing</span>':''}</td>
     ${inp(it,'feature','w-m')}${inp(it,'hole','w-m')}${inp(it,'box','w-s',1)}${inp(it,'of','w-s',1)}${inp(it,'from','w-s',1)}${inp(it,'to','w-s',1)}
     ${p.customCols.map(c=>`<td class="w-m"><input id="it_c_${c.id}_${it.id}" data-k="item" data-id="${it.id}" data-c="${c.id}" value="${esc((it.custom||{})[c.id])}" aria-label="${esc(c.name)}"></td>`).join('')}
     </tr>`;}).join('');
@@ -2211,6 +2377,7 @@ function planRowsAll(p,P){
   const rows=[];
   P.racks.forEach(R=>R.cells.forEach(c=>{(c.item?slotBoxes(c):[null]).forEach(it=>{
     rows.push([R.rack.name,c.slot,it?it.feature:'',it?outVal(it,'hole'):'',it?numOr(outVal(it,'box')):'',it?numOr(outVal(it,'of')):'',it?numOr(outVal(it,'from')):'',it?numOr(outVal(it,'to')):'',...p.customCols.map(col=>it?((it.custom||{})[col.id]||''):''),c.blocked?'Blocked':c.gap?'Spare':it?(it.missing?'Missing':''):'Empty']);});}));
+  pallets(p).forEach(pl0=>palletItems(p,pl0.id).forEach(it=>rows.push([pl0.text,'',it.feature,outVal(it,'hole'),numOr(outVal(it,'box')),numOr(outVal(it,'of')),numOr(outVal(it,'from')),numOr(outVal(it,'to')),...p.customCols.map(col=>(it.custom||{})[col.id]||''),pl0.kept?'Stored on pallet':'On temporary pallet'])));
   P.unplaced.forEach(it=>rows.push(['(no space)','',it.feature,outVal(it,'hole'),numOr(outVal(it,'box')),numOr(outVal(it,'of')),numOr(outVal(it,'from')),numOr(outVal(it,'to')),...p.customCols.map(col=>(it.custom||{})[col.id]||''),'Does not fit']));
   return{head,rows};}
 const numOr=v=>{if(v===''||v==null)return'';const n=Number(v);return isNaN(n)?v:n;};
@@ -2261,7 +2428,8 @@ function templateRows(p,P){
   P.racks.forEach(R=>{const r=R.rack;curBay=r;const L=r.rowLetter||'';const bay=r.name.slice(L.length);
     if(!R.cells.length){rows.push(one(L,bay,'',null,'Bay has no slots'));return;}
     R.cells.forEach(c=>{if(c.blocked){rows.push(one(L,bay,c.slot,null,'Blocked slot'));return;}if(!c.item){rows.push(one(L,bay,c.slot,null,''));return;}slotBoxes(c).forEach(it=>rows.push(one(L,bay,c.slot,it,'')));});});
-  curBay=null;P.unplaced.forEach(it=>rows.push(one('','','',it,'Not placed: no space in the plan')));
+  curBay=null;pallets(p).forEach(pl0=>palletItems(p,pl0.id).forEach(it=>rows.push(one(pl0.text,'','',it,pl0.kept?'Stored on pallet':'On temporary pallet'))));
+  P.unplaced.forEach(it=>rows.push(one('','','',it,'Not placed: no space in the plan')));
   return rows;}
 function exportContext(){const pr=projRec(),m=moveRec();return{title:[pr.name,pr.site].filter(Boolean).join(' – '),detail:`Exported from Core Rack Planner on ${new Date().toLocaleDateString()}: ${m?`core move “${m.name}”`:'saved shed layout'}`,file:safeName([pr.name,pr.site,m&&m.name].filter(Boolean).join(' - '))};}
 function exportTemplateCSV(p){const P=computePlan(p);const rows=templateRows(p,P);const cx=exportContext();
@@ -2321,13 +2489,18 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTi
 function openCtx(pid,mid){S.mmZoom=undefined;if(!S.ctx||S.ctx.pid!==pid){S.filter={q:'',conds:[],onlyMatches:true};S.filterOpen=false;}S.ctx={pid,mid:mid||null};S.view='work';S.tab='plan';S.q='';S.imp=null;S.confirm=null;S.sel=null;S.updated={};S.renaming=null;S.newMoveFor=null;S.mmZoom=undefined;
   if(mid)startDraft();else S.draft=null;
   const p=cur();if(p){const pr=projRec();p.name=mid?pr.name+' – '+moveRec().name:pr.name;}render();window.scrollTo(0,0);}
-function gotoRack(id){S.tab='plan';render();const el=document.getElementById('rack-'+id);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
+/* scroll so the bay's table header sits just below the sticky top bar */
+function gotoRack(id){S.tab='plan';render();const el=document.getElementById('rack-'+id);if(!el)return;
+  const bar=document.querySelector('.appbar');const off=(bar?bar.getBoundingClientRect().height:0)+12;
+  const top=el.getBoundingClientRect().top+window.scrollY-off;
+  window.scrollTo({top:Math.max(0,top),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
 function saveMoveToProject(pr,m,quiet){if(draftOn()&&S.draft.mid===m.id)commitDraft(true);pr.plan=clone(m.plan);pr.plan.name=pr.name;pr.plan.stage='done';deriveNames(pr.plan);const now=Date.now();m.savedAt=now;m.updated=Math.min(m.updated,now);pr.updated=now;persist();if(!quiet)toast(`Saved “${m.name}” to ${[pr.name,pr.site].filter(Boolean).join(' – ')}`);}
 
 document.addEventListener('click',e=>{
   document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menu-pop button'))d.open=false;});
   const b=e.target.closest('[data-act]');
   if(S.pop&&!e.target.closest('.popwrap')){S.pop=null;render();}
+  if(S.mapPop&&!e.target.closest('.edcorner')){S.mapPop=null;render();}
   if(!b)return;
   const act=b.dataset.act,id=b.dataset.id,p=cur();
   if(act!=='cancel'&&!/^(del|clear|save-move|reorg)/.test(act))S.confirm=null;
@@ -2354,7 +2527,7 @@ document.addEventListener('click',e=>{
     case 'save-move-yes':{const pr=S.projects.find(x=>x.id===b.dataset.pid);const m=pr.moves.find(x=>x.id===id);S.confirm=null;saveMoveToProject(pr,m);render();break;}
     case 'cancel':S.confirm=null;S.renaming=null;S.newMoveFor=null;render();break;
     case 'open-file':$('#fileProject').value='';$('#fileProject').click();break;
-    case 'tab':if(b.dataset.tab==='moves'&&S.tab!=='moves'){S.mmZoom=false;S.mmDir=null;}S.tab=b.dataset.tab;S.confirm=null;S.sel=null;render();break;
+    case 'tab':if(b.dataset.tab==='map'&&S.tab!=='map'){S.mapFitNext=true;S.mapPop=null;}if(b.dataset.tab==='moves'&&S.tab!=='moves'){S.mmZoom=false;S.mmDir=null;}S.tab=b.dataset.tab;S.confirm=null;S.sel=null;render();break;
     case 'export-xlsx':startExport(p,'xlsx');break;
     case 'export-csv':startExport(p,'csv');break;
     case 'export-xlsx-full':exportXLSX(p);break;
@@ -2362,7 +2535,33 @@ document.addEventListener('click',e=>{
     case 'exp-go':{const E=S.expPrompt;S.expPrompt=null;render();if(!E)break;
       if(E.ok)E.kind==='csv'?exportTemplateCSV(p):exportTemplateXLSX(p);else{E.kind==='csv'?exportCSV(p):exportXLSX(p);toast('Exported in the original planner layout');}break;}
     case 'save-file':saveFile(projRec());break;
-    case 'map-png':exportPNG(p);break;
+    case 'map-png':S.pngAsk=true;render();{const el=$('#mp_title');if(el)el.focus();}break;
+    case 'png-cancel':S.pngAsk=false;render();break;
+    case 'png-go':{const t=$('#mp_title');const lg=$('#png_leg');if(lg)S.pngLegend=lg.checked;S.pngAsk=false;
+      if(t&&isReadOnly()){const old=p.map.title;p.map.title=t.value;render();exportPNG(p);p.map.title=old;break;}
+      if(t&&t.value!==p.map.title){p.map.title=t.value;touch(p);}render();exportPNG(p);break;}
+    case 'map-desel':S.sel=null;S.selEdit=null;render();break;
+    case 'sel-edit':S.selEdit=S.selEdit===S.sel.type+':'+S.sel.id?null:S.sel.type+':'+S.sel.id;render();{const f=$('.edfloat input');if(f&&S.selEdit)f.focus();}break;
+    case 'sel-cancel':S.selEdit=null;render();break;
+    case 'sel-save':{const sl=S.sel;if(!sl)break;const v=k=>{const el=$('#'+k);return el?(el.type==='checkbox'?el.checked:el.value):undefined;};mapSnap(p);const before=nameSnapshot(p);let note='';
+      if(sl.type==='rack'){const r=p.racks.find(x=>x.id===sl.id);if(!r)break;
+        r.rows=clamp(int(v('fb_r'),r.rows),0,500);r.blocked=parseRows(v('fb_b'));
+        const dm={};['l','w','h'].forEach(x=>{const n=mm(v('fb_d'+x));if(n)dm[x]=n;});if(Object.keys(dm).length)r.dim=dm;else delete r.dim;
+        if(!!v('fb_lock')!==!!r.locked)lockBays(p,[r.id],!!v('fb_lock'));}
+      else if(sl.type==='row'){let g=groupOfBay(p,sl.id);if(!g)break;
+        const L=String(v('rw_l')||'').toUpperCase().replace(/[^A-Z]/g,'').slice(0,3);
+        if(L&&(p._rows||[]).some(o=>o!==g&&o.ov===L)){toast(`Row ${L} is already set on another row.`);S.mapUndo.pop();break;}
+        g.bays.forEach(b0=>{if(L)b0.letterFix=L;else delete b0.letterFix;const nm=v('rw_n');if(nm)b0.numMode=nm;else delete b0.numMode;});
+        deriveNames(p);g=groupOfBay(p,sl.id);
+        if(v('rw_unst')){const b0=g.bays[0];stretchRow(g,'x',baseW(b0)/dw(b0));stretchRow(g,'y',baseH(b0)/dh(b0));g.bays.forEach(x=>{delete x.sw;delete x.sh;});deriveNames(p);g=groupOfBay(p,sl.id);}
+        if((v('rw_o')==='h')!==!!g.horiz){const res=flipRow(p,g);if(res==='fail')note=' The row couldn’t turn here; move it to open space first.';deriveNames(p);g=groupOfBay(p,sl.id);}
+        const want=clamp(int(v('rw_c'),g.bays.length),1,200);
+        while(g.bays.length<want){const nr=makeRack(p);const lastB=g.bays[g.bays.length-1];nr.rows=lastB.rows;nr.blocked=(lastB.blocked||[]).slice();appendBayToRow(p,nr,g);p.racks.push(nr);deriveNames(p);g=groupOfBay(p,sl.id);}
+        while(g.bays.length>want&&p.racks.length>1){const lastB=g.bays[g.bays.length-1];if(lastB.id===sl.id&&g.bays.length>1){/* keep the selected bay */const other=g.bays[g.bays.length-2];p.racks=p.racks.filter(r=>r.id!==other.id);}else p.racks=p.racks.filter(r=>r.id!==lastB.id);deriveNames(p);g=groupOfBay(p,sl.id);if(!g)break;}
+        if(g){const lk=!!v('rw_lock'),all=g.bays.every(b0=>b0.locked);if(lk!==all)lockBays(p,g.bays.map(b0=>b0.id),lk);}
+        p.setup.rackCount=p.racks.length;}
+      markUpdated(p,before);S.selEdit=null;touch(p);render();toast('Saved'+note);break;}
+    case 'map-pop':S.mapPop=b.dataset.v&&S.mapPop!==b.dataset.v?b.dataset.v:null;render();break;
     case 'to-top':window.scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});break;
     case 'modal-close':S.modal=null;render();break;
     case 'modal-dl':modalDownload();break;
@@ -2413,31 +2612,33 @@ document.addEventListener('click',e=>{
     case 'mm-pick':if(id&&!S.mmReturn)S.mmReturn=S.mmShown||null;S.mmPick=id||null;S.mmNot=false;S.mmAlt=null;render();{const c=$('.mmcard');if(c)c.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}if(id){const it=cur().items.find(x=>x.id===id);if(it)toast(`Showing ${it.hole} box ${it.box}. After it’s placed you’ll go back to the expected box.`);}break;
     case 'mm-gap':S.mmGap=b.dataset.v;render();break;
     case 'mm-elsewhere':case 'mm-altslot':{S.mmJust=true;S.mmPick=null;S.mmNot=false;if(id===S.mmReturn)S.mmReturn=null;const it=p.items.find(x=>x.id===id);if(!it)break;const txt=act==='mm-altslot'?b.dataset.loc:($('#mmLoc')||{}).value;
-      if(/^\s*pallet\s*$/i.test(txt||'')){it.temp=true;S.mmAlt=null;commitDraft(true);render();break;}
+      {const pl0=palletByName(p,txt);if(pl0){putOnPallet(p,it,pl0.id);S.mmAlt=null;commitDraft(true);render();toast(`${it.hole} box ${it.box} is on ${pl0.text}`);break;}}
       const L=parseSlotRef(p,txt);if(!L||L.bad){toast(!L?'Type a slot like B2-4.':`There’s no bay ${L.bad} in this shed.`);break;}
       const P0=computePlan(p);const before=P0.pos[id];let where;
       if(before&&before.rackId===L.r.id&&before.slot===L.slot)where=pinHere(p,id);
       else{if(moveItemTo(p,id,txt)===false&&!computePlan(p).pos[id])break;where=L.r.name+'-'+L.slot;if(S.mmGap==='empty')keepEmpty(p,before);}
       mmState(p).done[id]=where;S.mmAlt=null;commitDraft(true);render();break;}
-    case 'mm-temp':{S.mmJust=true;S.mmPick=null;S.mmNot=false;if(id===S.mmReturn)S.mmReturn=null;const it=p.items.find(x=>x.id===id);if(it){unpinItem(p,id);it.temp=true;S.mmAlt=null;commitDraft(true);render();toast(`${it.hole} box ${it.box} is on the temporary pallet`);}break;}
-    case 'mm-temp-back':{const it=p.items.find(x=>x.id===id);if(it){delete it.temp;commitDraft(true);render();}break;}
+    case 'mm-temp':{S.mmJust=true;S.mmPick=null;S.mmNot=false;if(id===S.mmReturn)S.mmReturn=null;const it=p.items.find(x=>x.id===id);if(it){putOnPallet(p,it);S.mmAlt=null;commitDraft(true);render();toast(`${it.hole} box ${it.box} is on the temporary pallet`);}break;}
+    case 'mm-temp-back':{const it=p.items.find(x=>x.id===id);if(it){delete it.temp;delete it.pallet;commitDraft(true);render();}break;}
     case 'mm-temp-place':{const it=p.items.find(x=>x.id===id);const txt=($('#tp_'+id)||{}).value;const L=parseSlotRef(p,txt);if(!it||!L||L.bad){toast('Type a slot like B2-4.');break;}
-      delete it.temp;moveItemTo(p,id,txt);mmState(p).done[id]=L.r.name+'-'+L.slot;commitDraft(true);render();break;}
+      delete it.temp;delete it.pallet;moveItemTo(p,id,txt);mmState(p).done[id]=L.r.name+'-'+L.slot;commitDraft(true);render();break;}
     case 'mm-undo':{const mm=mmState(p);delete mm.done[id];unpinItem(p,id);mm.finished=false;mm.saved=false;mm.step=3;commitDraft(true);render();break;}
     case 'mm-allgood':{const mm=mmState(p);const B=mmBoxes(p,computePlan(p),computeMoves(p,computePlan(p)));B.list.forEach(it=>{if(!mm.done[it.id]){const w=pinHere(p,it.id);if(w)mm.done[it.id]=w;}});mm.finished=true;commitDraft(true);render();toast('Move recorded and saved');break;}
     case 'mm-fixstart':S.mmFix=[{id:'',loc:'',gap:'next'}];render();break;
     case 'mm-fixadd':S.mmFix=(S.mmFix||[]).concat({id:'',loc:'',gap:'next'});render();break;
     case 'mm-fixdel':S.mmFix.splice(+b.dataset.i,1);if(!S.mmFix.length)S.mmFix=null;render();break;
     case 'mm-fixcancel':S.mmFix=null;render();break;
-    case 'mm-fixapply':{const rows=(S.mmFix||[]).filter(r=>r.id&&r.loc);const bad=rows.find(r=>!/^\s*pallet\s*$/i.test(r.loc)&&!((L)=>L&&!L.bad)(parseSlotRef(p,r.loc)));
+    case 'mm-fixapply':{const rows=(S.mmFix||[]).filter(r=>r.id&&r.loc);const bad=rows.find(r=>!palletByName(p,r.loc)&&!((L)=>L&&!L.bad)(parseSlotRef(p,r.loc)));
       if(bad){toast(`“${bad.loc}” isn’t a slot in this shed. Use a slot like B2-4, or “pallet”.`);break;}
       const mm=mmState(p);rows.forEach(r=>{const it=p.items.find(x=>x.id===r.id);if(!it)return;const before=computePlan(p).pos[r.id];
-        if(/^\s*pallet\s*$/i.test(r.loc)){unpinItem(p,r.id);it.temp=true;}else{moveItemTo(p,r.id,r.loc);const L=parseSlotRef(p,r.loc);mm.done[r.id]=L.r.name+'-'+L.slot;}
+        if(palletByName(p,r.loc)){putOnPallet(p,it,palletByName(p,r.loc).id);}else{moveItemTo(p,r.id,r.loc);const L=parseSlotRef(p,r.loc);mm.done[r.id]=L.r.name+'-'+L.slot;}
         if(r.gap==='empty')keepEmpty(p,before);});
       const B=mmBoxes(p,computePlan(p),computeMoves(p,computePlan(p)));B.list.forEach(it=>{if(!mm.done[it.id]&&!it.temp){const w=pinHere(p,it.id);if(w)mm.done[it.id]=w;}});
       mm.finished=true;S.mmFix=null;commitDraft(true);render();toast(`Plan updated with ${plural(rows.length,'change')} and saved`);break;}
     case 'mm-reopen':{const mm=mmState(p);mm.finished=false;mm.saved=false;S.mmJust=false;S.mmFix=null;
       if(mm.mode==='online'){mm.step=3;S.open.mmdone=true;}else{mm.step=4;S.mmFix=[{id:'',loc:'',gap:'next'}];}S.mmDir='back';touch(p);render();window.scrollTo(0,0);break;}
+    case 'pallet-keep':{const l=p.map.labels.find(x=>x.id===id);if(l){l.kept=true;commitDraft(true);render();toast(`${l.text} is now a permanent storage location`);}break;}
+    case 'pallet-unkeep':{const l=p.map.labels.find(x=>x.id===id);if(l){l.kept=false;commitDraft(true);render();}break;}
     case 'mm-reset':{S.mmReturn=null;S.mmPick=null;delete p.mm;delete p.pallet;S.mmFix=null;S.mmAlt=null;S.mmJust=false;S.mmZoom=false;S.mmDir='out';touch(p);render();window.scrollTo(0,0);toast('Move mode started over');break;}
     case 'mm-save-shed':{const pr=projRec(),m=moveRec();mmState(p).saved=true;commitDraft(true);saveMoveToProject(pr,m);render();window.scrollTo(0,0);break;}
     case 'mm-export':{const P=computePlan(p);const mm=mmState(p);const B=mmBoxes(p,P,computeMoves(p,P));const ord=mm.order==='pallet'&&B.src==='pallet'?'pallet':'slot';const rows=mmSheetRows(p,P,B,ord);const hasPal=rows.some(r=>r.pal);
@@ -2477,23 +2678,30 @@ document.addEventListener('click',e=>{
     case 'reoptimise':{const n=heldCount(p);reoptimise(p);touch(p);render();toast(`${plural(n,'held box','held boxes')} moved into the best order`);break;}
     case 'row-add-rack':{const g=groupOfBay(p,id);if(g){const r=makeRack(p);const lastB=g.bays[g.bays.length-1];if(lastB){r.rows=lastB.rows;r.blocked=(lastB.blocked||[]).slice();}appendBayToRow(p,r,g);p.racks.push(r);deriveNames(p);p.setup.rackCount=p.racks.length;touch(p);render();}break;}
     case 'row-del-rack':{const g=groupOfBay(p,id);if(g&&p.racks.length>1){const last=g.bays[g.bays.length-1];p.racks=p.racks.filter(r=>r.id!==last.id);deriveNames(p);if(!groupOfBay(p,S.sel&&S.sel.id))S.sel=null;p.setup.rackCount=p.racks.length;touch(p);render();}break;}
-    case 'map-add-row':{const gs=p._rows||deriveNames(p);const last=gs[gs.length-1];const n=last?last.bays.length:4;const cols=last?new Set(last.bays.map(b=>b.x)).size:1;
+    case 'map-add-row':{mapSnap(p);const gs=p._rows||deriveNames(p);const last=gs[gs.length-1];const n=last?last.bays.length:4;const cols=last?new Set(last.bays.map(b=>b.x)).size:1;
       const horiz=!!(last&&last.horiz);const lines=last?new Set(last.bays.map(b=>horiz?b.y:b.x)).size:1;
       const x=(last?Math.max(...gs.map(g=>g.maxX))+AISLE:2)+(horiz?1:0);const list=[];for(let i=0;i<n;i++){const r=makeRack(p);list.push(r);}
       placeRow(list,x,2,horiz,Math.min(2,lines),(last&&last.mode||p.setup.numbering)==='across');p.racks.push(...list);deriveNames(p);
       p.setup.rackCount=p.racks.length;S.sel={type:'row',id:list[0].id};touch(p);render();toast(`Added row ${list[0].rowLetter} with ${plural(n,'bay')}`);break;}
+    case 'map-tool':S.mapTool=b.dataset.tool||'select';if(S.mapTool!=='select')S.sel=null;render();break;
+    case 'map-undo':if((S.mapUndo||[]).length){S.mapRedo=(S.mapRedo||[]).concat(mapState(p));mapRestore(p,S.mapUndo.pop());S.sel=null;touch(p);render();}break;
+    case 'map-redo':if((S.mapRedo||[]).length){S.mapUndo=(S.mapUndo||[]).concat(mapState(p));mapRestore(p,S.mapRedo.pop());S.sel=null;touch(p);render();}break;
+    case 'shape-del':{const l=p.map.labels.find(x=>x.id===id);if(!l)break;mapSnap(p);if(shType(l)==='pallet'){const its=palletItems(p,id);its.forEach(it=>{delete it.temp;delete it.pallet;});if(its.length)toast(`${plural(its.length,'box','boxes')} from ${l.text} went back into the plan`);}
+      p.map.labels=p.map.labels.filter(x=>x.id!==id);S.sel=null;touch(p);render();break;}
+    case 'shape-dup':{const l=p.map.labels.find(x=>x.id===id);if(!l)break;mapSnap(p);const c=clone(l);c.id=uid();c.x+=1;c.y+=1;if(isLine(c)){c.x2+=1;c.y2+=1;}if(shType(c)==='pallet'){c.text=(c.text||'Pallet')+' copy';delete c.kept;}p.map.labels.push(c);S.sel={type:'label',id:c.id};touch(p);render();break;}
+    case 'shape-front':case 'shape-back':{const i=p.map.labels.findIndex(x=>x.id===id);if(i<0)break;mapSnap(p);const [l]=p.map.labels.splice(i,1);l.layer=act==='shape-front'?'front':'back';if(act==='shape-front')p.map.labels.push(l);else p.map.labels.unshift(l);touch(p);render();toast(act==='shape-front'?'Brought to the front':'Sent behind the bays');break;}
     case 'map-add-label':{const B=mapBounds(p);const l={id:uid(),x:1,y:Math.max(1,B.h-2),text:'Door'};p.map.labels.push(l);S.sel={type:'label',id:l.id};S.focusAfter='lb_text';touch(p);render();break;}
-    case 'label-color':{const l=p.map.labels.find(x=>x.id===id);if(l){l.color=b.dataset.color||'';touch(p);render();}break;}
+    case 'label-color':{const l=p.map.labels.find(x=>x.id===id);if(l){mapSnap(p);l.color=b.dataset.color||'';touch(p);render();}break;}
     case 'label-del':p.map.labels=p.map.labels.filter(l=>l.id!==id);S.sel=null;touch(p);render();break;
-    case 'row-unstretch':{const g=groupOfBay(p,id);if(g){const b=g.bays[0];const fx=baseW(b)/dw(b),fy=baseH(b)/dh(b);const orig=g.bays.map(x=>({b:x,x:x.x,y:x.y,sw:x.sw,sh:x.sh}));
+    case 'row-unstretch':{const g=groupOfBay(p,id);if(g){mapSnap(p);const b=g.bays[0];const fx=baseW(b)/dw(b),fy=baseH(b)/dh(b);const orig=g.bays.map(x=>({b:x,x:x.x,y:x.y,sw:x.sw,sh:x.sh}));
       stretchRow(g,'x',fx);stretchRow(g,'y',fy);g.bays.forEach(x=>{delete x.sw;delete x.sh;});
       if(g.bays.some(x=>p.racks.some(o=>!g.bays.includes(o)&&overlap(o,x)))){restoreStretch({orig});toast('There isn’t room to shrink this row back here.');break;}
       touch(p);render();toast(`Row ${g.letter} is back to the standard bay size.`);}break;}
-    case 'row-orient':{const g=groupOfBay(p,id);if(g){const before=nameSnapshot(p);const res=flipRow(p,g);
+    case 'row-orient':{const g=groupOfBay(p,id);if(g){mapSnap(p);const before=nameSnapshot(p);const res=flipRow(p,g);
       if(res==='fail'){toast('There isn’t room to turn this row here. Move it to open space first.');break;}
       markUpdated(p,before);S.sel={type:'row',id};touch(p);render();toast(`Row ${g.letter} is now ${g.horiz?'upright':'sideways'}${res==='moved'?' and moved below the other rows to make room':''}.`);}break;}
     case 'map-zoom':{const z=b.dataset.z;if(z==='fit')mapFit();else setMapScale(mapScale()*(z==='in'?1.25:0.8));break;}
-    case 'map-auto':{const gs=rowGroups(p);let x=2;gs.forEach(g=>{const lx=g.horiz?x+1:x;const dx=lx-g.minX,dy=2-g.minY;g.bays.forEach(b=>{b.x+=dx;b.y+=dy;});x=lx+(g.maxX-g.minX)+AISLE;});deriveNames(p);touch(p);render();toast('Rows lined up');break;}
+    case 'map-auto':{mapSnap(p);const gs=rowGroups(p);let x=2;gs.forEach(g=>{const lx=g.horiz?x+1:x;const dx=lx-g.minX,dy=2-g.minY;g.bays.forEach(b=>{b.x+=dx;b.y+=dy;});x=lx+(g.maxX-g.minX)+AISLE;});deriveNames(p);touch(p);render();toast('Rows lined up');break;}
     case 'clear-updated':S.updated={};render();break;
   }
 });
@@ -2538,6 +2746,8 @@ document.addEventListener('change',e=>{
   if(t.name==='abmode'){S.addMode=t.value;const form=$('#addForm');form.querySelectorAll('[data-mode]').forEach(el=>el.hidden=el.dataset.mode!==S.addMode);$('#ab_submit').textContent=S.addMode==='range'?'Add boxes':'Add box';updateAbHint();return;}
   const k=t.dataset.k;if(!k)return;const p=cur();const f=t.dataset.f;
   const val=t.type==='checkbox'?t.checked:t.value;
+  if(k==='ui'&&f==='mapSnap'){S.mapSnap=!!val;render();return;}
+  if(k==='ui'&&f==='mapGrid'){if(p&&!isReadOnly()){p.map.noGrid=!val;touch(p);render();}return;}
   if(k==='ui'){if(f==='zoom'){S.zoom=int(val,26);render();}if(f==='onlyMatches'){S.filter.onlyMatches=val;render();}if(f==='pngLegend')S.pngLegend=val;if(f==='pfilter'){S.pfilter=val;render();}
     if(f==='jumprow'&&val){const el=document.getElementById('rg-'+val);const sc=el&&el.closest('.shed');if(sc){const smooth=!matchMedia('(prefers-reduced-motion: reduce)').matches;sc.scrollTo({left:el.offsetLeft-8,behavior:smooth?'smooth':'auto'});const top=sc.getBoundingClientRect().top;if(top<80||top>innerHeight-120)sc.scrollIntoView({block:'center',behavior:smooth?'smooth':'auto'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1400);}t.value='';}if(f==='expOk'&&S.expPrompt)S.expPrompt.ok=val;return;}
   if(k==='cond'){const c=S.filter.conds[+t.dataset.i];if(!c)return;if(f==='v'||f==='w')return;c[f]=val;
@@ -2574,12 +2784,19 @@ document.addEventListener('change',e=>{
       g.bays.forEach(b=>{if(L)b.letterFix=L;else delete b.letterFix;});}
     else g.bays.forEach(b=>{if(val)b.numMode=val;else delete b.numMode;});
     markUpdated(p,before);touch(p);S.sel={type:'row',id:g.bays[0].id};render();return;}
-  if(k==='label'){const l=p.map.labels.find(x=>x.id===t.dataset.id);if(l){
-      if(f==='text')l.text=val.trim()||l.text;else if(f==='w')l.w=clamp(int(val,labelW(l)),1,200);else if(f==='h')l.h=clamp(int(val,1),1,200);else if(f==='size')l.size=+val||1;else if(f==='color')l.color=val;
+  if(k==='label'){const l=p.map.labels.find(x=>x.id===t.dataset.id);if(l){mapSnap(p);const num=v=>{const n=parseFloat(v);return isNaN(n)?null:n;};
+      if(f==='text'){l.text=shType(l)==='pallet'?(String(val).trim()||l.text):String(val);}
+      else if(f==='w'){const n=num(val);if(n)l.w=clamp(n,0.25,400);}else if(f==='h'){const n=num(val);if(n)l.h=clamp(n,0.25,400);}
+      else if(f==='size')l.size=+val||1;else if(f==='color')l.color=val;else if(f==='stroke')l.stroke=val;else if(f==='tc')l.tc=val;
+      else if(f==='sw'){if(val==='')delete l.sw;else l.sw=+val;}else if(f==='dash'){if(val)l.dash=val;else delete l.dash;}else if(f==='align'){if(val)l.align=val;else delete l.align;}
+      else if(f==='r'){if(val==='')delete l.r;else l.r=clamp(+val||0,0,60);}else if(f==='op')l.op=clamp((+val||100)/100,0.1,1);else if(f==='bold')l.bold=!!val;
+      else if(f==='kept'){l.kept=!!val;toast(val?`${l.text} is now a permanent storage location`:`Boxes on ${l.text} are waiting for a slot again`);}
       touch(p);render();}return;}
   if(k==='map'){if(f==='title'){p.map.title=val;touch(p);return;}p.map[f]=Math.max(0,int(val,0));touch(p);render();return;}
+  if(k==='fe')return;
   if(k==='mmfix'){const r=(S.mmFix||[])[+t.dataset.i];if(r)r[f]=val;return;}
-  if(k==='itemloc'){moveItemTo(p,t.dataset.id,val);render();return;}
+  if(k==='itemloc'){const it=p.items.find(x=>x.id===t.dataset.id);const pl0=palletByName(p,val);if(it&&pl0){putOnPallet(p,it,pl0.id);touch(p);render();toast(`${it.hole} box ${it.box} is on ${pl0.text}`);return;}
+    if(it&&it.temp){delete it.temp;delete it.pallet;}moveItemTo(p,t.dataset.id,val);touch(p);render();return;}
   if(k==='item'){const it=p.items.find(x=>x.id===t.dataset.id);if(!it)return;if(t.dataset.c){it.custom=it.custom||{};it.custom[t.dataset.c]=t.value.trim();}else{it[f]=t.value.trim();if(f==='from'||f==='to'){const was=it.missing;it.missing=false;cleanItem(it);if(!it.missing&&was&&!(it.from||it.to))it.missing=was;t.value=it[f];}}touch(p);S.dirty=true;refreshSummary();return;}
   if(k==='col'){const c=p.customCols.find(x=>x.id===t.dataset.id);if(c){c.name=t.value.trim()||c.name;touch(p);S.dirty=true;}return;}
   if(k==='opt'){if(t.type==='checkbox'){p.options[f]=t.checked;if(f==='useCustomOrder'&&t.checked&&!(p.options.featureOrder||[]).length)p.options.featureOrder=featureOrder(Object.assign({},p,{options:Object.assign({},p.options,{useCustomOrder:false})}));}
@@ -2607,16 +2824,17 @@ document.addEventListener('focusout',e=>{
   if(e.relatedTarget&&box.contains(e.relatedTarget))return;
   setTimeout(()=>{if(!S.dirty)return;const a=document.activeElement;if(a&&a.closest&&a.closest('[data-live]'))return;const y=window.scrollY;render();window.scrollTo(0,y);},0);
 });
-document.addEventListener('toggle',e=>{const t=e.target;if(t.id==='manualDetails')S.manualOpen=t.open;if(t.dataset&&t.dataset.sec)S.open[t.dataset.sec]=t.open;if(t.dataset&&t.dataset.pid)S.homeOpen[t.dataset.pid]=t.open;},true);
+document.addEventListener('toggle',e=>{const t=e.target;if(t.id==='dispMenu')S.dispOpen=t.open;if(t.id==='manualDetails')S.manualOpen=t.open;if(t.dataset&&t.dataset.sec)S.open[t.dataset.sec]=t.open;if(t.dataset&&t.dataset.pid)S.homeOpen[t.dataset.pid]=t.open;},true);
 
 /* shed map zoom */
 function mapScale(){return clamp(+S.mapScale||1,0.15,3);}
+function repaintMap(mc){if(!mc)return;mc.classList.toggle('rp');}
 function setMapScale(v,cx,cy){const mc=$('#mapcanvas'),svg=$('#shedmap');const old=mapScale();const nv=clamp(v,0.15,3);S.mapScale=nv;if(!mc||!svg)return;
   const r=mc.getBoundingClientRect();const mx=cx===undefined?mc.clientWidth/2:cx-r.left,my=cy===undefined?mc.clientHeight/2:cy-r.top;
   const px=(mc.scrollLeft+mx)/old,py=(mc.scrollTop+my)/old;
-  svg.setAttribute('width',Math.round(+svg.dataset.w*nv));svg.setAttribute('height',Math.round(+svg.dataset.h*nv));
-  mc.scrollLeft=px*nv-mx;mc.scrollTop=py*nv-my;}
-function mapFit(){const mc=$('#mapcanvas'),svg=$('#shedmap');if(!mc||!svg)return;const top=mc.getBoundingClientRect().top;const vis=Math.max(200,Math.min(mc.clientHeight,innerHeight-Math.max(0,top)-12));const v=Math.min((mc.clientWidth-4)/+svg.dataset.w,(vis-4)/+svg.dataset.h);setMapScale(v);mc.scrollLeft=0;mc.scrollTop=0;}
+  svg.setAttribute('width',Math.round(+svg.dataset.w*nv));svg.setAttribute('height',Math.round(+svg.dataset.h*nv));{const z=$('#mp_zpct');if(z)z.textContent=Math.round(nv*100)+'%';}
+  mc.scrollLeft=px*nv-mx;mc.scrollTop=py*nv-my;repaintMap(mc);}
+function mapFit(){const mc=$('#mapcanvas'),svg=$('#shedmap');if(!mc||!svg)return;const v=Math.min((mc.clientWidth-40)/+svg.dataset.w,(mc.clientHeight-40)/+svg.dataset.h);setMapScale(v);mc.scrollLeft=0;mc.scrollTop=0;}
 document.addEventListener('wheel',e=>{const mc=e.target.closest&&e.target.closest('#mapcanvas');if(!mc||MD)return;e.preventDefault();
   const d=e.deltaMode===1?e.deltaY*16:e.deltaMode===2?e.deltaY*400:e.deltaY;setMapScale(mapScale()*Math.exp(-clamp(d,-200,200)*0.0016),e.clientX,e.clientY);},{passive:false});
 
@@ -2628,10 +2846,14 @@ document.addEventListener('pointerdown',e=>{
   const svg=mc.querySelector('#shedmap');
   const lr=e.button===0&&e.target.closest('[data-lresize]');const rs=e.button===0&&!isReadOnly()&&e.target.closest('[data-rstretch]');
   if(rs){const p=cur();const g=groupOfBay(p,rs.dataset.rstretch);if(!g)return;e.preventDefault();
-    MD={type:'stretch',id:g.key,dir:rs.dataset.dir,mc,sx:e.clientX,sy:e.clientY,moved:false,pid:e.pointerId,orig:g.bays.map(b=>({b,x:b.x,y:b.y,sw:b.sw,sh:b.sh})),
+    MD={type:'stretch',snap0:mapState(p),id:g.key,dir:rs.dataset.dir,mc,sx:e.clientX,sy:e.clientY,moved:false,pid:e.pointerId,orig:g.bays.map(b=>({b,x:b.x,y:b.y,sw:b.sw,sh:b.sh})),
       span:rs.dataset.dir==='x'?g.maxX-g.minX:g.maxY-g.minY,start:rs.dataset.dir==='x'?g.minX:g.minY,ids:new Set(g.bays.map(b=>b.id)),names:p.racks.map(b=>[b,b.letterFix,b.numMode]),
       edges:(p._rows||[]).filter(o=>o.key!==g.key).map(o=>rs.dataset.dir==='x'?o.maxX:o.maxY)};
     try{mc.setPointerCapture(e.pointerId);}catch(_){}return;}
+  const le=e.button===0&&!isReadOnly()&&e.target.closest('[data-lend]');
+  if(le){e.preventDefault();const p=cur();const l=p.map.labels.find(x=>x.id===le.dataset.lend);if(!l)return;MD={type:'lend',id:l.id,end:le.dataset.end,mc,sx:e.clientX,sy:e.clientY,moved:false,pid:e.pointerId,ox:le.dataset.end==='1'?l.x:l.x2,oy:le.dataset.end==='1'?l.y:l.y2};try{mc.setPointerCapture(e.pointerId);}catch(_){}return;}
+  if(e.button===0&&!lr&&!isReadOnly()&&S.mapTool&&S.mapTool!=='select'&&svg){e.preventDefault();const rc=svg.getBoundingClientRect(),sc=mapScale();
+    const gx=(e.clientX-rc.left)/sc/MAPC,gy=(e.clientY-rc.top)/sc/MAPC;MD={type:'draw',tool:S.mapTool,mc,svg,sx:e.clientX,sy:e.clientY,gx:snapV(gx),gy:snapV(gy),moved:false,pid:e.pointerId};try{mc.setPointerCapture(e.pointerId);}catch(_){}return;}
   const rk=e.button===0&&e.target.closest('[data-rack]'),rh=e.button===0&&e.target.closest('[data-rowh]'),lb=e.button===0&&e.target.closest('[data-label]');
   let type,id,el;
   if(lr){type='lresize';id=lr.dataset.lresize;el=lr.closest('[data-label]');}
@@ -2650,16 +2872,21 @@ document.addEventListener('pointermove',e=>{
     let end=MD.start+MD.span+d/sc/C;const hit=MD.edges.find(v=>Math.abs(v-end)<0.6);end=hit!==undefined?hit:Math.round(end*2)/2;
     let f=Math.max(minF,(end-MD.start)/MD.span);MD.f=f;MD.snap=hit!==undefined;
     const gg={bays:MD.orig.map(o=>o.b),minX:MD.dir==='x'?MD.start:0,minY:MD.dir==='y'?MD.start:0};stretchRow(gg,MD.dir,f);
-    if(!MD.raf)MD.raf=requestAnimationFrame(()=>{if(!MD||MD.type!=='stretch')return;MD.raf=0;const P2=computePlan(cur());MD.mc.innerHTML=mapSVG(cur(),P2,{C:MAPC,pal:pal(),interactive:true});
+    if(!MD.raf)MD.raf=requestAnimationFrame(()=>{if(!MD||MD.type!=='stretch')return;MD.raf=0;const P2=computePlan(cur());(MD.mc.querySelector('.mapinner')||MD.mc).innerHTML=mapSVG(cur(),P2,{C:MAPC,pal:pal(),interactive:true});
       const h=MD.mc.querySelector(`[data-rstretch="${MD.id}"][data-dir="${MD.dir}"]`);if(h)h.classList.add('active');});
     return;}
-  if(MD.type==='lresize'){MD.moved=true;const l=cur().map.labels.find(x=>x.id===MD.id);if(!l)return;
-    const w=Math.max(1,Math.round(labelW(l)+dx/sc/C)),h=Math.max(1,Math.round((+l.h||1)+dy/sc/C));MD.nw=w;MD.nh=h;
-    const rc=MD.el.querySelector('rect'),tx=MD.el.querySelector('text');rc.setAttribute('width',w*C-2);rc.setAttribute('height',h*C-4);
-    tx.setAttribute('x',l.x*C+w*C/2);tx.setAttribute('y',l.y*C+h*C/2+(+tx.getAttribute('font-size'))*0.36);
-    const hd=MD.el.querySelector('[data-lresize]');const hz=+hd.getAttribute('width');hd.setAttribute('x',l.x*C+w*C-hz);hd.setAttribute('y',l.y*C+h*C-hz-1);return;}
+  const liveMap=()=>{if(MD.raf)return;MD.raf=requestAnimationFrame(()=>{if(!MD)return;MD.raf=0;const pp=cur();(MD.mc.querySelector('.mapinner')||MD.mc).innerHTML=mapSVG(pp,computePlan(pp),{C:MAPC,pal:pal(),interactive:true});if(MD.prev)MD.mc.querySelector('#shedmap').insertAdjacentHTML('beforeend',MD.prev);});};
+  if(MD.type==='lresize'){const l=cur().map.labels.find(x=>x.id===MD.id);if(!l)return;if(!MD.moved){MD.moved=true;MD.ow=labelW(l);MD.oh=+l.h||1;mapSnap(cur());}
+    const mn=S.mapSnap===false?0.5:1;l.w=Math.max(mn,snapV(MD.ow+dx/sc/C));l.h=Math.max(mn,snapV(MD.oh+dy/sc/C));MD.nw=l.w;MD.nh=l.h;liveMap();return;}
+  if(MD.type==='lend'){const l=cur().map.labels.find(x=>x.id===MD.id);if(!l)return;if(!MD.moved){if(Math.hypot(dx,dy)<3)return;MD.moved=true;mapSnap(cur());}
+    const nx=Math.max(0,snapV(MD.ox+dx/sc/C)),ny=Math.max(0,snapV(MD.oy+dy/sc/C));if(MD.end==='1'){l.x=nx;l.y=ny;}else{l.x2=nx;l.y2=ny;}liveMap();return;}
+  if(MD.type==='draw'){if(!MD.moved){if(Math.hypot(dx,dy)<4)return;MD.moved=true;}const gx=snapV(MD.gx+dx/sc/C),gy=snapV(MD.gy+dy/sc/C);MD.ex=gx;MD.ey=gy;
+    const ac=pal().accent;MD.prev=isLine({type:MD.tool})?`<line class="drawprev" x1="${MD.gx*C}" y1="${MD.gy*C}" x2="${gx*C}" y2="${gy*C}" stroke="${ac}" stroke-width="2" stroke-dasharray="6 4"/>`
+      :MD.tool==='ellipse'?`<ellipse class="drawprev" cx="${(MD.gx+gx)/2*C}" cy="${(MD.gy+gy)/2*C}" rx="${Math.abs(gx-MD.gx)/2*C}" ry="${Math.abs(gy-MD.gy)/2*C}" fill="none" stroke="${ac}" stroke-width="2" stroke-dasharray="6 4"/>`
+      :`<rect class="drawprev" x="${Math.min(MD.gx,gx)*C}" y="${Math.min(MD.gy,gy)*C}" width="${Math.abs(gx-MD.gx)*C}" height="${Math.abs(gy-MD.gy)*C}" fill="none" stroke="${ac}" stroke-width="2" stroke-dasharray="6 4"/>`;
+    const sv=MD.mc.querySelector('#shedmap');const old=sv&&sv.querySelector('.drawprev');if(old)old.remove();if(sv)sv.insertAdjacentHTML('beforeend',MD.prev);return;}
   if(!MD.moved){if(Math.hypot(dx,dy)<5)return;MD.moved=true;MD.el.classList.add('dragging');MD.el.style.pointerEvents='none';MD.svg.lastElementChild.appendChild(MD.el);}
-  const free=MD.type==='rack';
+  const free=MD.type==='rack'||(MD.type==='label'&&S.mapSnap===false);
   const tx=free?dx/sc:Math.round(dx/sc/C)*C,ty=free?dy/sc:Math.round(dy/sc/C)*C;
   MD.el.setAttribute('transform',`translate(${tx} ${ty})`);
   if(MD.type==='rack'){const t=document.elementFromPoint(e.clientX,e.clientY);const tg=t&&t.closest&&t.closest('#shedmap [data-rack]');
@@ -2669,18 +2896,25 @@ document.addEventListener('pointermove',e=>{
 function restoreStretch(d){(d.names||[]).forEach(([b,l,n])=>{if(l)b.letterFix=l;else delete b.letterFix;if(n)b.numMode=n;else delete b.numMode;});d.orig.forEach(o=>{const b=o.b;b.x=o.x;b.y=o.y;if(o.sw)b.sw=o.sw;else delete b.sw;if(o.sh)b.sh=o.sh;else delete b.sh;});}
 function endDrag(e,cancel){
   if(!MD||(e&&e.pointerId!==MD.pid))return;const d=MD;MD=null;const p=cur();
-  if(d.type==='pan'){d.mc.classList.remove('panning');if(!d.moved&&!cancel&&S.sel){S.sel=null;render();}return;}
+  if(d.type==='pan'){d.mc.classList.remove('panning');if(!d.moved&&!cancel&&S.sel){S.sel=null;S.selEdit=null;render();}return;}
   if(d.type==='stretch'){if(d.raf)cancelAnimationFrame(d.raf);const g0=groupOfBay(p,d.id);
     if(!d.moved||cancel){restoreStretch(d);render();return;}
     const clash=d.orig.some(o=>p.racks.some(x=>!d.ids.has(x.id)&&(overlap(x,o.b)||touching(x,o.b))));
     if(!clash)(d.names||[]).forEach(([b,l,n])=>{if(l)b.letterFix=l;else delete b.letterFix;if(n)b.numMode=n;else delete b.numMode;});
     if(clash){restoreStretch(d);render();toast('That would run into another row. Move the row to open space first, or stretch it less.');return;}
-    S.sel={type:'row',id:d.id};touch(p);render();const b=d.orig[0].b;
+    S.mapUndo=(S.mapUndo||[]).concat(d.snap0).slice(-60);S.mapRedo=[];S.sel={type:'row',id:d.id};touch(p);render();const b=d.orig[0].b;
     toast(`Each bay in this row is now ${+dw(b).toFixed(2)} × ${+dh(b).toFixed(2)} squares${d.snap?', lined up with the next row':''}.`);return;}
-  if(d.type==='lresize'){const l=p.map.labels.find(x=>x.id===d.id);if(l&&d.nw&&!cancel){l.w=clamp(d.nw,1,200);l.h=clamp(d.nh,1,200);touch(p);}render();return;}
-  if(!d.moved||d.ro){if(!cancel){S.sel={type:d.type,id:d.type==='row'?d.id:d.id};render();}return;}
+  if(d.raf)cancelAnimationFrame(d.raf);
+  if(d.type==='lresize'||d.type==='lend'){if(cancel&&d.moved&&S.mapUndo&&S.mapUndo.length)mapRestore(p,S.mapUndo.pop());else if(d.moved)touch(p);S.sel={type:'label',id:d.id};render();return;}
+  if(d.type==='draw'){if(cancel){render();return;}const t=d.tool;let l;const ex=d.moved?d.ex:undefined,ey=d.moved?d.ey:undefined;
+    if(isLine({type:t})){l={id:uid(),type:t,x:d.gx,y:d.gy,x2:d.moved?ex:d.gx+4,y2:d.moved?ey:d.gy};if(l.x===l.x2&&l.y===l.y2)l.x2+=4;}
+    else{const def={text:[6,2],label:[4,1],rect:[4,3],ellipse:[4,3],pallet:[5,3]}[t]||[4,2];let x=d.gx,y=d.gy,w=def[0],h=def[1];
+      if(d.moved){x=Math.min(d.gx,ex);y=Math.min(d.gy,ey);w=Math.max(S.mapSnap===false?0.5:1,Math.abs(ex-d.gx));h=Math.max(S.mapSnap===false?0.5:1,Math.abs(ey-d.gy));}
+      l={id:uid(),type:t,x,y,w,h,text:t==='text'?'Text':t==='label'?'Label':t==='pallet'?(pallets(p).length?'Pallet '+(pallets(p).length+1):'Temporary pallet'):''};}
+    mapSnap(p);p.map.labels.push(l);S.sel={type:'label',id:l.id};S.mapTool='select';if(!isLine(l)&&shType(l)!=='rect'&&shType(l)!=='ellipse')S.focusAfter='lb_text';touch(p);render();return;}
+  if(!d.moved||d.ro){if(!cancel){const ns={type:d.type,id:d.id};if(!S.sel||S.sel.type!==ns.type||S.sel.id!==ns.id)S.selEdit=null;S.sel=ns;render();}return;}
   if(cancel){render();return;}
-  const C=MAPC*mapScale(),fdx=(e.clientX-d.sx)/C,fdy=(e.clientY-d.sy)/C;const before=nameSnapshot(p);let msg='';
+  const C=MAPC*mapScale(),fdx=(e.clientX-d.sx)/C,fdy=(e.clientY-d.sy)/C;mapSnap(p);const before=nameSnapshot(p);let msg='';
   if(d.type==='rack'){const bay=p.racks.find(r=>r.id===d.id);
     if(d.target){swapRacks(p,d.id,d.target);msg='swap';}
     else if(bay){const spot=magnet(p,bay,bay.x+fdx,bay.y+fdy);const ox=bay.x,oy=bay.y;bay.x=Math.max(0,spot.x);bay.y=Math.max(1,spot.y);
@@ -2689,7 +2923,7 @@ function endDrag(e,cancel){
   else if(d.type==='row'){const g=groupOfBay(p,d.id);if(g){const dx=Math.round(fdx),dy=Math.round(fdy);const ids=new Set(g.bays.map(b=>b.id));
       const ok=g.bays.every(b=>b.x+dx>=0&&b.y+dy>=1&&!p.racks.some(o=>!ids.has(o.id)&&overlap(o,{x:b.x+dx,y:b.y+dy,orient:b.orient,sw:b.sw,sh:b.sh})));
       if(ok)g.bays.forEach(b=>{b.x+=dx;b.y+=dy;});else msg='overlap';}S.sel={type:'row',id:d.id};}
-  else if(d.type==='label'){const l=p.map.labels.find(x=>x.id===d.id);if(l){l.x=Math.max(0,l.x+Math.round(fdx));l.y=Math.max(0,l.y+Math.round(fdy));}S.sel={type:'label',id:d.id};}
+  else if(d.type==='label'){const l=p.map.labels.find(x=>x.id===d.id);if(l){const mx=snapV(fdx),my=snapV(fdy);const b=shapeBox(l);const ax=Math.max(-b.x,mx),ay=Math.max(-b.y,my);l.x+=ax;l.y+=ay;if(isLine(l)){l.x2+=ax;l.y2+=ay;}}S.sel={type:'label',id:d.id};}
   markUpdated(p,before);touch(p);render();
   const r=d.type==='rack'&&p.racks.find(x=>x.id===d.id);
   if(msg==='overlap')toast('That spot overlaps another bay. Drop it on top of a bay to swap, or next to one to join it.');
@@ -2712,6 +2946,18 @@ document.addEventListener('dragend',()=>{S.drag=null;document.querySelectorAll('
 addEventListener('beforeunload',e=>{if(draftDirty()){e.preventDefault();e.returnValue='';}});
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'&&draftOn()){e.preventDefault();if(draftDirty()){commitDraft(false);updateSaveState();}return;}
   if(e.key==='Escape'&&S.pop){S.pop=null;render();return;}
+  if(S.selEdit&&e.target.closest&&e.target.closest('.edfloat')){if(e.key==='Enter'&&e.target.tagName!=='TEXTAREA'){e.preventDefault();const bt=$('[data-act=sel-save]');if(bt)bt.click();return;}if(e.key==='Escape'){S.selEdit=null;render();return;}}
+  if(e.key==='Escape'&&S.pngAsk){S.pngAsk=false;render();return;}
+  if(e.key==='Escape'&&S.mapPop){S.mapPop=null;render();return;}
+  if(S.tab==='map'&&draftOn()&&!S.leaveAsk){const a=document.activeElement;const typing=a&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName);const p=cur();
+    if(e.key==='Escape'&&S.mapTool&&S.mapTool!=='select'){S.mapTool='select';render();return;}
+    if(!typing&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();const bt=$(e.shiftKey?'[data-act=map-redo]':'[data-act=map-undo]');if(bt&&!bt.disabled)bt.click();return;}
+    if(!typing&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();const bt=$('[data-act=map-redo]');if(bt&&!bt.disabled)bt.click();return;}
+    const sl=S.sel&&S.sel.type==='label'&&p?p.map.labels.find(x=>x.id===S.sel.id):null;
+    if(sl&&!typing){if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();const bt=$('.edtools [data-act=shape-del]');if(bt)bt.click();return;}
+      if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='d'){e.preventDefault();const bt=$('.edtools [data-act=shape-dup]');if(bt)bt.click();return;}
+      const mv={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+      if(mv){e.preventDefault();const st=e.shiftKey||S.mapSnap===false?0.25:1;mapSnap(p);const b=shapeBox(sl);const dx=Math.max(-b.x,mv[0]*st),dy=Math.max(-b.y,mv[1]*st);sl.x+=dx;sl.y+=dy;if(isLine(sl)){sl.x2+=dx;sl.y2+=dy;}touch(p);render();return;}}}
   if(e.key==='Enter'&&S.tab==='moves'&&!S.leaveAsk){const a=document.activeElement;if(!a||!/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(a.tagName)){const bt=$('#mmPlaced');if(bt){e.preventDefault();bt.click();return;}}}
   if(e.key==='Escape'&&S.leaveAsk){S.leaveAsk=false;render();return;}
   if(e.key==='Escape'&&(S.modal||S.expPrompt)){S.modal=null;S.expPrompt=null;render();return;}
