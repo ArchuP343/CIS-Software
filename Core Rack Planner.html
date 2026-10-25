@@ -2254,10 +2254,12 @@ function guessBayDims(imp,map){const h=imp.headerRow-1;if(h<0)return;const row=i
     cols.push({i,own:words(imp.sub&&!o?g:o),ctx:words(ctx)});}
   const isBay=t=>/ (bay|bays|rack|racks|shelf|shelves|slot|slots|compartment|cell|opening|space|storage) /.test(t);const isBox=t=>/ (box|boxes|tray|trays|core) /.test(t);
   const which=t=>/ (length|len|long|l) /.test(t)?'yl':/ (width|wide|w) /.test(t)?'yw':/ (height|high|h|clearance) /.test(t)?'yh':/ (depth|deep|d) /.test(t)?'yd':/ (size|sizes|dimension|dimensions|dims|lxwxh) /.test(t)?'ysize':'';
-  const found={};
+  /* several candidates (e.g. “Max rack size (m)” and “Bay size (mm)”): the bay or slot heading wins over the whole rack, and “max / overall” sizes lose */
+  const found={},score={};const rank=t=>(/ (bay|bays|slot|slots|shelf|shelves|compartment|cell|opening) /.test(t)?3:1)-(/ (max|maximum|overall|total|external|outside) /.test(t)?2:0);
   cols.forEach(c=>{if(used.has(c.i))return;const own=c.own,ctx=c.ctx;let bay=false;
     if(isBay(own)&&!isBox(own))bay=true;else if(!isBay(own)&&!isBox(own)&&isBay(ctx)&&!isBox(ctx))bay=true;if(!bay)return;
-    let k=which(own);if(!k&&!/ (size|sizes|dimension|dimensions|dims) /.test(own))k=which(ctx);if(!k||found[k]!==undefined)return;found[k]=c.i;});
+    let k=which(own);if(!k&&!/ (size|sizes|dimension|dimensions|dims) /.test(own))k=which(ctx);if(!k)return;
+    const sc=rank(isBay(own)?own:ctx);if(found[k]!==undefined&&score[k]>=sc)return;found[k]=c.i;score[k]=sc;});
   if(found.yd!==undefined&&found.yl===undefined)found.yl=found.yd;
   ['yl','yw','yh','ysize'].forEach(k=>{if(!(map[k]>=0)&&found[k]!==undefined&&!used.has(found[k])){map[k]=found[k];used.add(found[k]);}});}
 /* the unit a size column is in: mm unless the heading or the numbers say metres or centimetres */
