@@ -250,6 +250,7 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 .rowgroup{display:flex;flex-direction:column;gap:8px;padding-right:16px;border-right:1px dashed var(--line);flex:0 0 auto}
 .rowgroup:last-child{border-right:0;padding-right:0}
 .printhead,.printnotes{display:none}
+.symmenu .menu-pop{left:0;right:auto;min-width:190px}.symmenu .menu-pop button{display:flex;align-items:center;gap:10px}.symmenu>summary::after{display:none}
 .modal .savewarn{width:min(520px,100%);display:flex;flex-direction:column;gap:12px;border-top:6px solid var(--warn)}
 .swhead{display:flex;align-items:center;gap:12px}.swhead h2{margin:0}.swicon{display:grid;place-items:center;width:46px;height:46px;flex:none;border-radius:12px;background:var(--warn-soft);color:var(--warn)}
 .savewarn p{margin:0}.savewarn ul{margin:0;padding:12px 12px 12px 32px;border-radius:10px;background:var(--surface-2);display:flex;flex-direction:column;gap:6px;font-size:1rem}
@@ -267,7 +268,8 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 tr.flashrow td{background:var(--accent-soft)!important;transition:background .4s}
 .edfloat{position:absolute;top:14px;right:14px;z-index:6;width:min(320px,calc(100% - 28px));max-height:calc(100% - 28px);overflow:auto;padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 34px rgba(10,31,46,.18);animation:edIn .16s ease-out}
 .edfloat h2{font-size:1.1rem;margin:0}.edfloat .edclose{position:absolute;top:8px;right:8px}
-.edhead{display:flex;flex-direction:column;gap:2px;padding-right:30px}.edname{display:flex;align-items:center;gap:6px}.edpencil{width:28px;height:28px;padding:0;min-width:0;color:var(--ink);opacity:.75}.edpencil:hover{opacity:1;background:var(--surface-2)}.edpencil.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}.edpencil.on svg{stroke:var(--accent)}
+.edhead{display:flex;flex-direction:column;gap:2px;padding-right:30px}.edname{display:flex;align-items:center;gap:6px}.edpencil{width:28px;height:28px;padding:0;min-width:0;color:var(--ink);opacity:.75}.edpencil svg{width:16px;height:16px;flex:none}.edfloat button.small svg{width:15px;height:15px;flex:none;vertical-align:-3px}
+.edpencil:hover{opacity:1;background:var(--surface-2)}.edpencil.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}.edpencil.on svg{stroke:var(--accent)}
 .kvs{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin:0}.kv dt{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.kv dd{margin:1px 0 0;font-size:.92rem}
 .edholes{margin:0;padding-left:16px;max-height:180px;overflow:auto}.edsave{margin-top:4px;padding-top:10px;border-top:1px solid var(--line)}
 .edfloat .formgrid{gap:8px}.edfloat .row{gap:6px}
@@ -513,7 +515,9 @@ tr.hit td{background:var(--accent-soft)}
 'use strict';
 const KEY='coreRackPlanner.v1';
 const RW=3,RL=4,HW=4,HL=2,AISLE=2,SNAP=1.6,MAPC=26;
-const isH=b=>!!b&&b.orient==='h';const baseW=b=>isH(b)?HW:RW,baseH=b=>isH(b)?HL:RL;const dw=b=>+b.sw>0?+b.sw:baseW(b),dh=b=>+b.sh>0?+b.sh:baseH(b);
+const isH=b=>!!b&&b.orient==='h';
+/* a row runs across the page (h) or down it (v). The bays in it are upright or sideways (isH) independently; older plans tie the two together. */
+const rowH=b=>!!b&&(b.dir?b.dir==='h':isH(b));const baseW=b=>isH(b)?HW:RW,baseH=b=>isH(b)?HL:RL;const dw=b=>+b.sw>0?+b.sw:baseW(b),dh=b=>+b.sh>0?+b.sh:baseH(b);
 const EPS=1e-3,near=(a,b)=>Math.abs(a-b)<EPS,r4=v=>Math.round(v*1e4)/1e4;
 /* order of bays inside a row: sequential runs along a line first; sideways rows swap the axes */
 const bayCmp=(horiz,across)=>((horiz?!across:across)?(a,b)=>a.y-b.y||a.x-b.x:(a,b)=>a.x-b.x||a.y-b.y);
@@ -699,7 +703,7 @@ function migrateRecord(r){
 function normalisePlan(p){const d=defaultsPlan();p.setup=Object.assign(d.setup,p.setup||{});p.options=Object.assign(d.options,p.options||{});
   const hadXY=(p.racks||[]).every(r=>typeof r.x==='number'&&typeof r.y==='number');
   p.racks=(p.racks||[]).map(r=>({id:r.id||uid(),name:r.name||'',rows:+r.rows||0,blocked:Array.isArray(r.blocked)?r.blocked:parseRows(r.blocked),x:+r.x||0,y:+r.y||0,
-    locked:!!r.locked,fixed:r.fixed||r.lock||{},slotLocks:r.slotLocks||{},hold:r.hold||{},...(r.letterFix?{letterFix:r.letterFix}:{}),...(r.numMode?{numMode:r.numMode}:{}),...(r.orient==='h'?{orient:'h'}:{}),...(r.dim?{dim:r.dim}:{}),...(+r.sw>0?{sw:+r.sw}:{}),...(+r.sh>0?{sh:+r.sh}:{})}));
+    locked:!!r.locked,fixed:r.fixed||r.lock||{},slotLocks:r.slotLocks||{},hold:r.hold||{},...(r.letterFix?{letterFix:r.letterFix}:{}),...(r.numMode?{numMode:r.numMode}:{}),...(r.orient==='h'?{orient:'h'}:{}),...(r.dir==='h'||r.dir==='v'?{dir:r.dir}:{}),...(r.posLock?{posLock:true}:{}),...(r.dim?{dim:r.dim}:{}),...(+r.sw>0?{sw:+r.sw}:{}),...(+r.sh>0?{sh:+r.sh}:{})}));
   if(!hadXY||p.layout){ // old row-based layout → bay positions
     const rows=(p.layout&&Array.isArray(p.layout.rows))?p.layout.rows:[{x:2,y:2,width:1,rackIds:p.racks.map(r=>r.id)}];const byId=new Map(p.racks.map(r=>[r.id,r]));
     rows.forEach(row=>{const n=row.rackIds.length,cols=row.width===2?2:1,len=Math.max(1,Math.ceil(n/cols));row.rackIds.forEach((id,k)=>{const r=byId.get(id);if(!r)return;const col=cols===2&&k>=len?1:0;r.x=row.x+col*RW;r.y=row.y+(col?k-len:k)*RL;});});
@@ -800,14 +804,14 @@ const fname=f=>f===''?'(no feature)':f;
 const cleanLetter=L=>(String(L||'A').toUpperCase().replace(/[^A-Z]/g,''))||'A';
 
 /* ---------- layout: bays placed on a grid; touching bays form a row ---------- */
-const touching=(a,b)=>isH(a)===isH(b)&&((((near(a.x+dw(a),b.x)||near(b.x+dw(b),a.x))&&a.y<b.y+dh(b)-EPS&&b.y<a.y+dh(a)-EPS))||((near(a.y+dh(a),b.y)||near(b.y+dh(b),a.y))&&a.x<b.x+dw(b)-EPS&&b.x<a.x+dw(a)-EPS));
+const touching=(a,b)=>isH(a)===isH(b)&&rowH(a)===rowH(b)&&((((near(a.x+dw(a),b.x)||near(b.x+dw(b),a.x))&&a.y<b.y+dh(b)-EPS&&b.y<a.y+dh(a)-EPS))||((near(a.y+dh(a),b.y)||near(b.y+dh(b),a.y))&&a.x<b.x+dw(b)-EPS&&b.x<a.x+dw(a)-EPS));
 const overlap=(a,b)=>a.x<b.x+dw(b)-EPS&&b.x<a.x+dw(a)-EPS&&a.y<b.y+dh(b)-EPS&&b.y<a.y+dh(a)-EPS;
 function rowGroups(p){
   const bays=p.racks;const parent=bays.map((_,i)=>i);const find=i=>parent[i]===i?i:(parent[i]=find(parent[i]));
   for(let i=0;i<bays.length;i++)for(let j=i+1;j<bays.length;j++)if(touching(bays[i],bays[j])){const a=find(i),b=find(j);if(a!==b)parent[a]=b;}
   const m=new Map();bays.forEach((b,i)=>{const k=find(i);if(!m.has(k))m.set(k,[]);m.get(k).push(b);});
   const across=p.setup&&p.setup.numbering==='across';
-  const groups=[...m.values()].map(list=>{const horiz=isH(list[0]);list.sort(bayCmp(horiz,across));const minX=Math.min(...list.map(b=>b.x)),minY=Math.min(...list.map(b=>b.y)),maxX=Math.max(...list.map(b=>b.x+dw(b))),maxY=Math.max(...list.map(b=>b.y+dh(b)));return{bays:list,minX,minY,maxX,maxY,horiz};});
+  const groups=[...m.values()].map(list=>{const horiz=rowH(list[0]);list.sort(bayCmp(horiz,across));const minX=Math.min(...list.map(b=>b.x)),minY=Math.min(...list.map(b=>b.y)),maxX=Math.max(...list.map(b=>b.x+dw(b))),maxY=Math.max(...list.map(b=>b.y+dh(b)));return{bays:list,minX,minY,maxX,maxY,horiz};});
   groups.sort((a,b)=>a.minX-b.minX||a.minY-b.minY);return groups;}
 function deriveNames(p){
   const first=cleanLetter(p.setup.letter),start=int(p.setup.startNum,1);
@@ -825,7 +829,9 @@ function deriveNames(p){
 const letterNum=l=>{let n=0;for(const ch of String(l))n=n*26+(ch.charCodeAt(0)-64);return n;};
 /* where bay k of n sits in a row: line (0 or 1 when back to back) and position along the line */
 function rowSpot(k,n,lines,across){if(lines<2)return{line:0,pos:k};if(across)return{line:k%2,pos:Math.floor(k/2)};const len=Math.ceil(n/2);return k>=len?{line:1,pos:k-len}:{line:0,pos:k};}
-function placeRow(list,ax,ay,horiz,lines,across){list.forEach((b,k)=>{delete b.sw;delete b.sh;const q=rowSpot(k,list.length,lines,across);if(horiz){b.orient='h';b.x=ax+q.pos*HW;b.y=ay+q.line*HL;}else{delete b.orient;b.x=ax+q.line*RW;b.y=ay+q.pos*RL;}});}
+function placeRow(list,ax,ay,horiz,lines,across,side){if(side===undefined)side=horiz;const bw=side?HW:RW,bh=side?HL:RL;
+  list.forEach((b,k)=>{delete b.sw;delete b.sh;const q=rowSpot(k,list.length,lines,across);if(side)b.orient='h';else delete b.orient;b.dir=horiz?'h':'v';
+    if(horiz){b.x=ax+q.pos*bw;b.y=ay+q.line*bh;}else{b.x=ax+q.line*bw;b.y=ay+q.pos*bh;}});}
 function autoLayout(bays,R,b2b,orient,across){
   R=clamp(R|0,1,Math.max(1,bays.length));const per=Math.ceil(bays.length/R)||1;const horiz=orient==='h';let x=2,y=2;
   for(let i=0;i<R;i++){const list=bays.slice(i*per,(i+1)*per);if(!list.length)break;const cols=b2b&&list.length>1?2:1;
@@ -835,11 +841,11 @@ function freeAt(p,x,y,except,orient){const t={x,y,orient};return x>=0&&y>=1&&!p.
 function appendBayToRow(p,bay,group){
   if(!group){const gs=rowGroups(p);const maxX=gs.length?Math.max(...gs.map(g=>g.maxX)):0;bay.x=gs.length?maxX+AISLE:2;bay.y=2;return;}
   const b0=group.bays[0];delete bay.sw;delete bay.sh;if(b0.sw)bay.sw=b0.sw;if(b0.sh)bay.sh=b0.sh;
-  const free=(x,y)=>{const t={x,y,orient:group.horiz?'h':undefined,sw:bay.sw,sh:bay.sh};return x>=0&&y>=1&&!p.racks.some(o=>overlap(t,o));};
-  if(group.horiz){bay.orient='h';const lines=new Map();group.bays.forEach(b=>{if(!lines.has(b.y))lines.set(b.y,[]);lines.get(b.y).push(b);});
+  if(b0.orient)bay.orient=b0.orient;else delete bay.orient;bay.dir=group.horiz?'h':'v';
+  const free=(x,y)=>{const t={x,y,orient:bay.orient,sw:bay.sw,sh:bay.sh};return x>=0&&y>=1&&!p.racks.some(o=>overlap(t,o));};
+  if(group.horiz){const lines=new Map();group.bays.forEach(b=>{if(!lines.has(b.y))lines.set(b.y,[]);lines.get(b.y).push(b);});
     const ln=[...lines.entries()].sort((a,b)=>a[1].length-b[1].length||a[0]-b[0])[0];const st=dw(b0);
     let x=r4(Math.max(...ln[1].map(b=>b.x))+st);while(!free(x,ln[0])&&x<2000)x=r4(x+st);bay.x=x;bay.y=ln[0];return;}
-  delete bay.orient;
   const cols=new Map();group.bays.forEach(b=>{if(!cols.has(b.x))cols.set(b.x,[]);cols.get(b.x).push(b);});
   const col=[...cols.entries()].sort((a,b)=>a[1].length-b[1].length||a[0]-b[0])[0];const st=dh(b0);
   let y=r4(Math.max(...col[1].map(b=>b.y))+st);while(!free(col[0],y)&&y<2000)y=r4(y+st);bay.x=col[0];bay.y=y;}
@@ -852,52 +858,95 @@ function magnet(p,bay,fx,fy){
 function stretchRow(g,dir,f){const m=dir==='x'?g.minX:g.minY;g.bays.forEach(b=>{const sn=v=>near(v,Math.round(v))?Math.round(v):r4(v);if(dir==='x'){const w=dw(b);b.x=sn(m+(b.x-m)*f);b.sw=sn(w*f);}else{const h=dh(b);b.y=sn(m+(b.y-m)*f);b.sh=sn(h*f);}
   if(near(b.sw||0,baseW(b)))delete b.sw;if(near(b.sh||0,baseH(b)))delete b.sh;});}
 function rowStretched(g){return g.bays.some(b=>b.sw||b.sh);}
-function flipRow(p,g){
-  const horiz=!g.horiz;const across=(g.mode||p.setup.numbering)==='across';
+/* turn a row: horiz = the row runs across the page, side = its bays are sideways. Leaving them out flips both, as before. */
+function flipRow(p,g,horiz,side){
+  if(horiz===undefined)horiz=!g.horiz;if(side===undefined)side=horiz;const across=(g.mode||p.setup.numbering)==='across';
   const lines=Math.min(2,new Set(g.bays.map(b=>g.horiz?b.y:b.x)).size);const ids=new Set(g.bays.map(b=>b.id));
-  const list=g.bays.slice();const save=list.map(b=>({x:b.x,y:b.y,o:b.orient}));
+  const list=g.bays.slice();const save=list.map(b=>({x:b.x,y:b.y,o:b.orient,d:b.dir,sw:b.sw,sh:b.sh}));
   const fits=()=>list.every(b=>b.x>=0&&b.y>=1&&!p.racks.some(o=>!ids.has(o.id)&&overlap(o,b)));
-  placeRow(list,g.minX,g.minY,horiz,lines,across);if(fits())return 'ok';
-  if(g.minY>2){placeRow(list,g.minX,2,horiz,lines,across);if(fits())return 'ok';}
+  placeRow(list,g.minX,g.minY,horiz,lines,across,side);if(fits())return 'ok';
+  if(g.minY>2){placeRow(list,g.minX,2,horiz,lines,across,side);if(fits())return 'ok';}
   const others=p.racks.filter(o=>!ids.has(o.id));const bottom=others.length?Math.max(...others.map(o=>o.y+dh(o))):1;
-  placeRow(list,Math.max(1,g.minX),bottom+AISLE,horiz,lines,across);if(fits())return 'moved';
-  list.forEach((b,i)=>{b.x=save[i].x;b.y=save[i].y;if(save[i].o)b.orient=save[i].o;else delete b.orient;});return 'fail';}
+  placeRow(list,Math.max(1,g.minX),bottom+AISLE,horiz,lines,across,side);if(fits())return 'moved';
+  list.forEach((b,i)=>{const o=save[i];b.x=o.x;b.y=o.y;['orient','dir','sw','sh'].forEach((k,j)=>{const v=[o.o,o.d,o.sw,o.sh][j];if(v)b[k]=v;else delete b[k];});});return 'fail';}
 function nameSnapshot(p){deriveNames(p);return new Map(p.racks.map(r=>[r.id,r.name]));}
 function markUpdated(p,before){deriveNames(p);p.racks.forEach(r=>{const old=before.get(r.id);if(old===undefined||old===r.name)return;
   const orig=S.updated[r.id]!==undefined?S.updated[r.id]:old;if(orig===r.name)delete S.updated[r.id];else S.updated[r.id]=orig;});}
 /* ---------- map shapes (labels, boxes, lines, text, pallets) ---------- */
-const SHAPES={select:'Select',text:'Text',label:'Label',rect:'Rectangle',ellipse:'Ellipse',line:'Line',arrow:'Arrow',pallet:'Pallet'};
-const shType=l=>l.type||'label';const isLine=l=>{const t=shType(l);return t==='line'||t==='arrow';};
+const SHAPES={select:'Select',text:'Text',label:'Label',rect:'Rectangle',ellipse:'Ellipse',line:'Line',arrow:'Arrow',pallet:'Pallet',dim:'Dimension',wall:'Wall',door:'Door',rdoor:'Roller door',window:'Window',column:'Column',north:'North arrow'};
+const SYMBOLS=['door','rdoor','window','wall','column','north'];
+const shType=l=>l.type||'label';const isLine=l=>['line','arrow','dim','wall'].includes(shType(l));
+/* drawing symbols that are drawn as a picture in their box rather than a filled shape */
+const isPic=l=>['door','rdoor','window','north'].includes(shType(l));
+const FILL_PATS=[['','Solid'],['lines','Diagonal lines'],['lines2','Diagonal lines, other way'],['cross','Cross-hatch'],['horiz','Horizontal lines'],['vert','Vertical lines'],['grid','Grid'],['dots','Dots']];
+function patDef(id,pat,col,C){const s=Math.max(6,Math.round(C*0.32)),w=Math.max(1,s/7);const h=`<path d="M0 ${s/2}H${s}" stroke="${col}" stroke-width="${w}"/>`,v=`<path d="M${s/2} 0V${s}" stroke="${col}" stroke-width="${w}"/>`;
+  const body={lines:h,lines2:h,horiz:h,vert:v,cross:h+v,grid:h+v,dots:`<circle cx="${s/2}" cy="${s/2}" r="${Math.max(1,s/6)}" fill="${col}"/>`}[pat]||h;const rot={lines:-45,lines2:45,cross:45}[pat];
+  return `<pattern id="${id}" width="${s}" height="${s}" patternUnits="userSpaceOnUse"${rot?` patternTransform="rotate(${rot})"`:''}>${body}</pattern>`;}
+/* metres per grid square, for dimension labels */
+const mapScaleM=p=>{const v=parseFloat(p&&p.map&&p.map.scale);return v>0?v:0;};
+function dimLabel(p,l){if(String(l.text||'').trim())return l.text;const m=mapScaleM(p);if(!m)return'';const d=Math.hypot(l.x2-l.x,l.y2-l.y)*m;return (d>=10?d.toFixed(1):d.toFixed(2)).replace(/\.?0+$/,'')+' m';}
+function lockBadge(x,y,pl){return `<g pointer-events="none"><circle cx="${x}" cy="${y}" r="9" fill="${pl.ink}" stroke="${pl.surface}" stroke-width="1.5"/><path d="M${x-3} ${y-1}v-2.2a3 3 0 0 1 6 0V${y-1}" stroke="${pl.surface}" stroke-width="1.5" fill="none"/><rect x="${x-4.2}" y="${y-1}" width="8.4" height="5.6" rx="1.2" fill="${pl.surface}"/></g>`;}
 const shLayer=l=>l.layer||(['rect','ellipse'].includes(shType(l))?'back':'front');
 const snapV=v=>S.mapSnap===false?Math.round(v*4)/4:Math.round(v);
 function shapeBox(l){if(isLine(l))return{x:Math.min(l.x,l.x2),y:Math.min(l.y,l.y2),w:Math.abs(l.x2-l.x),h:Math.abs(l.y2-l.y)};return{x:l.x,y:l.y,w:labelW(l),h:+l.h||1};}
-function renderShape(p,l,C,pl,sel,hs,o){const t=shType(l);const lsel=!!(sel&&sel.type==='label'&&sel.id===l.id);const ro=isReadOnly()||!o.interactive;
+function renderShape(p,l,C,pl,sel,hs,o){const t=shType(l);const ms=o.ms||new Set();const lone=!!(sel&&sel.type==='label'&&sel.id===l.id);const lsel=lone||ms.has('label:'+l.id);const ro=isReadOnly()||!o.interactive;const handles=lone&&!ro&&!l.locked;
   const dash=d=>d==='dashed'?'8 5':d==='dotted'?'2 4':'';const op=l.op!==undefined&&l.op!==''?+l.op:1;
-  let g=`<g data-label="${l.id}" ${o.interactive?'style="cursor:move"':''} ${op<1?`opacity="${op}"`:''}>`;
-  if(isLine(l)){const x1=l.x*C,y1=l.y*C,x2=l.x2*C,y2=l.y2*C;const col=l.stroke||pl.ink,sw=l.sw!==undefined?+l.sw:2.5;
-    g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="14"/><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${sw}" stroke-linecap="round" ${dash(l.dash)?`stroke-dasharray="${dash(l.dash)}"`:''}/>`;
-    if(t==='arrow'){const ang=Math.atan2(y2-y1,x2-x1),hl=Math.max(10,sw*4);const p1=[x2-hl*Math.cos(ang-0.42),y2-hl*Math.sin(ang-0.42)],p2=[x2-hl*Math.cos(ang+0.42),y2-hl*Math.sin(ang+0.42)];g+=`<polygon points="${x2},${y2} ${p1} ${p2}" fill="${col}"/>`;}
-    if(l.text)g+=boxText(l.text,Math.min(x1,x2),Math.min(y1,y2)-C*1.2,Math.max(Math.abs(x2-x1),C*4),C,Math.max(9,C*0.42*(+l.size||1)),`font-weight="${l.bold===false?400:700}" fill="${l.tc||col}"`);
-    if(lsel&&!ro)g+=[[x1,y1,1],[x2,y2,2]].map(([x,y,e])=>`<circle data-lend="${l.id}" data-end="${e}" cx="${x}" cy="${y}" r="${Math.max(6,hs/2)}" fill="${pl.accent}" stroke="${pl.surface}" stroke-width="2" style="cursor:crosshair"><title>Drag to move this end</title></circle>`).join('');
+  let g=`<g data-label="${l.id}" ${o.interactive?`style="cursor:${l.locked?'default':'move'}"`:''} ${op<1?`opacity="${op}"`:''}>`;
+  const badge=o.interactive&&!o.export&&l.locked;
+  if(isLine(l)){const x1=l.x*C,y1=l.y*C,x2=l.x2*C,y2=l.y2*C;const col=l.stroke||pl.ink,sw=l.sw!==undefined&&l.sw!==''?+l.sw:(t==='wall'?6:t==='dim'?1.5:2.5);
+    g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="transparent" stroke-width="14"/>`;
+    if(t==='dim'){/* dimension line: extension lines, arrows or ticks at both ends, the measurement written along it */
+      const ang=Math.atan2(y2-y1,x2-x1),nx=-Math.sin(ang),ny=Math.cos(ang),e=C*0.45,ux=Math.cos(ang),uy=Math.sin(ang);
+      g+=[[x1,y1],[x2,y2]].map(([x,y])=>`<line x1="${x+nx*e}" y1="${y+ny*e}" x2="${x-nx*e}" y2="${y-ny*e}" stroke="${col}" stroke-width="${Math.max(1,sw*0.8)}"/>`).join('');
+      g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${sw}" ${dash(l.dash)?`stroke-dasharray="${dash(l.dash)}"`:''}/>`;
+      if(l.ends==='ticks'){const k=C*0.28;g+=[[x1,y1],[x2,y2]].map(([x,y])=>`<line x1="${x-(ux+nx)*k}" y1="${y-(uy+ny)*k}" x2="${x+(ux+nx)*k}" y2="${y+(uy+ny)*k}" stroke="${col}" stroke-width="${sw*1.6}" stroke-linecap="round"/>`).join('');}
+      else{const hl=Math.max(8,sw*5),hw=hl*0.38;g+=[[x1,y1,1],[x2,y2,-1]].map(([x,y,s])=>`<polygon points="${x},${y} ${x+s*ux*hl+nx*hw},${y+s*uy*hl+ny*hw} ${x+s*ux*hl-nx*hw},${y+s*uy*hl-ny*hw}" fill="${col}"/>`).join('');}
+      const lab=dimLabel(p,l);if(lab){let deg=ang*180/Math.PI;if(deg>90)deg-=180;if(deg<=-90)deg+=180;const mx=(x1+x2)/2,my=(y1+y2)/2,fs=Math.max(9,C*0.46*(+l.size||1));const r=deg*Math.PI/180;const ox=Math.sin(r)*fs*0.75,oy=-Math.cos(r)*fs*0.75;
+        g+=`<text x="${mx+ox}" y="${my+oy}" transform="rotate(${deg} ${mx+ox} ${my+oy})" text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="${l.bold===false?400:700}" fill="${l.tc||col}" paint-order="stroke" stroke="${pl.bg}" stroke-width="4" stroke-linejoin="round">${esc(lab)}</text>`;}}
+    else{g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}" stroke-width="${sw}" stroke-linecap="${t==='wall'?'square':'round'}" ${dash(l.dash)?`stroke-dasharray="${dash(l.dash)}"`:''}/>`;
+      if(t==='arrow'){const ang=Math.atan2(y2-y1,x2-x1),hl=Math.max(10,sw*4);const p1=[x2-hl*Math.cos(ang-0.42),y2-hl*Math.sin(ang-0.42)],p2=[x2-hl*Math.cos(ang+0.42),y2-hl*Math.sin(ang+0.42)];g+=`<polygon points="${x2},${y2} ${p1} ${p2}" fill="${col}"/>`;}
+      if(l.text)g+=boxText(l.text,Math.min(x1,x2),Math.min(y1,y2)-C*1.2,Math.max(Math.abs(x2-x1),C*4),C,Math.max(9,C*0.42*(+l.size||1)),`font-weight="${l.bold===false?400:700}" fill="${l.tc||col}"`);}
+    if(lsel)g+=`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${pl.accent}" stroke-width="${sw+6}" stroke-opacity="0.25" stroke-linecap="round" pointer-events="none"/>`;
+    if(handles)g+=[[x1,y1,1],[x2,y2,2]].map(([x,y,e])=>`<circle data-lend="${l.id}" data-end="${e}" cx="${x}" cy="${y}" r="${Math.max(6,hs/2)}" fill="${pl.accent}" stroke="${pl.surface}" stroke-width="2" style="cursor:crosshair"><title>Drag to move this end</title></circle>`).join('');
+    if(badge)g+=lockBadge(Math.max(x1,x2),Math.min(y1,y2)-8,pl);
     return g+'</g>';}
-  const x=l.x*C,y=l.y*C,w=labelW(l)*C,h=(+l.h||1)*C;const r=l.r!==undefined&&l.r!==''?+l.r:(t==='ellipse'?0:t==='rect'?2:6);
-  const defFill={label:pl.surface,rect:'none',ellipse:'none',text:'none',pallet:pl.surface}[t];const fill=l.color||defFill;
-  const defStroke={label:pl.frame,rect:pl.frame,ellipse:pl.frame,text:'none',pallet:pl.warn}[t];const stroke=l.stroke||(t==='label'&&l.color?'none':defStroke);
-  const sw=l.sw!==undefined&&l.sw!==''?+l.sw:(t==='pallet'?2:t==='label'?1:1.5);const ds=l.dash||(t==='label'&&!l.color||t==='pallet'?'dashed':'solid');
-  const tc=l.tc||(fill&&fill!=='none'&&fill!==pl.surface?inkOn(fill):t==='pallet'?pl.warn:pl.ink);const fs=Math.max(9,C*0.46*(+l.size||1));
+  const x=l.x*C,y=l.y*C,w=labelW(l)*C,h=(+l.h||1)*C;const r=l.r!==undefined&&l.r!==''?+l.r:(t==='ellipse'||t==='column'?0:t==='rect'?2:6);
+  const defFill={label:pl.surface,rect:'none',ellipse:'none',text:'none',pallet:pl.surface,column:pl.ink}[t]||'none';const fill0=l.color||defFill;
+  const defStroke={label:pl.frame,rect:pl.frame,ellipse:pl.frame,text:'none',pallet:pl.warn,column:pl.ink}[t]||pl.ink;const stroke=l.stroke||(t==='label'&&l.color?'none':defStroke);
+  const sw=l.sw!==undefined&&l.sw!==''?+l.sw:(t==='pallet'||isPic(l)?2:t==='label'?1:1.5);const ds=l.dash||(t==='label'&&!l.color||t==='pallet'?'dashed':'solid');
+  const pat=!isPic(l)&&FILL_PATS.some(x=>x[0]&&x[0]===l.pat)?l.pat:'';const pid='pt'+l.id+(o.export?'x':'')+C;
+  const fill=pat?`url(#${pid})`:fill0;if(pat)g+=`<defs>${patDef(pid,pat,fill0&&fill0!=='none'&&fill0!==pl.surface?fill0:(stroke!=='none'?stroke:pl.ink),C)}</defs>`;
+  const tc=l.tc||(!pat&&fill0&&fill0!=='none'&&fill0!==pl.surface?inkOn(fill0):t==='pallet'?pl.warn:pl.ink);const fs=Math.max(9,C*0.46*(+l.size||1));
   const sAttr=`stroke="${stroke}" stroke-width="${stroke==='none'?0:sw}" ${dash(ds)&&stroke!=='none'?`stroke-dasharray="${dash(ds)}"`:''}`;
-  if(t==='ellipse')g+=`<ellipse cx="${x+w/2}" cy="${y+h/2}" rx="${Math.max(1,w/2-1)}" ry="${Math.max(1,h/2-1)}" fill="${fill}" ${sAttr}/>`;
-  else g+=`<rect x="${x+1}" y="${y+1}" width="${Math.max(1,w-2)}" height="${Math.max(1,h-2)}" rx="${r}" fill="${fill==='none'?'transparent':fill}" ${sAttr}/>`;
-  if(t==='pallet'){const n=palletItems(p,l.id).length;const body=`${l.text||'Pallet'}\n${n} box${n===1?'':'es'}${l.kept?' · stored':''}`;g+=boxText(body,x,y,w,h,fs,`font-weight="700" fill="${tc}"`,l.align);}
-  else g+=boxText(l.text,x,y,w,h,fs,`font-weight="${l.bold===false?400:700}" fill="${tc}"`,l.align);
+  if(isPic(l)){/* symbols are drawn in their own frame: turned in 90° steps (north arrow: any angle) and mirrored */
+    const ang=((+l.ang||0)%360+360)%360,cx=x+w/2,cy=y+h/2,swap=t!=='north'&&Math.round(ang/90)%2===1;const W=swap?h:w,H=swap?w:h,X=cx-W/2,Y=cy-H/2;const ink=stroke==='none'?pl.ink:stroke;
+    g+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="transparent"/><g transform="rotate(${ang} ${cx} ${cy})${l.fx?` translate(${cx} 0) scale(-1 1) translate(${-cx} 0)`:''}">`;
+    if(t==='door'){const thin=Math.max(1,sw*0.55),da='5 4';
+      if(l.variant==='double'){const hw=W/2;g+=`<line x1="${X}" y1="${Y+H}" x2="${X}" y2="${Y}" stroke="${ink}" stroke-width="${sw*1.3}" stroke-linecap="round"/><line x1="${X+W}" y1="${Y+H}" x2="${X+W}" y2="${Y}" stroke="${ink}" stroke-width="${sw*1.3}" stroke-linecap="round"/>
+        <path d="M${X} ${Y}A${hw} ${H} 0 0 1 ${X+hw} ${Y+H}M${X+W} ${Y}A${hw} ${H} 0 0 0 ${X+hw} ${Y+H}" fill="none" stroke="${ink}" stroke-width="${thin}" stroke-dasharray="${da}"/>`;}
+      else g+=`<line x1="${X}" y1="${Y+H}" x2="${X}" y2="${Y}" stroke="${ink}" stroke-width="${sw*1.3}" stroke-linecap="round"/><path d="M${X} ${Y}A${W} ${H} 0 0 1 ${X+W} ${Y+H}" fill="none" stroke="${ink}" stroke-width="${thin}" stroke-dasharray="${da}"/>`;
+      g+=`<line x1="${X}" y1="${Y+H}" x2="${X+W}" y2="${Y+H}" stroke="${ink}" stroke-width="${thin}"/>`;}
+    else if(t==='rdoor'){const pw=Math.min(C*0.3,W*0.15);g+=`<rect x="${X}" y="${Y}" width="${pw}" height="${H}" fill="${ink}"/><rect x="${X+W-pw}" y="${Y}" width="${pw}" height="${H}" fill="${ink}"/><line x1="${X+pw}" y1="${Y+H/2}" x2="${X+W-pw}" y2="${Y+H/2}" stroke="${ink}" stroke-width="${sw}" stroke-dasharray="7 4"/>`;}
+    else if(t==='window'){g+=`<rect x="${X+1}" y="${Y+1}" width="${Math.max(1,W-2)}" height="${Math.max(1,H-2)}" fill="${pl.surface}" stroke="${ink}" stroke-width="${sw}"/><line x1="${X}" y1="${Y+H/2}" x2="${X+W}" y2="${Y+H/2}" stroke="${ink}" stroke-width="${Math.max(1,sw*0.6)}"/>`;}
+    else if(t==='north'){const rr=Math.max(4,Math.min(W,H)/2-sw);g+=`<circle cx="${cx}" cy="${cy}" r="${rr}" fill="${pl.surface}" stroke="${ink}" stroke-width="${sw}"/>
+        <polygon points="${cx},${cy-rr*0.45} ${cx-rr*0.32},${cy+rr*0.72} ${cx},${cy+rr*0.42}" fill="${ink}"/><polygon points="${cx},${cy-rr*0.45} ${cx+rr*0.32},${cy+rr*0.72} ${cx},${cy+rr*0.42}" fill="none" stroke="${ink}" stroke-width="${Math.max(1,sw*0.6)}" stroke-linejoin="round"/>
+        <text x="${cx}" y="${cy-rr*0.58}" text-anchor="middle" font-size="${Math.max(8,rr*0.5)}" font-weight="800" fill="${ink}">N</text>`;}
+    g+=`</g>`;
+    if(l.text&&t!=='north')g+=boxText(l.text,x,y,w,h,fs,`font-weight="${l.bold===false?400:700}" fill="${tc}" paint-order="stroke" stroke="${pl.bg}" stroke-width="3"`,l.align,l.rot);}
+  else{if(t==='ellipse')g+=`<ellipse cx="${x+w/2}" cy="${y+h/2}" rx="${Math.max(1,w/2-1)}" ry="${Math.max(1,h/2-1)}" fill="${fill}" ${sAttr}/>`;
+    else g+=`<rect x="${x+1}" y="${y+1}" width="${Math.max(1,w-2)}" height="${Math.max(1,h-2)}" rx="${r}" fill="${fill==='none'?'transparent':fill}" ${sAttr}/>`;
+    if(t==='pallet'){const n=palletItems(p,l.id).length;const body=`${l.text||'Pallet'}\n${n} box${n===1?'':'es'}${l.kept?' · stored':''}`;g+=boxText(body,x,y,w,h,fs,`font-weight="700" fill="${tc}"`,l.align,l.rot);}
+    else g+=boxText(l.text,x,y,w,h,fs,`font-weight="${l.bold===false?400:700}" fill="${tc}"${pat?` paint-order="stroke" stroke="${pl.bg}" stroke-width="3"`:''}`,l.align,l.rot);}
   if(lsel){g+=`<rect x="${x-2}" y="${y-2}" width="${w+4}" height="${h+4}" fill="none" stroke="${pl.accent}" stroke-width="2" stroke-dasharray="5 3" rx="${Math.min(10,r+2)}"/>`;
-    if(!ro)g+=`<rect data-lresize="${l.id}" x="${x+w-hs}" y="${y+h-hs-1}" width="${hs}" height="${hs}" rx="2" fill="${pl.accent}" stroke="${pl.surface}" stroke-width="1.5" style="cursor:nwse-resize"><title>Drag to resize</title></rect>`;}
+    if(handles)g+=`<rect data-lresize="${l.id}" x="${x+w-hs}" y="${y+h-hs-1}" width="${hs}" height="${hs}" rx="2" fill="${pl.accent}" stroke="${pl.surface}" stroke-width="1.5" style="cursor:nwse-resize"><title>Drag to resize</title></rect>`;}
+  if(badge)g+=lockBadge(x+w-2,y+2,pl);
   return g+'</g>';}
 function wrapText(text,maxW,fs){const cw=fs*0.6;const maxC=Math.max(1,Math.floor(maxW/cw));const out=[];
   String(text??'').split(/\r?\n/).forEach(par=>{let line='';par.split(/\s+/).forEach(w=>{if(!w)return;while(w.length>maxC){if(line){out.push(line);line='';}out.push(w.slice(0,maxC));w=w.slice(maxC);}
     const t=line?line+' '+w:w;if(t.length>maxC){out.push(line);line=w;}else line=t;});out.push(line);});return out;}
 /* text that wraps inside a box and shrinks if it still doesn't fit */
-function boxText(text,x,y,w,h,fs,attrs,align){if(!String(text??'').trim())return'';let f=fs,lines=wrapText(text,w-8,f);
+function boxText(text,x,y,w,h,fs,attrs,align,rot){if(!String(text??'').trim())return'';
+  if(rot==='up'||rot==='down'){const cx=x+w/2,cy=y+h/2;return `<g transform="rotate(${rot==='up'?-90:90} ${cx} ${cy})">${boxText(text,cx-h/2,cy-w/2,h,w,fs,attrs,align)}</g>`;}let f=fs,lines=wrapText(text,w-8,f);
   while(f>7&&lines.length*f*1.2>h-4){f-=1;lines=wrapText(text,w-8,f);}
   const lh=f*1.2,y0=y+h/2-(lines.length-1)*lh/2+f*0.35;const ax=align==='left'?x+6:align==='right'?x+w-6:x+w/2;const anc=align==='left'?'start':align==='right'?'end':'middle';
   return `<text ${attrs} font-size="${f}" text-anchor="${anc}">${lines.map((t,i)=>`<tspan x="${ax}" y="${y0+i*lh}">${esc(t)}</tspan>`).join('')}</text>`;}
@@ -907,6 +956,41 @@ function defaultPallet(p){let pl=pallets(p).find(x=>!x.kept);if(pl)return pl;con
   pl={id:uid(),type:'pallet',text:pallets(p).length?'Temporary pallet '+(pallets(p).length+1):'Temporary pallet',x:Math.max(1,B.w-1),y:2,w:5,h:3};p.map.labels.push(pl);return pl;}
 function palletByName(p,t){const q=String(t||'').trim().toLowerCase();if(!q)return null;if(q==='pallet'||q==='temp pallet'||q==='temporary pallet'&&!pallets(p).some(x=>x.text.toLowerCase()===q))return defaultPallet(p);return pallets(p).find(x=>String(x.text).trim().toLowerCase()===q)||null;}
 function putOnPallet(p,it,pid){unpinItem(p,it.id);it.temp=true;it.pallet=pid||defaultPallet(p).id;}
+/* ---------- map selection: one item (S.sel) or several (S.multi, keys like label:id, rack:id, row:key) ---------- */
+const selKey=sl=>sl.type+':'+sl.id;const splitKey=k=>{const i=k.indexOf(':');return{type:k.slice(0,i),id:k.slice(i+1)};};
+function selSet(){return S.multi&&S.multi.length>1?new Set(S.multi):S.sel?new Set([selKey(S.sel)]):new Set();}
+function setSel(keys){keys=[...new Set(keys)];S.selEdit=null;if(!keys.length){S.sel=null;S.multi=[];}else if(keys.length===1){S.sel=splitKey(keys[0]);S.multi=[];}else{S.sel=null;S.multi=keys;}}
+function rowBox(g){return{x:g.minX-(g.horiz?1:0),y:g.minY-(g.horiz?0:1),x2:g.maxX,y2:g.maxY};}
+const rowPinned=g=>!!g&&g.bays.some(b=>b.posLock);
+/* the shapes and bays a selection covers; a row key covers every bay in the row */
+function selItems(p,keys){const labels=[],bays=new Set();[...keys].forEach(k=>{const{type,id}=splitKey(k);
+  if(type==='label'){const l=p.map.labels.find(x=>x.id===id);if(l)labels.push(l);}
+  else if(type==='rack'||type==='row'){const g=groupOfBay(p,id);if(type==='row'&&g)g.bays.forEach(b=>bays.add(b));else{const b=p.racks.find(x=>x.id===id);if(b)bays.add(b);}}});
+  return{labels,bays:[...bays]};}
+function selLocked(p,keys){const{labels,bays}=selItems(p,keys);const all=labels.map(l=>!!l.locked).concat(bays.map(b=>rowPinned(groupOfBay(p,b.id))));return all.length>0&&all.every(Boolean);}
+function setLocked(p,keys,on){const{labels,bays}=selItems(p,keys);labels.forEach(l=>{if(on)l.locked=true;else delete l.locked;});
+  bays.forEach(b=>{const g=groupOfBay(p,b.id);(g?g.bays:[b]).forEach(x=>{if(on)x.posLock=true;else delete x.posLock;});});}
+/* move a selection by whole squares; locked items stay put. Bays may not land on other bays. */
+function moveSel(p,keys,dx,dy){const{labels,bays}=selItems(p,keys);const L=labels.filter(l=>!l.locked),B=bays.filter(b=>!rowPinned(groupOfBay(p,b.id)));const skipped=labels.length+bays.length-L.length-B.length;
+  if(L.length){const mx=Math.min(...L.map(l=>shapeBox(l).x)),my=Math.min(...L.map(l=>shapeBox(l).y));dx=Math.max(dx,-mx);dy=Math.max(dy,-my);}
+  if(B.length){dx=Math.max(dx,-Math.min(...B.map(b=>b.x)));dy=Math.max(dy,1-Math.min(...B.map(b=>b.y)));}
+  if(!dx&&!dy)return{msg:skipped?'locked':'',skipped};
+  const ids=new Set(B.map(b=>b.id));B.forEach(b=>{b.x+=dx;b.y+=dy;});
+  if(B.some(b=>p.racks.some(o=>!ids.has(o.id)&&overlap(o,b)))){B.forEach(b=>{b.x-=dx;b.y-=dy;});return{msg:'overlap',skipped};}
+  L.forEach(l=>{l.x+=dx;l.y+=dy;if(isLine(l)){l.x2+=dx;l.y2+=dy;}});return{msg:'moved',skipped};}
+/* a shape drawn or dropped over the bays pushes the rows under it (and everything below them) down to make room. Rows locked in place stay put. */
+function makeRoom(p,l){if(!l||isLine(l)||l.locked)return 0;const b=shapeBox(l);const gs=rowGroups(p);
+  const hits=gs.filter(g=>{const r=rowBox(g);return r.x<b.x+b.w-EPS&&b.x<r.x2-EPS&&r.y<b.y+b.h-EPS&&b.y<r.y2-EPS;});
+  const push=hits.filter(g=>!rowPinned(g));if(!push.length)return 0;
+  let dy=Math.max(...push.map(g=>b.y+b.h-rowBox(g).y));dy=S.mapSnap===false?Math.ceil(dy*4-EPS)/4:Math.ceil(dy-EPS);if(dy<=0)return 0;
+  const top=Math.min(...push.map(g=>rowBox(g).y));const moving=new Set(push);const xov=(a,c)=>a.x<c.x2-EPS&&c.x<a.x2-EPS;
+  for(let grew=true;grew;){grew=false;gs.forEach(g=>{if(moving.has(g)||rowPinned(g))return;const r=rowBox(g);if(r.y<top-EPS)return;if([...moving].some(m=>xov(rowBox(m),r))){moving.add(g);grew=true;}});}
+  const bays=[...moving].flatMap(g=>g.bays);const ids=new Set(bays.map(x=>x.id));const span=[...moving].map(rowBox);
+  const shp=(p.map.labels||[]).filter(o=>o!==l&&!o.locked&&(()=>{const sb=shapeBox(o);return sb.y>=top-EPS&&span.some(r=>sb.x<r.x2-EPS&&r.x<sb.x+sb.w-EPS);})());
+  bays.forEach(x=>x.y+=dy);
+  if(bays.some(x=>p.racks.some(o=>!ids.has(o.id)&&overlap(o,x)))){bays.forEach(x=>x.y-=dy);return -1;}
+  shp.forEach(o=>{o.y+=dy;if(isLine(o))o.y2+=dy;});return moving.size;}
+function roomToast(n){if(n>0)toast(`Moved ${plural(n,'row')} down to make room. Lock a row in place to draw over it instead.`);else if(n<0)toast('A row locked in place is in the way, so the rows weren’t moved.');}
 /* map undo / redo */
 function mapState(p){return JSON.stringify({map:p.map,racks:p.racks});}
 function mapSnap(p){S.mapUndo=(S.mapUndo||[]).concat(mapState(p)).slice(-60);S.mapRedo=[];}
@@ -1660,7 +1744,7 @@ function movesList(p,P,M){
 function featBreakdown(R){const m=new Map();R.cells.forEach(c=>slotBoxes(c).forEach(it=>{const f=it.feature||'';m.set(f,(m.get(f)||0)+1);}));return[...m.entries()];}
 function mapSVG(p,P,o){
   const C=o.C,pl=o.pal,B=mapBounds(p),W=B.w*C,H=B.h*C,exp=!!o.export,compact=!!o.compact;
-  const sel=o.interactive?S.sel:null;const sc=o.interactive?mapScale():1;const hs=Math.round(Math.min(36,Math.max(10,13/sc)));
+  const sel=o.interactive?S.sel:null;const ms=o.interactive?selSet():new Set();o=Object.assign({},o,{ms});const sc=o.interactive?mapScale():1;const hs=Math.round(Math.min(36,Math.max(10,13/sc)));
   const fc=f=>`hsl(${P.hue.get(f)}, ${pl.chipS}, ${pl.chipL})`;
   let legend='',legH=0;const top=exp?66:0;
   if(exp&&o.legend!==false){const items=P.feats.map(f=>({c:fc(f),t:fname(f)}));if(p.racks.some(r=>r.locked))items.push({c:pl.lockfill,t:'Locked bay',stroke:pl.ink});
@@ -1675,8 +1759,8 @@ function mapSVG(p,P,o){
   s+=`<g transform="translate(${ox} ${oy})"><rect width="${W}" height="${H}" fill="${pl.bg}"/>${p.map.noGrid?'':`<rect width="${W}" height="${H}" fill="url(#${gid})"/>`}<rect x="1" y="1" width="${W-2}" height="${H-2}" fill="none" stroke="${pl.frame}" stroke-width="2"/>`;
   const shapesOf=layer=>(p.map.labels||[]).filter(l=>shLayer(l)===layer).map(l=>renderShape(p,l,C,pl,sel,hs,o)).join('');
   s+=shapesOf('back');
-  P.rowList.forEach(G=>{const g=G.row;const rsel=sel&&sel.type==='row'&&G.racks.some(R=>R.rack.id===sel.id);
-    s+=`<g data-rowg="${g.key}">`;const hfill=rsel?pl.accent:pl.ink,hatt=o.interactive?`data-rowh="${g.key}" style="cursor:move"`:'';
+  P.rowList.forEach(G=>{const g=G.row;const rsel=(sel&&sel.type==='row'&&G.racks.some(R=>R.rack.id===sel.id))||ms.has('row:'+g.key);const pinned=rowPinned(g);
+    s+=`<g data-rowg="${g.key}">`;const hfill=rsel?pl.accent:pl.ink,hatt=o.interactive?`data-rowh="${g.key}" style="cursor:${pinned?'default':'move'}"`:'';
     if(g.horiz){/* sideways row: header runs down its left-hand end */
       const leftX=Math.min(...g.bays.map(b=>b.x));const topY=Math.min(...g.bays.filter(b=>near(b.x,leftX)).map(b=>b.y));const botY=Math.max(...g.bays.filter(b=>near(b.x,leftX)).map(b=>b.y+dh(b)));
       const hx=(leftX-1)*C,hy=topY*C,hh=(botY-topY)*C;const long=!compact&&hh>=60;const tx=hx+C/2,ty=hy+hh/2;
@@ -1684,7 +1768,7 @@ function mapSVG(p,P,o){
     else{const topY=Math.min(...g.bays.filter(b=>near(b.x,g.minX)).map(b=>b.y));const hx=g.minX*C,hy=(topY-1)*C,hw=(g.maxX-g.minX)*C;
       s+=`<g ${hatt}><rect x="${hx+1}" y="${hy+3}" width="${hw-2}" height="${C-6}" rx="4" fill="${hfill}"/><text x="${hx+hw/2}" y="${hy+C/2+4}" text-anchor="middle" font-size="${compact?Math.max(9,C*0.6):12}" font-weight="700" fill="${pl.surface}">${compact?esc(g.letter):`Row ${esc(g.letter)}`}</text></g>`;}
     G.racks.forEach(R=>{const r=R.rack,x=r.x*C,y=r.y*C,w=dw(r)*C,h=dh(r)*C,hz=isH(r);
-      const usable=R.cells.filter(c=>!c.blocked).length;const upd=!!o.interactive&&S.updated[r.id]!==undefined;const isSel=sel&&sel.type==='rack'&&sel.id===r.id;
+      const usable=R.cells.filter(c=>!c.blocked).length;const upd=!!o.interactive&&S.updated[r.id]!==undefined;const isSel=(sel&&sel.type==='rack'&&sel.id===r.id)||ms.has('rack:'+r.id);
       const hits=o.interactive&&S.match?(S.match.byBay.get(r.id)||0):-1;
       const stroke=isSel||hits>0?pl.accent:upd?pl.warn:R.locked?pl.ink:pl.frame;
       s+=`<g data-rack="${r.id}" ${o.interactive?'style="cursor:grab"':''} ${hits===0?'opacity="0.3"':''}><rect x="${x+1.5}" y="${y+1.5}" width="${w-3}" height="${h-3}" rx="3" fill="${R.locked?pl.lockfill:pl.surface}" stroke="${stroke}" stroke-width="${isSel||R.locked||hits>0?2.5:1.5}" ${upd&&!isSel?'stroke-dasharray="5 3"':''}/>`;
@@ -1702,7 +1786,8 @@ function mapSVG(p,P,o){
       s+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="1.5" fill="${pl.grid}"/>`;
       let cx=bx;featBreakdown(R).forEach(([f,n])=>{const ww=usable?bw*n/usable:0;s+=`<rect x="${cx}" y="${by}" width="${ww}" height="${bh}" fill="${fc(f)}"/>`;cx+=ww;});
       s+=`</g>`;});
-    if(o.interactive&&!isReadOnly()){const x0=g.minX*C,y0=g.minY*C,x1=g.maxX*C,y1=g.maxY*C;
+    if(o.interactive&&!o.export&&pinned)s+=g.horiz?lockBadge((g.minX-1)*C+3,g.minY*C+1,pl):lockBadge(g.maxX*C-1,(g.minY-1)*C+3,pl);
+    if(o.interactive&&!isReadOnly()&&!pinned){const x0=g.minX*C,y0=g.minY*C,x1=g.maxX*C,y1=g.maxY*C;
       s+=`<rect class="rstretch" data-rstretch="${g.key}" data-dir="x" x="${x1-5}" y="${y0}" width="10" height="${y1-y0}"><title>Drag to stretch the bays in Row ${esc(g.letter)} sideways</title></rect><rect class="rstretch" data-rstretch="${g.key}" data-dir="y" x="${x0}" y="${y1-5}" width="${x1-x0}" height="10"><title>Drag to stretch the bays in Row ${esc(g.letter)} up or down</title></rect>`;}
     s+=`</g>`;});
   s+=shapesOf('front');
@@ -1714,6 +1799,7 @@ function holesInRack(R){const out=[];R.cells.forEach(c=>slotBoxes(c).forEach(it=
   if(last&&last.k===k)last.items.push(it);else out.push({k,feature:it.feature,hole:it.hole,items:[it]});}));return out;}
 function groupOfBay(p,id){return (p._rows||deriveNames(p)).find(g=>g.bays.some(b=>b.id===id));}
 function mapSide(p,P,ro){
+  if(S.multi&&S.multi.length>1)return multiPanel(p,ro);
   const sel=S.sel;
   const editing=!ro&&S.selEdit&&sel&&S.selEdit===sel.type+':'+sel.id;
   const pencil=ro?'':`<button class="icon ghost edpencil ${editing?'on':''}" data-act="sel-edit" title="${editing?'Stop editing':'Edit'}" aria-label="Edit" aria-pressed="${!!editing}"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button>`;
@@ -1727,18 +1813,20 @@ function mapSide(p,P,ro){
       <label class="check"><input type="checkbox" id="fb_lock" data-k="fe" ${R.locked?'checked':''}> Locked</label>${saveRow}`;
     return head+`<dl class="kvs">${kv('Row',esc(r.rowLetter||''))}${kv('Slots used',`${R.used} / ${usable}`)}${kv('Status',R.locked?'<span class="pill lock">Locked</span>':'Unlocked')}${d?kv('Size',`${esc(dimTxt(d))} mm`):''}${r.blocked.length?kv('Blocked',esc(fmtRows(r.blocked))):''}</dl>
       ${hs.length?`<ul class="small edholes">${hs.map(h=>`<li><span class="mono">${esc([h.feature,h.hole].filter(Boolean).join('-'))}</span> <span class="muted">box ${esc(boxSummary(h.items))}</span></li>`).join('')}</ul>`:'<p class="muted small" style="margin:0">Empty</p>'}
-      <div class="row"><button class="ghost small" data-act="goto-rack" data-id="${r.id}">Show in rack plan →</button></div>`;}}
+      <div class="row"><button class="ghost small" data-act="goto-rack" data-id="${r.id}">Show in rack plan →</button>${ro?'':`<span class="spacer"></span><button class="ghost small" data-act="item-lock" data-key="rack:${r.id}">${edIcon(rowPinned(groupOfBay(p,r.id))?'lock':'unlock')} ${rowPinned(groupOfBay(p,r.id))?'Unlock row':'Lock row in place'}</button>`}</div>`;}}
   if(sel&&sel.type==='row'){const g=groupOfBay(p,sel.id);if(g){const all=g.bays.every(b=>b.locked),some=g.bays.some(b=>b.locked);
     const head=`<div class="edhead"><span class="label">Row</span><div class="edname"><h2>Row ${esc(g.letter)}</h2>${pencil}</div></div>`;
     if(editing)return head+`<div class="formgrid" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
         <div class="field"><label class="label" for="rw_l">Row letter</label><input id="rw_l" data-k="fe" value="${esc(g.ov||'')}" placeholder="Auto (${esc(g.letter)})" maxlength="3" style="text-transform:uppercase"></div>
         <div class="field"><label class="label" for="rw_c">Bays</label><input id="rw_c" data-k="fe" type="number" min="1" max="200" value="${g.bays.length}"></div>
         <div class="field"><label class="label" for="rw_n">Numbering</label><select id="rw_n" data-k="fe"><option value="" ${!g.mode?'selected':''}>Same as the shed</option><option value="down" ${g.mode==='down'?'selected':''}>Sequential</option><option value="across" ${g.mode==='across'?'selected':''}>Alternating</option></select></div>
-        <div class="field"><label class="label" for="rw_o">Direction</label><select id="rw_o" data-k="fe"><option value="v" ${g.horiz?'':'selected'}>Upright</option><option value="h" ${g.horiz?'selected':''}>Sideways</option></select></div>
+        <div class="field"><label class="label" for="rw_o">Row runs</label><select id="rw_o" data-k="fe"><option value="v" ${g.horiz?'':'selected'}>Top to bottom</option><option value="h" ${g.horiz?'selected':''}>Left to right</option></select></div>
+        <div class="field"><label class="label" for="rw_s">Bays</label><select id="rw_s" data-k="fe"><option value="v" ${isH(g.bays[0])?'':'selected'}>Upright</option><option value="h" ${isH(g.bays[0])?'selected':''}>Sideways</option></select></div>
       </div>
       <label class="check"><input type="checkbox" id="rw_lock" data-k="fe" ${all?'checked':''}> Lock every bay in the row</label>
       ${rowStretched(g)?`<label class="check"><input type="checkbox" id="rw_unst" data-k="fe"> Reset stretched bays to the standard size</label>`:''}${saveRow}`;
-    return head+`<dl class="kvs">${kv('Bays',g.bays.length)}${kv('Letter',g.ov?esc(g.ov):`${esc(g.letter)} <span class="muted">(auto)</span>`)}</dl>`;}}
+    return head+`<dl class="kvs">${kv('Bays',g.bays.length)}${kv('Letter',g.ov?esc(g.ov):`${esc(g.letter)} <span class="muted">(auto)</span>`)}</dl>
+      ${ro?'':`<div class="row"><button class="ghost small" data-act="item-lock" data-key="row:${g.key}">${edIcon(rowPinned(g)?'lock':'unlock')} ${rowPinned(g)?'Unlock row':'Lock row in place'}</button></div>`}`;}}
   if(sel&&sel.type==='label'){const l=p.map.labels.find(x=>x.id===sel.id);if(l)return shapePanel(p,l,ro);}
   return '';
 }
@@ -1752,38 +1840,53 @@ function shapePanel(p,l,ro){const t=shType(l);const ln=isLine(l);const id=l.id;
       ${its.length?`<ul class="small">${its.slice(0,30).map(it=>`<li class="mono">${esc([fname(it.feature||''),it.hole].filter(Boolean).join('-'))} box ${esc(it.box)}</li>`).join('')}${its.length>30?`<li class="muted">and ${its.length-30} more</li>`:''}</ul>`:'<p class="muted small">No boxes on this pallet.</p>'}
       ${ro?'':`<div class="row"><button class="ghost danger" data-act="shape-del" data-id="${id}">Delete pallet${its.length?' (boxes go back into the plan)':''}</button></div>`}`;}
   if(ro)return `<div><span class="label">${SHAPES[t]}</span><h2>${esc(l.text||SHAPES[t])}</h2></div>`;
-  return `<div><span class="label">${SHAPES[t]}</span><h2>${ln?SHAPES[t]:esc(l.text||SHAPES[t])}</h2></div>
-    <div class="field"><label class="label" for="lb_text">${ln?'Label (optional)':'Text'}</label><textarea id="lb_text" rows="2" data-k="label" data-id="${id}" data-f="text">${esc(l.text||'')}</textarea></div>
-    ${ln?'':`<div class="field"><span class="label">Fill</span><div class="swatches">${LABEL_COLOURS.map(([c,n])=>`<button class="swatch ${(l.color||'')===c?'on':''}" data-act="label-color" data-id="${id}" data-color="${c}" title="${n}" aria-label="${n}" style="${c?`background:${c}`:''}">${c?'':'∅'}</button>`).join('')}<input type="color" id="lb_c" data-k="label" data-id="${id}" data-f="color" value="${l.color&&l.color!=='none'?l.color:'#ffffff'}" title="Custom fill" aria-label="Custom fill colour"></div></div>`}
+  const pic=isPic(l),hasFill=!ln&&!pic,hasCorner=['rect','label','text','column'].includes(t);
+  const lockB=`<button class="icon ghost edpencil ${l.locked?'on':''}" data-act="item-lock" data-key="label:${id}" title="${l.locked?'Unlock':'Lock in place'}" aria-label="${l.locked?'Unlock':'Lock in place'}" aria-pressed="${!!l.locked}">${edIcon(l.locked?'lock':'unlock')}</button>`;
+  const title=ln||pic||t==='column'?SHAPES[t]:esc(l.text||SHAPES[t]);
+  return `<div class="edhead"><span class="label">${SHAPES[t]}${l.locked?' · locked in place':''}</span><div class="edname"><h2>${title}</h2>${lockB}</div></div>
+    ${t==='column'?'':`<div class="field"><label class="label" for="lb_text">${t==='dim'?'Length label':ln||pic?'Label (optional)':'Text'}</label>${t==='dim'?`<input id="lb_text" data-k="label" data-id="${id}" data-f="text" value="${esc(l.text||'')}" placeholder="${esc(mapScaleM(p)?dimLabel(p,Object.assign({},l,{text:''})):'e.g. 12.5 m')}">`:`<textarea id="lb_text" rows="2" data-k="label" data-id="${id}" data-f="text">${esc(l.text||'')}</textarea>`}</div>`}
+    ${t==='door'?`<div class="row"><label class="mini">Door${sel2('variant',[['','Single'],['double','Double']],l.variant||'')}</label><button class="ghost small" data-act="shape-rot" data-id="${id}" title="Turn 90°">⟳ Turn</button><button class="ghost small" data-act="shape-mirror" data-id="${id}" title="Swap the hinge side">⇋ Flip</button></div>`:''}
+    ${t==='rdoor'||t==='window'?`<div class="row"><button class="ghost small" data-act="shape-rot" data-id="${id}" title="Turn 90°">⟳ Turn</button></div>`:''}
+    ${t==='north'?`<div class="row"><label class="mini">Points to<input id="sp_ang" data-k="label" data-id="${id}" data-f="ang" type="number" min="0" max="359" step="5" value="${+l.ang||0}" style="width:70px"> °</label></div>`:''}
+    ${t==='dim'?`<div class="row"><label class="mini">Ends${sel2('ends',[['','Arrows'],['ticks','Ticks']],l.ends||'')}</label>${mapScaleM(p)?'':'<span class="muted small">Set a scale in Display to measure automatically.</span>'}</div>`:''}
+    ${hasFill?`<div class="field"><span class="label">Fill</span><div class="swatches">${LABEL_COLOURS.map(([c,n])=>`<button class="swatch ${(l.color||'')===c?'on':''}" data-act="label-color" data-id="${id}" data-color="${c}" title="${n}" aria-label="${n}" style="${c?`background:${c}`:''}">${c?'':'∅'}</button>`).join('')}<input type="color" id="lb_c" data-k="label" data-id="${id}" data-f="color" value="${l.color&&l.color!=='none'?l.color:'#ffffff'}" title="Custom fill" aria-label="Custom fill colour"></div></div>
+      <div class="field"><label class="label" for="sp_pat">Fill pattern</label>${sel2('pat',FILL_PATS,l.pat||'')}</div>`:''}
     <div class="formgrid sp3">
-      <div class="field"><label class="label" for="sp_stroke">${ln?'Colour':'Border'}</label><input type="color" id="sp_stroke" data-k="label" data-id="${id}" data-f="stroke" value="${l.stroke&&l.stroke!=='none'?l.stroke:'#6f8290'}"></div>
-      <div class="field"><label class="label" for="sp_sw">Thickness</label>${sel2('sw',[['','Default'],[0,'None'],[1,'1'],[1.5,'1.5'],[2,'2'],[3,'3'],[4,'4'],[6,'6'],[8,'8']],l.sw??'')}</div>
+      <div class="field"><label class="label" for="sp_stroke">${ln||pic?'Colour':'Border'}</label><input type="color" id="sp_stroke" data-k="label" data-id="${id}" data-f="stroke" value="${l.stroke&&l.stroke!=='none'?l.stroke:'#6f8290'}"></div>
+      <div class="field"><label class="label" for="sp_sw">Thickness</label>${sel2('sw',[['','Default'],[0,'None'],[1,'1'],[1.5,'1.5'],[2,'2'],[3,'3'],[4,'4'],[6,'6'],[8,'8'],[12,'12']],l.sw??'')}</div>
       <div class="field"><label class="label" for="sp_dash">Style</label>${sel2('dash',[['','Default'],['solid','Solid'],['dashed','Dashed'],['dotted','Dotted']],l.dash||'')}</div>
     </div>
     ${ln?'':`<div class="formgrid sp3">
       <div class="field"><label class="label" for="lb_w">Width</label><input id="lb_w" type="number" min="0.5" max="400" step="${S.mapSnap===false?0.25:1}" data-k="label" data-id="${id}" data-f="w" value="${labelW(l)}"></div>
       <div class="field"><label class="label" for="lb_h">Height</label><input id="lb_h" type="number" min="0.5" max="400" step="${S.mapSnap===false?0.25:1}" data-k="label" data-id="${id}" data-f="h" value="${+l.h||1}"></div>
-      ${t==='ellipse'?'<span></span>':`<div class="field"><label class="label" for="sp_r">Corners</label><input id="sp_r" type="number" min="0" max="60" data-k="label" data-id="${id}" data-f="r" value="${l.r??''}" placeholder="auto"></div>`}
+      ${hasCorner?`<div class="field"><label class="label" for="sp_r">Corners</label><input id="sp_r" type="number" min="0" max="60" data-k="label" data-id="${id}" data-f="r" value="${l.r??''}" placeholder="auto"></div>`:'<span></span>'}
     </div>`}
-    <div class="formgrid sp3">
-      <div class="field"><label class="label" for="lb_s">Text size</label>${sel2('size',[[0.7,'Tiny'],[0.85,'Small'],[1,'Normal'],[1.4,'Large'],[2,'Extra large'],[3,'Huge']],+l.size||1)}</div>
+    ${t==='column'||(pic&&!l.text)?'':`<div class="formgrid sp3">
+      <div class="field"><label class="label" for="sp_size">Text size</label>${sel2('size',[[0.7,'Tiny'],[0.85,'Small'],[1,'Normal'],[1.4,'Large'],[2,'Extra large'],[3,'Huge']],+l.size||1)}</div>
       <div class="field"><label class="label" for="sp_tc">Text colour</label><input type="color" id="sp_tc" data-k="label" data-id="${id}" data-f="tc" value="${l.tc||'#0f2433'}"></div>
-      <div class="field"><label class="label" for="sp_align">Align</label>${sel2('align',[['','Centre'],['left','Left'],['right','Right']],l.align||'')}</div>
+      ${ln?'<span></span>':`<div class="field"><label class="label" for="sp_rot">Direction</label>${sel2('rot',[['','Across'],['up','Up ↑'],['down','Down ↓']],l.rot||'')}</div>`}
     </div>
-    <div class="row" style="gap:16px"><label class="check"><input type="checkbox" id="sp_bold" data-k="label" data-id="${id}" data-f="bold" ${l.bold===false?'':'checked'}> Bold</label>
+    ${ln?'':`<div class="formgrid sp3"><div class="field"><label class="label" for="sp_align">Align</label>${sel2('align',[['','Centre'],['left','Left'],['right','Right']],l.align||'')}</div></div>`}`}
+    <div class="row" style="gap:16px">${t==='column'||(pic&&!l.text)?'':`<label class="check"><input type="checkbox" id="sp_bold" data-k="label" data-id="${id}" data-f="bold" ${l.bold===false?'':'checked'}> Bold</label>`}
       <label class="mini" style="flex:1">Opacity<input type="range" id="sp_op" min="10" max="100" step="5" data-k="label" data-id="${id}" data-f="op" value="${Math.round((l.op!==undefined&&l.op!==''?+l.op:1)*100)}" style="flex:1"></label></div>
-    <div class="row"><button data-act="shape-front" data-id="${id}" title="Bring to front">Bring to front</button><button data-act="shape-back" data-id="${id}" title="Send behind the bays">Send to back</button><button data-act="shape-dup" data-id="${id}">Duplicate</button><button class="ghost danger" data-act="shape-del" data-id="${id}">Delete</button></div>
+    <div class="row"><button data-act="shape-front" data-id="${id}" title="Bring to front">Bring to front</button><button data-act="shape-back" data-id="${id}" title="Send behind the bays">Send to back</button><button data-act="shape-dup" data-id="${id}">Duplicate</button>${l.locked?'':`<button class="ghost danger" data-act="shape-del" data-id="${id}">Delete</button>`}</div>
 `;}
-const ED_ICONS={display:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',legend:'<rect x="4" y="5" width="4" height="4" rx="1"/><rect x="4" y="15" width="4" height="4" rx="1"/><path d="M11 7h9M11 17h9"/>',select:'<path d="M5 3l14 8-6 2-2 6z"/>',text:'<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',label:'<rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 12h10"/>',rect:'<rect x="4" y="6" width="16" height="12" rx="1"/>',ellipse:'<ellipse cx="12" cy="12" rx="9" ry="6"/>',line:'<path d="M4 20L20 4"/>',arrow:'<path d="M4 20L20 4M11 4h9v9"/>',pallet:'<rect x="3" y="5" width="18" height="10" rx="1"/><path d="M3 19h18M6 15v4M12 15v4M18 15v4"/>',
+function multiPanel(p,ro){const keys=S.multi;const{labels,bays}=selItems(p,keys);const rowsN=new Set(bays.map(b=>(groupOfBay(p,b.id)||{}).key)).size;const lk=selLocked(p,keys);
+  return `<div class="edhead"><span class="label">Selection</span><div class="edname"><h2>${plural(keys.length,'item')}</h2>${ro?'':`<button class="icon ghost edpencil ${lk?'on':''}" data-act="item-lock" title="${lk?'Unlock':'Lock in place'}" aria-label="${lk?'Unlock':'Lock in place'}" aria-pressed="${lk}">${edIcon(lk?'lock':'unlock')}</button>`}</div></div>
+    <p class="muted small" style="margin:0">${[labels.length?plural(labels.length,'shape'):'',rowsN?plural(rowsN,'row')+' of bays':''].filter(Boolean).join(' · ')}${lk?' · locked in place':''}</p>
+    ${ro||!labels.length?'':`<div class="row"><button data-act="shape-front">Bring to front</button><button data-act="shape-back">Send to back</button><button data-act="shape-dup">Duplicate</button><button class="ghost danger" data-act="shape-del">Delete</button></div>`}`;}
+const ED_ICONS={dim:'<path d="M4 8v8M20 8v8M4 12h16M7 9.5L4 12l3 2.5M17 9.5l3 2.5-3 2.5"/>',door:'<path d="M5 20V4"/><path d="M5 4a15 16 0 0 1 15 16" stroke-dasharray="3 2.5"/><path d="M5 20h15"/>',rdoor:'<rect x="3" y="9" width="3" height="6" fill="currentColor"/><rect x="18" y="9" width="3" height="6" fill="currentColor"/><path d="M7 12h10" stroke-dasharray="3 2"/>',window:'<rect x="3" y="8" width="18" height="8"/><path d="M3 12h18"/>',wall:'<path d="M4 18L20 6" stroke-width="4.5" stroke-linecap="square"/>',column:'<rect x="7" y="7" width="10" height="10" fill="currentColor"/>',north:'<circle cx="12" cy="12" r="9"/><path d="M12 6l-3 10 3-2 3 2z" fill="currentColor"/>',lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',unlock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/>',display:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',legend:'<rect x="4" y="5" width="4" height="4" rx="1"/><rect x="4" y="15" width="4" height="4" rx="1"/><path d="M11 7h9M11 17h9"/>',select:'<path d="M5 3l14 8-6 2-2 6z"/>',text:'<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',label:'<rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 12h10"/>',rect:'<rect x="4" y="6" width="16" height="12" rx="1"/>',ellipse:'<ellipse cx="12" cy="12" rx="9" ry="6"/>',line:'<path d="M4 20L20 4"/>',arrow:'<path d="M4 20L20 4M11 4h9v9"/>',pallet:'<rect x="3" y="5" width="18" height="10" rx="1"/><path d="M3 19h18M6 15v4M12 15v4M18 15v4"/>',
   undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',redo:'<path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>',dup:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/>',del:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',front:'<rect x="9" y="9" width="11" height="11" rx="1" fill="currentColor"/><rect x="4" y="4" width="11" height="11" rx="1"/>',back:'<rect x="4" y="4" width="11" height="11" rx="1" fill="currentColor"/><rect x="9" y="9" width="11" height="11" rx="1"/>',row:'<rect x="5" y="3" width="6" height="8"/><rect x="5" y="13" width="6" height="8"/><path d="M17 9v6M14 12h6"/>'};
 const edIcon=k=>`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ED_ICONS[k]}</svg>`;
-function mapToolbar(p,disp,savePng){const tool=S.mapTool||'select';const sel=S.sel&&S.sel.type==='label'?p.map.labels.find(x=>x.id===S.sel.id):null;
+function mapToolbar(p,disp,savePng){const tool=S.mapTool||'select';const ks=selSet();const shp=selItems(p,ks).labels.length>0;const sel=shp?{id:S.sel&&S.sel.type==='label'?S.sel.id:''}:null;const lk=ks.size>0&&selLocked(p,ks);
   const tb=(k,label,extra)=>`<button class="tbtn ${tool===k?'on':''}" data-act="map-tool" data-tool="${k}" title="${label}" aria-label="${label}" aria-pressed="${tool===k}" ${extra||''}>${edIcon(k)}<span>${label}</span></button>`;
   return `<div class="edtools" role="toolbar" aria-label="Map editing tools">
-    <div class="tgroup">${tb('select','Select')}${tb('text','Text')}${tb('label','Label')}${tb('rect','Rectangle')}${tb('ellipse','Ellipse')}${tb('line','Line')}${tb('arrow','Arrow')}${tb('pallet','Pallet')}</div>
+    <div class="tgroup">${tb('select','Select')}${tb('text','Text')}${tb('label','Label')}${tb('rect','Rectangle')}${tb('ellipse','Ellipse')}${tb('line','Line')}${tb('arrow','Arrow')}${tb('dim','Dimension')}
+      <details class="menu symmenu" id="symMenu"><summary class="tbtn ${SYMBOLS.includes(tool)?'on':''}" title="Symbols: door, roller door, window, wall, column, north arrow" aria-label="Symbols">${edIcon(SYMBOLS.includes(tool)?tool:'door')}<span>Symbols</span></summary><div class="menu-pop" role="menu">${SYMBOLS.map(k=>`<button role="menuitem" data-act="map-tool" data-tool="${k}">${edIcon(k)}<span>${SHAPES[k]}</span></button>`).join('')}</div></details>
+      ${tb('pallet','Pallet')}</div>
     <div class="tgroup"><button class="tbtn" data-act="map-add-row" title="Add a row of bays">${edIcon('row')}<span>Row</span></button></div>
     <div class="tgroup"><button class="tbtn" data-act="map-undo" title="Undo (Ctrl+Z)" ${(S.mapUndo||[]).length?'':'disabled'}>${edIcon('undo')}<span>Undo</span></button><button class="tbtn" data-act="map-redo" title="Redo (Ctrl+Shift+Z)" ${(S.mapRedo||[]).length?'':'disabled'}>${edIcon('redo')}<span>Redo</span></button></div>
-    <div class="tgroup"><button class="tbtn" data-act="shape-dup" data-id="${sel?sel.id:''}" ${sel?'':'disabled'} title="Duplicate (Ctrl+D)">${edIcon('dup')}<span>Duplicate</span></button><button class="tbtn" data-act="shape-del" data-id="${sel?sel.id:''}" ${sel?'':'disabled'} title="Delete (Del)">${edIcon('del')}<span>Delete</span></button><button class="tbtn" data-act="shape-front" data-id="${sel?sel.id:''}" ${sel?'':'disabled'} title="Bring to front">${edIcon('front')}<span>Front</span></button><button class="tbtn" data-act="shape-back" data-id="${sel?sel.id:''}" ${sel?'':'disabled'} title="Send to back">${edIcon('back')}<span>Back</span></button></div>
+    <div class="tgroup"><button class="tbtn" data-act="shape-dup" data-id="${sel?sel.id:''}" ${sel?'':'disabled'} title="Duplicate (Ctrl+D)">${edIcon('dup')}<span>Duplicate</span></button><button class="tbtn" data-act="shape-del" data-id="${sel?sel.id:''}" ${sel?'':'disabled'} title="Delete (Del)">${edIcon('del')}<span>Delete</span></button><button class="tbtn" data-act="shape-front" data-id="${sel?sel.id:''}" ${sel?'':'disabled'} title="Bring to front">${edIcon('front')}<span>Front</span></button><button class="tbtn" data-act="shape-back" data-id="${sel?sel.id:''}" ${sel?'':'disabled'} title="Send to back">${edIcon('back')}<span>Back</span></button><button class="tbtn ${lk?'on':''}" data-act="item-lock" ${ks.size?'':'disabled'} title="${lk?'Unlock':'Lock in place'} (L)" aria-pressed="${lk}">${edIcon(lk?'lock':'unlock')}<span>${lk?'Unlock':'Lock'}</span></button></div>
     <div class="tgroup">${disp||''}</div><span class="spacer"></span>${savePng||''}
   </div>`;}
 function mapTab(p,P,ro){
@@ -1793,18 +1896,19 @@ function mapTab(p,P,ro){
       ${ro?'':`<button role="menuitem" data-act="map-auto">Tidy layout <span class="hint">line rows up side by side</span></button>
       <label class="check"><input type="checkbox" id="ed_snap" data-k="ui" data-f="mapSnap" ${S.mapSnap===false?'':'checked'}> Snap to grid</label>
       <label class="check"><input type="checkbox" id="ed_grid" data-k="ui" data-f="mapGrid" ${p.map.noGrid?'':'checked'}> Show grid</label>
+      <label class="label" for="mp_scale" style="margin-top:6px">Scale for dimensions</label><span class="row" style="gap:6px;align-items:center;flex-wrap:nowrap"><span class="small">1 square =</span><input id="mp_scale" data-k="map" data-f="scale" inputmode="decimal" value="${esc(p.map.scale||'')}" placeholder="–" style="width:70px;text-align:right"><span class="small">m</span></span>
       <label class="label" for="mp_num" style="margin-top:6px">Bay numbering</label><select id="mp_num" data-k="setup" data-f="numbering"><option value="down" ${p.setup.numbering!=='across'?'selected':''}>Sequential</option><option value="across" ${p.setup.numbering==='across'?'selected':''}>Alternating</option></select>`}</div></details>`;
   const savePng=`<button class="tbtn tsave" data-act="map-png" title="Save the map as an image">${edIcon('image')}<span>Save PNG</span></button>`;
   const legend=`<div class="legend small">${P.feats.length?P.feats.map(f=>`<span><span class="sw" style="background:hsl(${P.hue.get(f)} var(--chipS) var(--chipL))"></span><span class="mono">${esc(fname(f))}</span></span>`).join(''):'<span class="muted">No boxes yet.</span>'}${p.racks.some(r=>r.locked)?'<span><span class="sw" style="background:var(--lockfill,#e4e7e4);border:1.5px solid var(--ink)"></span>Locked bay</span>':''}</div>`;
   const help=ro?`<ul><li>Click a bay or row header to see what’s in it.</li><li>Scroll to zoom. Drag empty space to pan.</li><li>To rearrange the shed, open a core move.</li></ul>`
-    :`<ul><li><b>Bays:</b> drag a bay anywhere. Near another bay it snaps on; drop it on a bay to swap the two.</li><li><b>Rows:</b> bays that touch form a row, lettered left to right. Drag a row’s dark header to move it; drag its right or bottom edge to stretch the bays.</li><li><b>Drawing:</b> pick a tool, then click to place it or drag to size it. Select anything to style it in the side bar.</li><li><b>View:</b> scroll to zoom, drag empty space to pan. Display → Fit to screen shows everything.</li><li><b>Keys:</b> Ctrl+Z undo · Ctrl+Shift+Z redo · Ctrl+D duplicate · Delete · arrows nudge · Esc stops drawing.</li></ul>`;
+    :`<ul><li><b>Bays:</b> drag a bay anywhere. Near another bay it snaps on; drop it on a bay to swap the two.</li><li><b>Rows:</b> bays that touch form a row, lettered left to right. Drag a row’s dark header to move it; drag its right or bottom edge to stretch the bays.</li><li><b>Drawing:</b> pick a tool, then click to place it or drag to size it. Select anything to style it in the side bar.</li><li><b>Select several:</b> Shift+click, or Shift+drag a box around them. Drag any one to move them all. Ctrl+A selects everything.</li><li><b>Lock in place:</b> select, then the lock button (or L). Locked items can’t be moved, and you can draw over them. A shape drawn over unlocked rows pushes them down to make room.</li><li><b>View:</b> scroll to zoom, drag empty space to pan. Display → Fit to screen shows everything.</li><li><b>Keys:</b> Ctrl+Z undo · Ctrl+Shift+Z redo · Ctrl+D duplicate · Delete · arrows nudge · L lock · Esc stops drawing.</li></ul>`;
   return `<div class="mapeditor ${ro?'ro':''}">
     <div class="edbar">${ro?`<div class="edtools" role="toolbar"><span class="spacer"></span>${savePng}</div>`:mapToolbar(p,disp,savePng)}</div>
     <div class="edbody">
       <div class="edstage">
         <div class="mapcanvas ${!ro&&S.mapTool&&S.mapTool!=='select'?'drawing':''}" id="mapcanvas"><div class="mapinner">${mapSVG(p,P,{C:MAPC,pal:pal(),interactive:true})}</div></div>
         ${upd.length&&!ro?`<div class="edtoast"><span>${plural(upd.length,'bay has','bays have')} a new ID: ${upd.slice(0,4).map(([id,old])=>`<b class="mono">${esc(nameOf(p,id,''))}</b> (was ${esc(old)})`).join(', ')}${upd.length>4?' …':''}</span><button class="ghost small" data-act="clear-updated">OK</button></div>`:''}
-        ${!ro&&S.mapTool&&S.mapTool!=='select'?`<div class="edhint">${S.mapTool==='line'||S.mapTool==='arrow'?'Drag to draw the line':S.mapTool==='text'||S.mapTool==='label'||S.mapTool==='pallet'?'Click to place, or drag to size':'Drag to draw'} · Esc to stop</div>`:''}
+        ${!ro&&S.mapTool&&S.mapTool!=='select'?`<div class="edhint">${isLine({type:S.mapTool})?'Drag to draw the line':S.mapTool==='text'||S.mapTool==='label'||S.mapTool==='pallet'?'Click to place, or drag to size':'Drag to draw'} · Esc to stop</div>`:''}
         ${(()=>{const side=mapSide(p,P,ro);return side?`<aside class="edfloat" data-live role="dialog" aria-label="Selection"><button class="icon ghost edclose" data-act="map-desel" aria-label="Close">✕</button>${side}</aside>`:'';})()}
         <div class="edcorner">
           <div class="popwrap"><button class="iconbtn round ${S.mapPop==='info'?'on':''}" data-act="map-pop" data-v="info" title="How to use the map" aria-label="How to use the map" aria-expanded="${S.mapPop==='info'}">i</button>
@@ -1905,7 +2009,8 @@ function rackSettings(p,P){
             <label class="mini">Slots<input id="rh_r_${g.key}" data-k="rowset" data-id="${g.key}" data-f="rows" inputmode="numeric" value="${rowsIn(G)}" placeholder="mixed" style="width:64px;text-align:right"></label>
             <label class="mini">Blocked<input id="rh_b_${g.key}" data-k="rowset" data-id="${g.key}" data-f="blocked" value="${esc(blkIn(G))}" placeholder="${blkIn(G)===''&&G.racks.some(R=>R.rack.blocked.length)?'mixed':'none'}" style="width:80px"></label>
             <label class="mini" title="Bay size in mm: length × width × height. Applies to every bay in the row.">Size mm${['l','w','h'].map(x=>`<input id="rh_d${x}_${g.key}" data-k="rowset" data-id="${g.key}" data-f="d${x}" inputmode="numeric" value="${(()=>{const v=[...new Set(G.racks.map(R=>(R.rack.dim||{})[x]||''))];return v.length===1?v[0]:'';})()}" placeholder="${x==='l'?'L':x==='w'?'W':'H'}" style="width:62px;text-align:right">`).join('')}</label>
-            <span class="seg mini-seg" role="group" aria-label="Direction of row ${esc(g.letter)}"><button data-act="${g.horiz?'row-orient':'noop'}" data-id="${g.key}" aria-pressed="${!g.horiz}" title="Bays run top to bottom">↕ Upright</button><button data-act="${g.horiz?'noop':'row-orient'}" data-id="${g.key}" aria-pressed="${!!g.horiz}" title="Bays run left to right, at half height">↔ Sideways</button></span>
+            <span class="seg mini-seg" role="group" aria-label="Direction of row ${esc(g.letter)}"><button data-act="${g.horiz?'row-shape':'noop'}" data-id="${g.key}" data-dir="v" aria-pressed="${!g.horiz}" title="The row runs top to bottom">↕ Down</button><button data-act="${g.horiz?'noop':'row-shape'}" data-id="${g.key}" data-dir="h" aria-pressed="${!!g.horiz}" title="The row runs left to right">↔ Across</button></span>
+            <span class="seg mini-seg" role="group" aria-label="Bays in row ${esc(g.letter)}"><button data-act="${isH(g.bays[0])?'row-shape':'noop'}" data-id="${g.key}" data-side="v" aria-pressed="${!isH(g.bays[0])}" title="Bays stand upright: boxes go in end on">▯ Upright bays</button><button data-act="${isH(g.bays[0])?'noop':'row-shape'}" data-id="${g.key}" data-side="h" aria-pressed="${isH(g.bays[0])}" title="Bays turned sideways: boxes go in side on">▭ Sideways bays</button></span>
             ${lockBtn('lock-row',g.key,all,'Lock row',false)}
             <span class="spacer"></span>
             <button class="icon ghost" data-act="row-del-rack" data-id="${g.key}" ${p.racks.length<=1?'disabled':''} aria-label="Remove last bay from row ${esc(g.letter)}" title="Remove the last bay">−</button>
@@ -2127,7 +2232,39 @@ const normH=s=>String(s??'').toLowerCase().replace(/[^a-z0-9#]/g,'');
 const LAYOUT_FIELDS=[['location','Location (e.g. A1-3)',['location','loc','position','rackposition','racklocation','shedlocation','address','rowbayslot','locationid','coreshedlocation']],
   ['row','Row',['row','rackrow','rowletter','aisle','line']],
   ['bay','Bay',['bay','rack','bayno','baynumber','rackno','racknumber','bay#','rack#']],
-  ['slot','Slot',['slot','shelf','level','slotno','slotnumber','shelfno','tier','shelfnumber']]];
+  ['slot','Slot',['slot','shelf','level','slotno','slotnumber','shelfno','tier','shelfnumber']],
+  ['yl','Bay length',['baylength','baylengthmm','baylengthm','baysizelength','baysizemmlength','racklength','racklengthmm','shelflength','shelflengthmm','slotlength','slotlengthmm','baydepth','rackdepth','shelfdepth']],
+  ['yw','Bay width',['baywidth','baywidthmm','baywidthm','baysizewidth','baysizemmwidth','rackwidth','rackwidthmm','shelfwidth','shelfwidthmm','slotwidth','slotwidthmm']],
+  ['yh','Bay height',['bayheight','bayheightmm','bayheightm','baysizeheight','baysizemmheight','rackheight','rackheightmm','shelfheight','shelfheightmm','slotheight','slotheightmm','clearance','shelfclearance','slotclearance']],
+  ['ysize','Bay size (L × W × H)',['baysize','baysizemm','baydimensions','baydimensionsmm','baydims','racksize','rackdimensions','shelfsize','slotsize']]];
+const BAYDIM_KEYS=['yl','yw','yh','ysize'];
+/* bay sizes are often under a merged “Bay size (mm)” heading with Length / Width / Height below it, or named “Rack L”, “Shelf depth” and so on.
+   Read the heading text around each column and pick out the bay ones (not the box ones). */
+function guessBayDims(imp,map){const h=imp.headerRow-1;if(h<0)return;const row=i=>(imp.rows[i]||[]);const used=new Set(Object.values(map).filter(v=>v>=0));
+  const ncols=Math.max(0,...imp.rows.slice(0,Math.max(h+3,5)).map(r=>r.length));const words=t=>' '+String(t??'').toLowerCase().replace(/[^a-z0-9]+/g,' ')+' ';
+  const dimWord=/^\s*(length|len|width|height|depth|l|w|h|d)\b/i;
+  /* a second heading row under a merged “Bay size” heading: Length / Width / Height, with no locations in it */
+  if(!imp.sub){const nx=row(h+1);const locI=['location','row','bay','slot'].map(k=>map[k]).filter(v=>v>=0);
+    if(nx.filter(v=>dimWord.test(String(v??''))).length>=2&&locI.every(i=>String(nx[i]??'').trim()==='')){imp.sub=true;if(map.ysize>=0&&dimWord.test(String(nx[map.ysize]??''))){used.delete(map.ysize);map.ysize=-1;}}}
+  const topRow=imp.sub?row(h):(h>0?row(h-1):[]);const ownRow=imp.sub?row(h+1):row(h);
+  let grp='';const cols=[];
+  for(let i=0;i<ncols;i++){const g=String(topRow[i]??'').trim();if(g)grp=g;const o=String(ownRow[i]??'').trim();
+    /* a group heading only carries on over the bare Length / Width / Height columns beside it */
+    const ctx=g||(dimWord.test(o)?grp:'');if(!g&&!dimWord.test(o))grp='';
+    cols.push({i,own:words(imp.sub&&!o?g:o),ctx:words(ctx)});}
+  const isBay=t=>/ (bay|bays|rack|racks|shelf|shelves|slot|slots|compartment|cell|opening|space|storage) /.test(t);const isBox=t=>/ (box|boxes|tray|trays|core) /.test(t);
+  const which=t=>/ (length|len|long|l) /.test(t)?'yl':/ (width|wide|w) /.test(t)?'yw':/ (height|high|h|clearance) /.test(t)?'yh':/ (depth|deep|d) /.test(t)?'yd':/ (size|sizes|dimension|dimensions|dims|lxwxh) /.test(t)?'ysize':'';
+  const found={};
+  cols.forEach(c=>{if(used.has(c.i))return;const own=c.own,ctx=c.ctx;let bay=false;
+    if(isBay(own)&&!isBox(own))bay=true;else if(!isBay(own)&&!isBox(own)&&isBay(ctx)&&!isBox(ctx))bay=true;if(!bay)return;
+    let k=which(own);if(!k&&!/ (size|sizes|dimension|dimensions|dims) /.test(own))k=which(ctx);if(!k||found[k]!==undefined)return;found[k]=c.i;});
+  if(found.yd!==undefined&&found.yl===undefined)found.yl=found.yd;
+  ['yl','yw','yh','ysize'].forEach(k=>{if(!(map[k]>=0)&&found[k]!==undefined&&!used.has(found[k])){map[k]=found[k];used.add(found[k]);}});}
+/* the unit a size column is in: mm unless the heading or the numbers say metres or centimetres */
+function dimScale(imp,i){const h=imp.headerRow-1;const lab=[h>0?(imp.rows[h-1]||[])[i]:'',h>=0?(imp.rows[h]||[])[i]:'',imp.sub?(imp.rows[h+1]||[])[i]:''].map(v=>String(v??'').toLowerCase()).join(' ');
+  if(/\bmm\b|millimet/.test(lab))return 1;if(/\bcm\b|centimet/.test(lab))return 10;if(/\(m\)|\bm\b|\bmetres?\b|\bmeters?\b/.test(lab))return 1000;
+  const vals=dataRows(imp).slice(0,200).map(r=>String(r[i]??'')).filter(v=>v.trim()).flatMap(v=>v.split(/[x×*\/]/i)).map(v=>parseFloat(v.replace(/[^0-9.]/g,''))).filter(n=>n>0);
+  return vals.length&&Math.max(...vals)<20?1000:1;}
 const PALLET_FIELDS=[['order','Pallet order (No.)',['no','#','order','stackorder','palletorder','sequence','seq','itemno','stackno','orderno','loadorder']],['pallet','Pallet',['pallet','palletno','palletnumber','palletid']]];
 const fieldsFor=imp=>imp&&imp.kind==='layout'?LAYOUT_FIELDS.concat(FIELDS):FIELDS.concat(PALLET_FIELDS);
 function parseLoc(R,B,Sl,loc){
@@ -2137,12 +2274,16 @@ function parseLoc(R,B,Sl,loc){
   if(/^\d+$/.test(R))R=+R>0?letterAdd('A',+R-1):'';R=R.replace(/[^A-Z]/g,'');
   const b=parseInt(B,10),s=parseInt(Sl,10);if(!R||!(b>=0)||!(s>=1)||s>500)return null;return{row:R,bay:b,slot:s};}
 const tidyName=n=>{n=String(n).replace(/\s+/g,' ').trim();n=n.split(' ').map(w=>/[A-Z]{2}/.test(w)&&w===w.toUpperCase()?w.toLowerCase():w).join(' ');return n.charAt(0).toUpperCase()+n.slice(1);};
-function layoutExtraCols(p,imp){if(!imp.extras)return[];
+/* with “bring in every other column” off, box sizes still come in: they are needed to check boxes fit their bays */
+function layoutExtraCols(p,imp){const all=layoutExtraCols0(p,imp);return imp.extras?all:all.filter(e=>['bl','bw','bh'].some(k=>DIMSYN[k].includes(normH(e.name))));}
+function layoutExtraCols0(p,imp){
   const hdr=imp.headerRow>0?(imp.rows[imp.headerRow-1]||[]):[];const grp=imp.headerRow>1?(imp.rows[imp.headerRow-2]||[]):[];const sub=imp.sub?(imp.rows[imp.headerRow]||[]):[];
   const mapped=new Set(Object.values(imp.map).filter(v=>v>=0));const ncols=Math.max(0,...imp.rows.slice(0,60).map(r=>r.length));const data=dataRows(imp);
   const have=new Set((p.customCols||[]).map(c=>normH(c.name)));const out=[];let lastTop='';
-  for(let i=0;i<ncols;i++){const top=String(hdr[i]??'').trim();if(top)lastTop=top;if(mapped.has(i))continue;const sb=String(sub[i]??'').trim();
-    let name=sb?((top||lastTop)+' '+sb):(top||String(grp[i]??'').trim());if(!name)continue;
+  let lastGrp='';
+  for(let i=0;i<ncols;i++){const top=String(hdr[i]??'').trim();if(top)lastTop=top;const g=String(grp[i]??'').trim();if(g)lastGrp=g;else if(!/^\s*(length|len|width|height|depth|l|w|h|d)\b/i.test(top))lastGrp='';if(mapped.has(i))continue;const sb=String(sub[i]??'').trim();
+    let name=sb?((top||lastTop)+' '+sb):(top||g);if(!name)continue;
+    if(!sb&&lastGrp&&/^\s*(length|len|width|height|depth|l|w|h|d)\b/i.test(top))name=lastGrp+' '+top;
     if(['uniqueno','uniquenumber','no','number','id'].includes(normH(name)))continue;
     if(!data.some(r=>String(r[i]??'').trim()))continue;
     name=tidyName(name);if(out.some(o=>normH(o.name)===normH(name)))continue;out.push({i,name,exists:have.has(normH(name))});}
@@ -2152,8 +2293,12 @@ function buildLayout(p,imp,rows){
   const m=imp.map;const get=(row,k)=>{const i=m[k];return i>=0&&row[i]!=null?String(row[i]).trim():'';};
   const cells=[],seen=new Map();let noLoc=0,dupes=0,empty=0,missing=0,unknown=0;
   /* bay sizes are read from every row, including EMPTY ones */
-  const dIdx={};['yl','yw','yh'].forEach(k=>{const x=xcols.find(e=>DIMSYN[k].includes(normH(e.name)));if(x)dIdx[k]=x.i;else{const c=p.customCols.find(c=>DIMSYN[k].includes(normH(c.name)));if(c&&m['c:'+c.id]>=0)dIdx[k]=m['c:'+c.id];}});
-  const dimOf=row=>{const d={l:mm(row[dIdx.yl]),w:mm(row[dIdx.yw]),h:mm(row[dIdx.yh])};return d.l||d.w||d.h?d:null;};
+  const dIdx={};['yl','yw','yh','ysize'].forEach(k=>{if(m[k]>=0){dIdx[k]=m[k];return;}if(k==='ysize')return;const x=xcols.find(e=>DIMSYN[k].includes(normH(e.name)));if(x)dIdx[k]=x.i;else{const c=p.customCols.find(c=>DIMSYN[k].includes(normH(c.name)));if(c&&m['c:'+c.id]>=0)dIdx[k]=m['c:'+c.id];}});
+  const sc={};Object.entries(dIdx).forEach(([k,i])=>sc[k]=dimScale(imp,i));
+  const num=(v,f)=>{const n=parseFloat(String(v??'').replace(/,/g,'').replace(/[^0-9.]/g,''));return n>0?Math.round(n*f):0;};
+  const dimOf=row=>{const d={l:dIdx.yl!==undefined?num(row[dIdx.yl],sc.yl):0,w:dIdx.yw!==undefined?num(row[dIdx.yw],sc.yw):0,h:dIdx.yh!==undefined?num(row[dIdx.yh],sc.yh):0};
+    if(dIdx.ysize!==undefined){const parts=String(row[dIdx.ysize]??'').split(/\s*[x×*\/]\s*/i).map(v=>num(v,sc.ysize));if(!d.l&&parts[0])d.l=parts[0];if(!d.w&&parts[1])d.w=parts[1];if(!d.h&&parts[2])d.h=parts[2];}
+    return d.l||d.w||d.h?d:null;};
   for(const row of rows){
     const L=parseLoc(get(row,'row'),get(row,'bay'),get(row,'slot'),get(row,'location'));if(!L){if(['feature','hole','box','from','to'].some(k=>get(row,k)))noLoc++;continue;}
     const key=L.row+'|'+L.bay+'|'+L.slot;const dupe=seen.has(key);if(dupe)dupes++;
@@ -2305,6 +2450,7 @@ function autoMap(p,imp){
   imp.sub=false;
   const find=(names)=>{const ns=names.map(normH);for(const [hi,H] of [[0,hdr],[1,sub]])for(let i=0;i<H.length;i++){if(used.has(i))continue;if(ns.includes(normH(H[i]))){used.add(i);if(hi)imp.sub=true;return i;}}return -1;};
   fieldsFor(imp).forEach(([k,,syn])=>{map[k]=find(syn);auto[k]=map[k]>=0;});
+  if(imp.kind==='layout'){guessBayDims(imp,map);BAYDIM_KEYS.forEach(k=>{auto[k]=map[k]>=0;});}
   p.customCols.forEach(c=>{const k='c:'+c.id;map[k]=find([c.name]);auto[k]=map[k]>=0;});
   imp.map=map;imp.auto=auto;
   const data=dataRows(imp);const hi=map.hole;
@@ -2398,7 +2544,10 @@ async function readSheetFile(file,kind){
   if(S.palletNext){S.palletNext=false;imp.pallet=true;imp.fromMove=true;S.mmZoom=true;S.mmDir='zoom';if((cur().items||[]).length){imp.mode='pallet';imp.skipDup=true;}S.tab='moves';}
   render();
 }
-function sheetRows(wb,name){return XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:false,defval:''});}
+function sheetRows(wb,name){const ws=wb.Sheets[name];
+  /* merged cells: Excel only stores the value in the top-left cell, so copy it into the rest of the range (merged headings and merged bay sizes) */
+  (ws['!merges']||[]).forEach(m=>{const tl=ws[XLSX.utils.encode_cell(m.s)];if(!tl)return;for(let r=m.s.r;r<=m.e.r;r++)for(let c=m.s.c;c<=m.e.c;c++){const a=XLSX.utils.encode_cell({r,c});if(!ws[a])ws[a]=Object.assign({},tl);}});
+  return XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});}
 function parseCSV(text){
   const delim=(text.split('\n')[0].match(/\t/g)||[]).length>(text.split('\n')[0].match(/,/g)||[]).length?'\t':',';
   const rows=[];let row=[],f='',q=false;
@@ -2629,7 +2778,7 @@ document.addEventListener('click',e=>{
     case 'png-go':{const t=$('#mp_title');const lg=$('#png_leg');if(lg)S.pngLegend=lg.checked;S.pngAsk=false;
       if(t&&isReadOnly()){const old=p.map.title;p.map.title=t.value;render();exportPNG(p);p.map.title=old;break;}
       if(t&&t.value!==p.map.title){p.map.title=t.value;touch(p);}render();exportPNG(p);break;}
-    case 'map-desel':S.sel=null;S.selEdit=null;render();break;
+    case 'map-desel':S.sel=null;S.multi=[];S.selEdit=null;render();break;
     case 'sel-edit':S.selEdit=S.selEdit===S.sel.type+':'+S.sel.id?null:S.sel.type+':'+S.sel.id;render();{const f=$('.edfloat input');if(f&&S.selEdit)f.focus();}break;
     case 'sel-cancel':S.selEdit=null;render();break;
     case 'sel-save':{const sl=S.sel;if(!sl)break;const v=k=>{const el=$('#'+k);return el?(el.type==='checkbox'?el.checked:el.value):undefined;};mapSnap(p);const before=nameSnapshot(p);let note='';
@@ -2643,7 +2792,7 @@ document.addEventListener('click',e=>{
         g.bays.forEach(b0=>{if(L)b0.letterFix=L;else delete b0.letterFix;const nm=v('rw_n');if(nm)b0.numMode=nm;else delete b0.numMode;});
         deriveNames(p);g=groupOfBay(p,sl.id);
         if(v('rw_unst')){const b0=g.bays[0];stretchRow(g,'x',baseW(b0)/dw(b0));stretchRow(g,'y',baseH(b0)/dh(b0));g.bays.forEach(x=>{delete x.sw;delete x.sh;});deriveNames(p);g=groupOfBay(p,sl.id);}
-        if((v('rw_o')==='h')!==!!g.horiz){const res=flipRow(p,g);if(res==='fail')note=' The row couldn’t turn here; move it to open space first.';deriveNames(p);g=groupOfBay(p,sl.id);}
+        if((v('rw_o')==='h')!==!!g.horiz||(v('rw_s')==='h')!==isH(g.bays[0])){const res=flipRow(p,g,v('rw_o')==='h',v('rw_s')==='h');if(res==='fail')note=' The row couldn’t turn here; move it to open space first.';deriveNames(p);g=groupOfBay(p,sl.id);}
         const want=clamp(int(v('rw_c'),g.bays.length),1,200);
         while(g.bays.length<want){const nr=makeRack(p);const lastB=g.bays[g.bays.length-1];nr.rows=lastB.rows;nr.blocked=(lastB.blocked||[]).slice();appendBayToRow(p,nr,g);p.racks.push(nr);deriveNames(p);g=groupOfBay(p,sl.id);}
         while(g.bays.length>want&&p.racks.length>1){const lastB=g.bays[g.bays.length-1];if(lastB.id===sl.id&&g.bays.length>1){/* keep the selected bay */const other=g.bays[g.bays.length-2];p.racks=p.racks.filter(r=>r.id!==other.id);}else p.racks=p.racks.filter(r=>r.id!==lastB.id);deriveNames(p);g=groupOfBay(p,sl.id);if(!g)break;}
@@ -2788,13 +2937,22 @@ document.addEventListener('click',e=>{
       const x=(last?Math.max(...gs.map(g=>g.maxX))+AISLE:2)+(horiz?1:0);const list=[];for(let i=0;i<n;i++){const r=makeRack(p);list.push(r);}
       placeRow(list,x,2,horiz,Math.min(2,lines),(last&&last.mode||p.setup.numbering)==='across');p.racks.push(...list);deriveNames(p);
       p.setup.rackCount=p.racks.length;S.sel={type:'row',id:list[0].id};touch(p);render();toast(`Added row ${list[0].rowLetter} with ${plural(n,'bay')}`);break;}
-    case 'map-tool':S.mapTool=b.dataset.tool||'select';if(S.mapTool!=='select')S.sel=null;render();break;
+    case 'map-tool':S.mapTool=b.dataset.tool||'select';if(S.mapTool!=='select'){S.sel=null;S.multi=[];}render();break;
     case 'map-undo':if((S.mapUndo||[]).length){S.mapRedo=(S.mapRedo||[]).concat(mapState(p));mapRestore(p,S.mapUndo.pop());S.sel=null;touch(p);render();}break;
     case 'map-redo':if((S.mapRedo||[]).length){S.mapUndo=(S.mapUndo||[]).concat(mapState(p));mapRestore(p,S.mapRedo.pop());S.sel=null;touch(p);render();}break;
-    case 'shape-del':{const l=p.map.labels.find(x=>x.id===id);if(!l)break;mapSnap(p);if(shType(l)==='pallet'){const its=palletItems(p,id);its.forEach(it=>{delete it.temp;delete it.pallet;});if(its.length)toast(`${plural(its.length,'box','boxes')} from ${l.text} went back into the plan`);}
-      p.map.labels=p.map.labels.filter(x=>x.id!==id);S.sel=null;touch(p);render();break;}
-    case 'shape-dup':{const l=p.map.labels.find(x=>x.id===id);if(!l)break;mapSnap(p);const c=clone(l);c.id=uid();c.x+=1;c.y+=1;if(isLine(c)){c.x2+=1;c.y2+=1;}if(shType(c)==='pallet'){c.text=(c.text||'Pallet')+' copy';delete c.kept;}p.map.labels.push(c);S.sel={type:'label',id:c.id};touch(p);render();break;}
-    case 'shape-front':case 'shape-back':{const i=p.map.labels.findIndex(x=>x.id===id);if(i<0)break;mapSnap(p);const [l]=p.map.labels.splice(i,1);l.layer=act==='shape-front'?'front':'back';if(act==='shape-front')p.map.labels.push(l);else p.map.labels.unshift(l);touch(p);render();toast(act==='shape-front'?'Brought to the front':'Sent behind the bays');break;}
+    case 'shape-del':{const ls=(id?[p.map.labels.find(x=>x.id===id)]:selItems(p,selSet()).labels).filter(Boolean);if(!ls.length)break;const del=ls.filter(l=>!l.locked);
+      if(!del.length){toast(ls.length>1?'They’re locked in place. Unlock them first.':'It’s locked in place. Unlock it first.');break;}mapSnap(p);
+      del.forEach(l=>{if(shType(l)==='pallet'){const its=palletItems(p,l.id);its.forEach(it=>{delete it.temp;delete it.pallet;});if(its.length)toast(`${plural(its.length,'box','boxes')} from ${l.text} went back into the plan`);}});
+      const gone=new Set(del.map(l=>l.id));p.map.labels=p.map.labels.filter(x=>!gone.has(x.id));setSel([...selSet()].filter(k=>!gone.has(splitKey(k).id)||!k.startsWith('label:')));if(del.length<ls.length)toast('Locked shapes were kept.');touch(p);render();break;}
+    case 'shape-dup':{const ls=(id?[p.map.labels.find(x=>x.id===id)]:selItems(p,selSet()).labels).filter(Boolean);if(!ls.length)break;mapSnap(p);const keys=[];
+      ls.forEach(l=>{const c=clone(l);c.id=uid();delete c.locked;c.x+=1;c.y+=1;if(isLine(c)){c.x2+=1;c.y2+=1;}if(shType(c)==='pallet'){c.text=(c.text||'Pallet')+' copy';delete c.kept;}p.map.labels.push(c);keys.push('label:'+c.id);});
+      setSel(keys);touch(p);render();break;}
+    case 'shape-front':case 'shape-back':{const ls=(id?[p.map.labels.find(x=>x.id===id)]:selItems(p,selSet()).labels).filter(Boolean);if(!ls.length)break;mapSnap(p);const set=new Set(ls);
+      const rest=p.map.labels.filter(x=>!set.has(x));ls.forEach(l=>l.layer=act==='shape-front'?'front':'back');p.map.labels=act==='shape-front'?rest.concat(ls):ls.concat(rest);touch(p);render();toast(act==='shape-front'?'Brought to the front':'Sent behind the bays');break;}
+    case 'item-lock':{const keys=b.dataset.key?[b.dataset.key]:[...selSet()];if(!keys.length)break;const on=!selLocked(p,keys);mapSnap(p);setLocked(p,keys,on);touch(p);render();
+      toast(on?'Locked in place. It won’t move, and you can draw over it.':'Unlocked. It can be moved again.');break;}
+    case 'shape-rot':{const l=p.map.labels.find(x=>x.id===id);if(!l||l.locked)break;mapSnap(p);l.ang=(((+l.ang||0)+90)%360);if(shType(l)!=='north'){const w=labelW(l),h=+l.h||1,cx=l.x+w/2,cy=l.y+h/2;l.w=h;l.h=w;l.x=Math.max(0,snapV(cx-h/2));l.y=Math.max(0,snapV(cy-w/2));}touch(p);render();break;}
+    case 'shape-mirror':{const l=p.map.labels.find(x=>x.id===id);if(!l)break;mapSnap(p);if(l.fx)delete l.fx;else l.fx=true;touch(p);render();break;}
     case 'map-add-label':{const B=mapBounds(p);const l={id:uid(),x:1,y:Math.max(1,B.h-2),text:'Door'};p.map.labels.push(l);S.sel={type:'label',id:l.id};S.focusAfter='lb_text';touch(p);render();break;}
     case 'label-color':{const l=p.map.labels.find(x=>x.id===id);if(l){mapSnap(p);l.color=b.dataset.color||'';touch(p);render();}break;}
     case 'label-del':p.map.labels=p.map.labels.filter(l=>l.id!==id);S.sel=null;touch(p);render();break;
@@ -2802,6 +2960,9 @@ document.addEventListener('click',e=>{
       stretchRow(g,'x',fx);stretchRow(g,'y',fy);g.bays.forEach(x=>{delete x.sw;delete x.sh;});
       if(g.bays.some(x=>p.racks.some(o=>!g.bays.includes(o)&&overlap(o,x)))){restoreStretch({orig});toast('There isn’t room to shrink this row back here.');break;}
       touch(p);render();toast(`Row ${g.letter} is back to the standard bay size.`);}break;}
+    case 'row-shape':{const g=groupOfBay(p,id);if(!g)break;const horiz=b.dataset.dir?b.dataset.dir==='h':!!g.horiz,side=b.dataset.side?b.dataset.side==='h':isH(g.bays[0]);
+      mapSnap(p);const before=nameSnapshot(p);const res=flipRow(p,g,horiz,side);if(res==='fail'){S.mapUndo.pop();toast('There isn’t room to turn this row here. Move it to open space first.');break;}
+      markUpdated(p,before);S.sel={type:'row',id};touch(p);render();toast(`Row ${g.letter} now runs ${horiz?'left to right':'top to bottom'} with ${side?'sideways':'upright'} bays${res==='moved'?', moved below the other rows to make room':''}.`);break;}
     case 'row-orient':{const g=groupOfBay(p,id);if(g){mapSnap(p);const before=nameSnapshot(p);const res=flipRow(p,g);
       if(res==='fail'){toast('There isn’t room to turn this row here. Move it to open space first.');break;}
       markUpdated(p,before);S.sel={type:'row',id};touch(p);render();toast(`Row ${g.letter} is now ${g.horiz?'upright':'sideways'}${res==='moved'?' and moved below the other rows to make room':''}.`);}break;}
@@ -2895,9 +3056,10 @@ document.addEventListener('change',e=>{
       else if(f==='size')l.size=+val||1;else if(f==='color')l.color=val;else if(f==='stroke')l.stroke=val;else if(f==='tc')l.tc=val;
       else if(f==='sw'){if(val==='')delete l.sw;else l.sw=+val;}else if(f==='dash'){if(val)l.dash=val;else delete l.dash;}else if(f==='align'){if(val)l.align=val;else delete l.align;}
       else if(f==='r'){if(val==='')delete l.r;else l.r=clamp(+val||0,0,60);}else if(f==='op')l.op=clamp((+val||100)/100,0.1,1);else if(f==='bold')l.bold=!!val;
+      else if(['pat','rot','variant','ends'].includes(f)){if(val)l[f]=val;else delete l[f];}else if(f==='ang'){const n=parseFloat(val);if(n)l.ang=((n%360)+360)%360;else delete l.ang;}
       else if(f==='kept'){l.kept=!!val;toast(val?`${l.text} is now a permanent storage location`:`Boxes on ${l.text} are waiting for a slot again`);}
       touch(p);render();}return;}
-  if(k==='map'){if(f==='title'){p.map.title=val;touch(p);return;}p.map[f]=Math.max(0,int(val,0));touch(p);render();return;}
+  if(k==='map'){if(f==='title'){p.map.title=val;touch(p);return;}if(f==='scale'){const v=parseFloat(String(val).replace(',','.'));if(v>0)p.map.scale=v;else delete p.map.scale;touch(p);render();return;}p.map[f]=Math.max(0,int(val,0));touch(p);render();return;}
   if(k==='fe')return;
   if(k==='palconf'&&S.palConf){S.palConf.choice[t.dataset.i]=val;render();return;}
   if(k==='mmfix'){const r=(S.mmFix||[])[+t.dataset.i];if(r)r[f]=val;return;}
@@ -2965,7 +3127,15 @@ document.addEventListener('pointerdown',e=>{
   let type,id,el;
   if(lr){type='lresize';id=lr.dataset.lresize;el=lr.closest('[data-label]');}
   else if(rk){type='rack';id=rk.dataset.rack;el=rk;}else if(rh){type='row';id=rh.dataset.rowh;el=svg.querySelector(`[data-rowg="${id}"]`);}else if(lb){type='label';id=lb.dataset.label;el=lb;}
+  else if(e.shiftKey&&!isReadOnly()&&svg){/* Shift+drag on empty space: select everything inside a box */
+    e.preventDefault();const rc=svg.getBoundingClientRect(),sc=mapScale();MD={type:'marq',mc,svg,sx:e.clientX,sy:e.clientY,gx:(e.clientX-rc.left)/sc/MAPC,gy:(e.clientY-rc.top)/sc/MAPC,moved:false,pid:e.pointerId};try{mc.setPointerCapture(e.pointerId);}catch(_){}return;}
   else{e.preventDefault();MD={type:'pan',mc,sx:e.clientX,sy:e.clientY,sl:mc.scrollLeft,st:mc.scrollTop,moved:false,pid:e.pointerId};try{mc.setPointerCapture(e.pointerId);}catch(_){}return;}
+  if(type!=='lresize'&&!isReadOnly()){const p=cur();const key=type+':'+id;const pan=extra=>{e.preventDefault();MD=Object.assign({type:'pan',mc,sx:e.clientX,sy:e.clientY,sl:mc.scrollLeft,st:mc.scrollTop,moved:false,pid:e.pointerId},extra);try{mc.setPointerCapture(e.pointerId);}catch(_){}};
+    if(e.shiftKey){pan({toggleKey:key});return;}
+    const locked=type==='label'?!!(p.map.labels.find(x=>x.id===id)||{}).locked:rowPinned(groupOfBay(p,id));
+    if(locked){pan({clickSel:{type,id}});return;}
+    const ss=selSet();const g0=type==='rack'?groupOfBay(p,id):null;
+    if(ss.size>1&&(ss.has(key)||(g0&&ss.has('row:'+g0.key)))){e.preventDefault();MD={type:'group',keys:[...ss],key,svg,mc,sx:e.clientX,sy:e.clientY,moved:false,pid:e.pointerId};try{svg.setPointerCapture(e.pointerId);}catch(_){}return;}}
   e.preventDefault();MD={type,id,el,svg,sx:e.clientX,sy:e.clientY,moved:false,target:null,pid:e.pointerId,ro:isReadOnly()};
   if(!MD.ro)try{svg.setPointerCapture(e.pointerId);}catch(_){}
 });
@@ -2987,6 +3157,14 @@ document.addEventListener('pointermove',e=>{
     const mn=S.mapSnap===false?0.5:1;l.w=Math.max(mn,snapV(MD.ow+dx/sc/C));l.h=Math.max(mn,snapV(MD.oh+dy/sc/C));MD.nw=l.w;MD.nh=l.h;liveMap();return;}
   if(MD.type==='lend'){const l=cur().map.labels.find(x=>x.id===MD.id);if(!l)return;if(!MD.moved){if(Math.hypot(dx,dy)<3)return;MD.moved=true;mapSnap(cur());}
     const nx=Math.max(0,snapV(MD.ox+dx/sc/C)),ny=Math.max(0,snapV(MD.oy+dy/sc/C));if(MD.end==='1'){l.x=nx;l.y=ny;}else{l.x2=nx;l.y2=ny;}liveMap();return;}
+  if(MD.type==='marq'){if(!MD.moved){if(Math.hypot(dx,dy)<4)return;MD.moved=true;}MD.ex=MD.gx+dx/sc/C;MD.ey=MD.gy+dy/sc/C;const ac=pal().accent;
+    const pv=`<rect class="drawprev" x="${Math.min(MD.gx,MD.ex)*C}" y="${Math.min(MD.gy,MD.ey)*C}" width="${Math.abs(MD.ex-MD.gx)*C}" height="${Math.abs(MD.ey-MD.gy)*C}" fill="${ac}" fill-opacity="0.08" stroke="${ac}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+    const sv=MD.mc.querySelector('#shedmap');const old=sv&&sv.querySelector('.drawprev');if(old)old.remove();if(sv)sv.insertAdjacentHTML('beforeend',pv);return;}
+  if(MD.type==='group'){if(!MD.moved){if(Math.hypot(dx,dy)<5)return;MD.moved=true;const p=cur();const sv=MD.svg;const els=new Set();
+      MD.keys.forEach(k=>{const{type,id}=splitKey(k);const q=type==='label'?`[data-label="${id}"]`:type==='rack'?`[data-rack="${id}"]`:`[data-rowg="${id}"]`;const el=sv.querySelector(q);if(!el)return;
+        if(type==='label'?(p.map.labels.find(x=>x.id===id)||{}).locked:rowPinned(groupOfBay(p,id)))return;els.add(el);});
+      MD.els=[...els];MD.els.forEach(el=>{el.classList.add('dragging');el.style.pointerEvents='none';});}
+    const free=S.mapSnap===false;const tx=free?Math.round(dx/sc/C*4)/4*C:Math.round(dx/sc/C)*C,ty=free?Math.round(dy/sc/C*4)/4*C:Math.round(dy/sc/C)*C;MD.els.forEach(el=>el.setAttribute('transform',`translate(${tx} ${ty})`));return;}
   if(MD.type==='draw'){if(!MD.moved){if(Math.hypot(dx,dy)<4)return;MD.moved=true;}const gx=snapV(MD.gx+dx/sc/C),gy=snapV(MD.gy+dy/sc/C);MD.ex=gx;MD.ey=gy;
     const ac=pal().accent;MD.prev=isLine({type:MD.tool})?`<line class="drawprev" x1="${MD.gx*C}" y1="${MD.gy*C}" x2="${gx*C}" y2="${gy*C}" stroke="${ac}" stroke-width="2" stroke-dasharray="6 4"/>`
       :MD.tool==='ellipse'?`<ellipse class="drawprev" cx="${(MD.gx+gx)/2*C}" cy="${(MD.gy+gy)/2*C}" rx="${Math.abs(gx-MD.gx)/2*C}" ry="${Math.abs(gy-MD.gy)/2*C}" fill="none" stroke="${ac}" stroke-width="2" stroke-dasharray="6 4"/>`
@@ -3003,7 +3181,19 @@ document.addEventListener('pointermove',e=>{
 function restoreStretch(d){(d.names||[]).forEach(([b,l,n])=>{if(l)b.letterFix=l;else delete b.letterFix;if(n)b.numMode=n;else delete b.numMode;});d.orig.forEach(o=>{const b=o.b;b.x=o.x;b.y=o.y;if(o.sw)b.sw=o.sw;else delete b.sw;if(o.sh)b.sh=o.sh;else delete b.sh;});}
 function endDrag(e,cancel){
   if(!MD||(e&&e.pointerId!==MD.pid))return;const d=MD;MD=null;const p=cur();
-  if(d.type==='pan'){d.mc.classList.remove('panning');if(!d.moved&&!cancel&&S.sel){S.sel=null;S.selEdit=null;render();}return;}
+  if(d.type==='pan'){d.mc.classList.remove('panning');if(d.moved||cancel)return;
+    if(d.toggleKey){const ks=[...selSet()];const i=ks.indexOf(d.toggleKey);if(i>=0)ks.splice(i,1);else ks.push(d.toggleKey);setSel(ks);render();return;}
+    if(d.clickSel){setSel([selKey(d.clickSel)]);render();return;}
+    if(S.sel||(S.multi&&S.multi.length)){setSel([]);render();}return;}
+  if(d.type==='marq'){const o=d.mc.querySelector('.drawprev');if(o)o.remove();if(!d.moved||cancel)return;
+    const b={x:Math.min(d.gx,d.ex),y:Math.min(d.gy,d.ey)};b.x2=Math.max(d.gx,d.ex);b.y2=Math.max(d.gy,d.ey);const inB=(x,y,w,h)=>x>=b.x-EPS&&y>=b.y-EPS&&x+w<=b.x2+EPS&&y+h<=b.y2+EPS;
+    const keys=[...selSet()];p.map.labels.forEach(l=>{const sb=shapeBox(l);if(inB(sb.x,sb.y,sb.w,sb.h))keys.push('label:'+l.id);});
+    (p._rows||deriveNames(p)).forEach(g=>{if(inB(g.minX,g.minY,g.maxX-g.minX,g.maxY-g.minY))keys.push('row:'+g.key);else g.bays.forEach(r=>{if(inB(r.x,r.y,dw(r),dh(r)))keys.push('rack:'+r.id);});});
+    setSel(keys);render();return;}
+  if(d.type==='group'){if(cancel){render();return;}if(!d.moved){setSel([d.key]);render();return;}
+    const C=MAPC*mapScale();const q=v=>S.mapSnap===false?Math.round(v*4)/4:Math.round(v);const gx=q((e.clientX-d.sx)/C),gy=q((e.clientY-d.sy)/C);
+    mapSnap(p);const before=nameSnapshot(p);const res=moveSel(p,d.keys,gx,gy);if(res.msg!=='moved')S.mapUndo.pop();markUpdated(p,before);touch(p);render();
+    if(res.msg==='overlap')toast('That would put bays on top of other bays, so nothing moved.');else if(res.skipped)toast('Items locked in place stayed where they were.');return;}
   if(d.type==='stretch'){if(d.raf)cancelAnimationFrame(d.raf);const g0=groupOfBay(p,d.id);
     if(!d.moved||cancel){restoreStretch(d);render();return;}
     const clash=d.orig.some(o=>p.racks.some(x=>!d.ids.has(x.id)&&(overlap(x,o.b)||touching(x,o.b))));
@@ -3012,14 +3202,15 @@ function endDrag(e,cancel){
     S.mapUndo=(S.mapUndo||[]).concat(d.snap0).slice(-60);S.mapRedo=[];S.sel={type:'row',id:d.id};touch(p);render();const b=d.orig[0].b;
     toast(`Each bay in this row is now ${+dw(b).toFixed(2)} × ${+dh(b).toFixed(2)} squares${d.snap?', lined up with the next row':''}.`);return;}
   if(d.raf)cancelAnimationFrame(d.raf);
-  if(d.type==='lresize'||d.type==='lend'){if(cancel&&d.moved&&S.mapUndo&&S.mapUndo.length)mapRestore(p,S.mapUndo.pop());else if(d.moved)touch(p);S.sel={type:'label',id:d.id};render();return;}
+  if(d.type==='lresize'||d.type==='lend'){let n=0;if(cancel&&d.moved&&S.mapUndo&&S.mapUndo.length)mapRestore(p,S.mapUndo.pop());else if(d.moved){if(d.type==='lresize'){const before=nameSnapshot(p);n=makeRoom(p,p.map.labels.find(x=>x.id===d.id));markUpdated(p,before);}touch(p);}S.sel={type:'label',id:d.id};S.multi=[];render();roomToast(n);return;}
   if(d.type==='draw'){if(cancel){render();return;}const t=d.tool;let l;const ex=d.moved?d.ex:undefined,ey=d.moved?d.ey:undefined;
     if(isLine({type:t})){l={id:uid(),type:t,x:d.gx,y:d.gy,x2:d.moved?ex:d.gx+4,y2:d.moved?ey:d.gy};if(l.x===l.x2&&l.y===l.y2)l.x2+=4;}
-    else{const def={text:[6,2],label:[4,1],rect:[4,3],ellipse:[4,3],pallet:[5,3]}[t]||[4,2];let x=d.gx,y=d.gy,w=def[0],h=def[1];
+    else{const def={text:[6,2],label:[4,1],rect:[4,3],ellipse:[4,3],pallet:[5,3],door:[3,3],rdoor:[5,1],window:[4,1],column:[1,1],north:[2,2]}[t]||[4,2];let x=d.gx,y=d.gy,w=def[0],h=def[1];
       if(d.moved){x=Math.min(d.gx,ex);y=Math.min(d.gy,ey);w=Math.max(S.mapSnap===false?0.5:1,Math.abs(ex-d.gx));h=Math.max(S.mapSnap===false?0.5:1,Math.abs(ey-d.gy));}
       l={id:uid(),type:t,x,y,w,h,text:t==='text'?'Text':t==='label'?'Label':t==='pallet'?(pallets(p).length?'Pallet '+(pallets(p).length+1):'Temporary pallet'):''};}
-    mapSnap(p);p.map.labels.push(l);S.sel={type:'label',id:l.id};S.mapTool='select';if(!isLine(l)&&shType(l)!=='rect'&&shType(l)!=='ellipse')S.focusAfter='lb_text';touch(p);render();return;}
-  if(!d.moved||d.ro){if(!cancel){const ns={type:d.type,id:d.id};if(!S.sel||S.sel.type!==ns.type||S.sel.id!==ns.id)S.selEdit=null;S.sel=ns;render();}return;}
+    mapSnap(p);p.map.labels.push(l);S.sel={type:'label',id:l.id};S.multi=[];S.mapTool='select';if(['text','label','pallet'].includes(t)||(t==='dim'&&!mapScaleM(p)))S.focusAfter='lb_text';
+    const before=nameSnapshot(p);const n=makeRoom(p,l);markUpdated(p,before);touch(p);render();roomToast(n);return;}
+  if(!d.moved||d.ro){if(!cancel){const ns={type:d.type,id:d.id};if(!S.sel||S.sel.type!==ns.type||S.sel.id!==ns.id)S.selEdit=null;S.sel=ns;S.multi=[];render();}return;}
   if(cancel){render();return;}
   const C=MAPC*mapScale(),fdx=(e.clientX-d.sx)/C,fdy=(e.clientY-d.sy)/C;mapSnap(p);const before=nameSnapshot(p);let msg='';
   if(d.type==='rack'){const bay=p.racks.find(r=>r.id===d.id);
@@ -3030,9 +3221,10 @@ function endDrag(e,cancel){
   else if(d.type==='row'){const g=groupOfBay(p,d.id);if(g){const dx=Math.round(fdx),dy=Math.round(fdy);const ids=new Set(g.bays.map(b=>b.id));
       const ok=g.bays.every(b=>b.x+dx>=0&&b.y+dy>=1&&!p.racks.some(o=>!ids.has(o.id)&&overlap(o,{x:b.x+dx,y:b.y+dy,orient:b.orient,sw:b.sw,sh:b.sh})));
       if(ok)g.bays.forEach(b=>{b.x+=dx;b.y+=dy;});else msg='overlap';}S.sel={type:'row',id:d.id};}
-  else if(d.type==='label'){const l=p.map.labels.find(x=>x.id===d.id);if(l){const mx=snapV(fdx),my=snapV(fdy);const b=shapeBox(l);const ax=Math.max(-b.x,mx),ay=Math.max(-b.y,my);l.x+=ax;l.y+=ay;if(isLine(l)){l.x2+=ax;l.y2+=ay;}}S.sel={type:'label',id:d.id};}
+  else if(d.type==='label'){const l=p.map.labels.find(x=>x.id===d.id);if(l){const mx=snapV(fdx),my=snapV(fdy);const b=shapeBox(l);const ax=Math.max(-b.x,mx),ay=Math.max(-b.y,my);l.x+=ax;l.y+=ay;if(isLine(l)){l.x2+=ax;l.y2+=ay;}msg='room:'+makeRoom(p,l);}S.sel={type:'label',id:d.id};}
   markUpdated(p,before);touch(p);render();
   const r=d.type==='rack'&&p.racks.find(x=>x.id===d.id);
+  S.multi=[];if(msg.startsWith('room:'))roomToast(+msg.slice(5));
   if(msg==='overlap')toast('That spot overlaps another bay. Drop it on top of a bay to swap, or next to one to join it.');
   else if(r&&before.get(r.id)!==r.name)toast(`This bay is now ${r.name}; the rack plan has been updated.`);
 }
@@ -3061,10 +3253,19 @@ document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLower
     if(e.key==='Escape'&&S.mapTool&&S.mapTool!=='select'){S.mapTool='select';render();return;}
     if(!typing&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();const bt=$(e.shiftKey?'[data-act=map-redo]':'[data-act=map-undo]');if(bt&&!bt.disabled)bt.click();return;}
     if(!typing&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();const bt=$('[data-act=map-redo]');if(bt&&!bt.disabled)bt.click();return;}
+    if(!typing&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='a'){e.preventDefault();setSel(p.map.labels.map(l=>'label:'+l.id).concat((p._rows||deriveNames(p)).map(g=>'row:'+g.key)));render();return;}
+    if(!typing&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&e.key.toLowerCase()==='l'&&selSet().size){e.preventDefault();const bt=$('.edtools [data-act=item-lock]');if(bt&&!bt.disabled)bt.click();return;}
+    if(!typing&&e.key==='Escape'&&(S.sel||(S.multi&&S.multi.length))){setSel([]);render();return;}
+    if(!typing&&S.multi&&S.multi.length>1){
+      if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();const bt=$('.edtools [data-act=shape-del]');if(bt&&!bt.disabled)bt.click();return;}
+      if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='d'){e.preventDefault();const bt=$('.edtools [data-act=shape-dup]');if(bt&&!bt.disabled)bt.click();return;}
+      const mv={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+      if(mv){e.preventDefault();const st=e.shiftKey||S.mapSnap===false?0.25:1;mapSnap(p);const before=nameSnapshot(p);const res=moveSel(p,S.multi,mv[0]*st,mv[1]*st);if(res.msg!=='moved')S.mapUndo.pop();markUpdated(p,before);touch(p);render();if(res.msg==='overlap')toast('Bays can’t move onto other bays.');return;}}
     const sl=S.sel&&S.sel.type==='label'&&p?p.map.labels.find(x=>x.id===S.sel.id):null;
     if(sl&&!typing){if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();const bt=$('.edtools [data-act=shape-del]');if(bt)bt.click();return;}
       if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='d'){e.preventDefault();const bt=$('.edtools [data-act=shape-dup]');if(bt)bt.click();return;}
       const mv={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+      if(mv&&sl.locked){e.preventDefault();toast('It’s locked in place. Unlock it to move it.');return;}
       if(mv){e.preventDefault();const st=e.shiftKey||S.mapSnap===false?0.25:1;mapSnap(p);const b=shapeBox(sl);const dx=Math.max(-b.x,mv[0]*st),dy=Math.max(-b.y,mv[1]*st);sl.x+=dx;sl.y+=dy;if(isLine(sl)){sl.x2+=dx;sl.y2+=dy;}touch(p);render();return;}}}
   if(e.key==='Enter'&&S.tab==='moves'&&!S.leaveAsk){const a=document.activeElement;if(!a||!/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(a.tagName)){const bt=$('#mmPlaced');if(bt){e.preventDefault();bt.click();return;}}}
   if(e.key==='Escape'&&S.leaveAsk){S.leaveAsk=false;render();return;}
