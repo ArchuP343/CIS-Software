@@ -771,7 +771,7 @@ function sizeResults(p,P){const q=S.szq||{};const b={l:mm(q.l),w:mm(q.w),h:mm(q.
     ${full.length?`<div><span class="label">Fits, but full</span><div class="szchips">${chips(full)}</div></div>`:''}
     ${noSize?`<p class="muted small">${plural(noSize,'bay has','bays have')} no size set and isn’t included.</p>`:''}`;}
 function sizeBody(p,P){const DC=P.DC;const anyBay=P.racks.some(R=>bayDim(R.rack));const anyBox=p.items.some(it=>boxDims(it,DC));
-  if(!anyBay&&!anyBox)return `<p class="muted small">No sizes yet. Box sizes come from Box Length, Width and Height columns when you import. Set bay sizes in Edit → Edit Bay Settings.</p>`;
+  if(!anyBay&&!anyBox)return `<p class="muted small">No sizes yet. Box sizes come from Box Length, Width and Height columns when you import. ${isReadOnly()?'To set bay sizes, open a core move and use Edit → Edit Bay Settings.':'Set bay sizes in Edit → Edit Bay Settings.'}</p>`;
   const bs=new Map();p.items.forEach(it=>{const d=boxDims(it,DC);const k=d?dimTxt(d):'';if(!bs.has(k))bs.set(k,{d,n:0,it});bs.get(k).n++;});
   const ys=new Map();P.racks.forEach(R=>{const d=bayDim(R.rack);const k=d?dimTxt(d)+(isH(R.rack)?' sideways':''):'';if(!ys.has(k))ys.set(k,{d,n:0,names:[]});const y=ys.get(k);y.n++;y.names.push(R.rack.name);});
   const fitN=e=>P.racks.filter(R=>bayDim(R.rack)&&!fitIssue(p,e.it,R.rack,DC)).length;
@@ -2823,6 +2823,9 @@ document.addEventListener('click',e=>{
     case 'filter-apply':{const f=(projRec().filters||[]).find(x=>x.id===id);if(f){S.filter.conds=clone(f.conds);render();toast(`Filter “${f.name}” applied`);}break;}
     case 'filter-del':{const pr=projRec();pr.filters=(pr.filters||[]).filter(x=>x.id!==id);persist();render();break;}
     case 'reorg-yes':{const pr=projRec();reoptimise(pr.plan);pr.updated=Date.now();persist();S.confirm=null;render();toast('Shed reorganised into the best order');break;}
+    /* the locks and sizes overviews (and Will it fit?) also work in a view-only shed */
+    case 'pop':S.pop=b.dataset.pop&&S.pop!==b.dataset.pop?b.dataset.pop:null;render();break;
+    case 'szsearch':S.szOpen=!S.szOpen;render();if(S.szOpen){const el=$('#sz_l');if(el)el.focus();}break;
   }
   if(!editable)return;
   switch(act){
@@ -2904,8 +2907,6 @@ document.addEventListener('click',e=>{
       if(window.XLSX){const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=head.map(h=>({wch:Math.max(9,h.length+2)}));XLSX.utils.book_append_sheet(wb,ws,'Pallet sheet');XLSX.writeFile(wb,name+'.xlsx');}
       else{const csv=aoa.map(r=>r.map(v=>{const x=String(v??'');return /[",\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x;}).join(',')).join('\r\n');download(name+'.csv',new Blob(['\ufeff'+csv],{type:'text/csv'}));}
       toast('Move sheet exported');break;}
-    case 'szsearch':S.szOpen=!S.szOpen;render();if(S.szOpen){const el=$('#sz_l');if(el)el.focus();}break;
-    case 'pop':S.pop=b.dataset.pop&&S.pop!==b.dataset.pop?b.dataset.pop:null;render();break;
     case 'item-del':p.items=p.items.filter(it=>it.id!==id);touch(p);render();break;
     case 'clear':S.confirm='clear';render();break;
     case 'clear-yes':p.items=[];S.confirm=null;touch(p);render();toast('All boxes removed');break;
