@@ -1589,12 +1589,14 @@ function pinHere(p,id){const P=computePlan(p);const ps=P.pos[id];if(!ps)return f
   return ps.rackName+'-'+ps.slot;}
 function keepEmpty(p,before){if(!before)return;const r=p.racks.find(x=>x.id===before.rackId);if(!r||r.locked)return;if(r.slotLocks[before.slot]===undefined){r.slotLocks[before.slot]='';delete r.hold[before.slot];}}
 /* empty slots that fit the box, nearest to where it was meant to go; bays the same size as the one it failed in are left out */
-function altSlots(p,P,it,failRackId){const DC=P.DC;if(!boxDims(it,DC))return null;const fr=p.racks.find(r=>r.id===failRackId);const fd=bayDim(fr);
+function altSlots(p,P,it,failRackId,full){const DC=P.DC;if(!boxDims(it,DC))return null;const fr=p.racks.find(r=>r.id===failRackId);const fd=bayDim(fr);
   const rank=slotRank(P);const ps=P.pos[it.id];const at=ps?rank.get(ps.rackId+'|'+ps.slot):0;const out=[];
-  P.racks.forEach(R=>{if(R.locked||R.rack.id===failRackId||!bayDim(R.rack))return;const d=bayDim(R.rack);if(fd&&dimTxt(d)===dimTxt(fd)&&isH(R.rack)===isH(fr))return;if(fitIssue(p,it,R.rack,DC))return;
-    R.cells.forEach(c=>{if(c.blocked||c.closed||c.item||c.gap)return;out.push({loc:R.rack.name+'-'+c.slot,d:Math.abs(rank.get(R.rack.id+'|'+c.slot)-at)});});});
-  return out.sort((a,b)=>a.d-b.d).slice(0,6).map(x=>x.loc);}
-function mmSheetRows(p,P,B,order){return mmOrdered(p,P,B,order).map((it,i)=>({n:i+1,it,dest:destOf(P,it),pal:B.pal.get(it.id)||''}));}
+  P.racks.forEach(R=>{if(R.rack.id===failRackId||!bayDim(R.rack))return;const d=bayDim(R.rack);if(fd&&dimTxt(d)===dimTxt(fd)&&isH(R.rack)===isH(fr))return;if(fitIssue(p,it,R.rack,DC))return;
+    const sl=R.rack.slotLocks||{};
+    R.cells.forEach(c=>{if(c.blocked||c.item||c.gap)return;if(R.locked){if(sl[c.slot]==='')return;}else if(c.closed)return;
+      out.push({loc:R.rack.name+'-'+c.slot,locked:!!R.locked,d:Math.abs(rank.get(R.rack.id+'|'+c.slot)-at)});});});
+  const list=out.sort((a,b)=>a.locked-b.locked||a.d-b.d).slice(0,8);return full?list:list.map(x=>x.loc);}
+function mmSheetRows(p,P,B,order){return mmOrdered(p,P,B,order).map((it,i)=>{const ps=P.pos[it.id];const r=ps&&p.racks.find(x=>x.id===ps.rackId);return{n:i+1,it,dest:destOf(P,it),pal:B.pal.get(it.id)||'',nofit:!!(r&&fitIssue(p,it,r,P.DC))};});}
 /* Move mode is one step at a time: 0 upload, 1 offline/online, 2 order, 3 move, 4 finish */
 function mmStep(p,B){const mm=mmState(p);let st=mm.step|0;if(st>=1&&!mm.mode)st=Math.min(st,1);if(st>=3&&!mm.mode)st=1;return st;}
 const MM_NODES=['Upload Move Data','Connection Mode','Offload Order','Start Move','Finish'];
@@ -1635,11 +1637,11 @@ function movesTab(p,P,M){
 function offlineSheet(p,P,B,order){const rows=mmSheetRows(p,P,B,order);if(!rows.length)return'<p class="muted">No boxes to move.</p>';
   const noDest=rows.filter(r=>!r.dest).length;const hasPal=rows.some(r=>r.pal);const title=order==='pallet'?'Pallet sheet':'Slot sheet';
   return `<div class="row noprint"><button class="primary" data-act="mm-print">Print ${title.toLowerCase()}</button><button data-act="mm-export">Export to Excel</button></div>
-    ${noDest?`<div class="msg warn">${plural(noDest,'box has','boxes have')} no slot in the plan yet. Add bays or slots, or check sizes.</div>`:''}
+    ${noDest?`<div class="msg warn">${plural(noDest,'box has','boxes have')} no slot in the plan yet. Unlock or add bays of the right size, or check sizes.</div>`:''}${rows.some(r=>r.nofit)?`<div class="msg warn">${plural(rows.filter(r=>r.nofit).length,'box is','boxes are')} held in a slot ${rows.filter(r=>r.nofit).length===1?'it doesn’t':'they don’t'} fit (marked “doesn’t fit”). Move ${rows.filter(r=>r.nofit).length===1?'it':'them'} in the Rack plan before printing.</div>`:''}
     <div id="palletSheet"><div class="printhead"><h1>${esc([projRec().name,projRec().site].filter(Boolean).join(' – '))}</h1><p>${title} · core move “${esc((moveRec()||{}).name||'')}” · ${order==='pallet'?'in the order the boxes come off the pallets':'in slot order'} · printed ${new Date().toLocaleDateString()}</p></div>
     <div class="tablewrap" style="max-height:520px;overflow:auto"><table class="palt">
       <thead><tr><th class="num">${order==='pallet'?'Off':'Step'}</th>${hasPal?'<th>Pallet</th>':''}<th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Depth (m)</th>${rows.some(r=>(mmState(p).orig||{})[r.it.id])?'<th>From</th>':''}<th>Goes to</th><th class="tick">Done</th></tr></thead>
-      <tbody>${rows.map(r=>`<tr><td class="num mono">${r.n}</td>${hasPal?`<td class="mono">${esc(r.pal)}</td>`:''}<td class="mono">${esc(fname(r.it.feature||''))}</td><td class="mono">${esc(r.it.hole)}</td><td class="num mono">${esc(r.it.box)}${r.it.of?' / '+esc(r.it.of):''}</td><td class="num mono">${esc([outVal(r.it,'from'),outVal(r.it,'to')].filter(v=>v!=='').join(' – '))}</td>${rows.some(r2=>(mmState(p).orig||{})[r2.it.id])?`<td class="mono">${esc(((mmState(p).orig||{})[r.it.id]||{}).loc||'')}</td>`:''}<td class="mono dest">${r.dest?esc(r.dest):'<span class="pill stage">No slot</span>'}</td><td class="tick"><span class="tickbox"></span></td></tr>`).join('')}</tbody></table></div>
+      <tbody>${rows.map(r=>`<tr><td class="num mono">${r.n}</td>${hasPal?`<td class="mono">${esc(r.pal)}</td>`:''}<td class="mono">${esc(fname(r.it.feature||''))}</td><td class="mono">${esc(r.it.hole)}</td><td class="num mono">${esc(r.it.box)}${r.it.of?' / '+esc(r.it.of):''}</td><td class="num mono">${esc([outVal(r.it,'from'),outVal(r.it,'to')].filter(v=>v!=='').join(' – '))}</td>${rows.some(r2=>(mmState(p).orig||{})[r2.it.id])?`<td class="mono">${esc(((mmState(p).orig||{})[r.it.id]||{}).loc||'')}</td>`:''}<td class="mono dest">${r.dest?esc(r.dest)+(r.nofit?' <span class="pill missing">doesn’t fit</span>':''):'<span class="pill stage">No slot</span>'}</td><td class="tick"><span class="tickbox"></span></td></tr>`).join('')}</tbody></table></div>
     <div class="printnotes"><h2>Changes from the plan</h2><p>Write down every box that went somewhere other than its “Goes to” slot, and what happened to the slot it was meant for. Enter these in Move mode → After the move.</p>
       <table><thead><tr><th>Feature</th><th>Hole ID</th><th>Box No.</th><th>Placed in (row-bay-slot)</th><th>Its planned slot was… (left empty / next box moved up)</th></tr></thead><tbody>${'<tr><td></td><td></td><td></td><td></td><td></td></tr>'.repeat(12)}</tbody></table>
       <p style="margin-top:14px"><b>Notes:</b></p><div class="noteslines"></div></div></div>`;}
@@ -1700,15 +1702,18 @@ function onlineRun(p,P,B,order){const mm=mmState(p);const all=mmOrdered(p,P,B,or
   /* after an out-of-order box, come back to the box that was showing when it was picked */
   const expected=(S.mmReturn&&queue.find(x=>x.id===S.mmReturn))||queue[0];S.mmShown=expected.id;const picked=S.mmPick&&S.mmPick!==expected.id?queue.find(x=>x.id===S.mmPick):null;if(!picked)S.mmPick=null;
   const it=picked||expected;const ps=P.pos[it.id];const dest=destOf(P,it);const R=ps?P.racks.find(x=>x.rack.id===ps.rackId):null;
-  const pct=Math.round(done.length/Math.max(1,total)*100);const alt=S.mmAlt===it.id;
+  const pct=Math.round(done.length/Math.max(1,total)*100);
+  /* a box held or locked in a slot of the wrong size: don't send it there */
+  const fitWhy=dest&&R?fitIssue(p,it,R.rack,P.DC):'';const autoAlt=!dest||!!fitWhy;const alt=S.mmAlt===it.id||autoAlt;
   const bayStrip=R?`<div class="mmbay"><span class="label">Bay ${esc(R.rack.name)}</span><div class="mmslots">${R.cells.map(c=>`<span class="${c.slot===ps.slot?'here':c.blocked?'blk':c.item?'full':''}" title="${esc(R.rack.name)}-${c.slot}">${c.slot}</span>`).join('')}</div></div>`:'';
-  const sug=alt?altSlots(p,P,it,ps?ps.rackId:null):null;
+  const sug=alt?altSlots(p,P,it,ps?ps.rackId:null,true):null;const ask=S.mmFitAsk&&S.mmFitAsk.id===it.id?S.mmFitAsk:null;
   return `<div class="mmprogress"><div class="bar"><span style="width:${pct}%"></span></div><span class="small">${done.length} of ${total} placed${temp.length?` · ${temp.length} on the temporary pallet`:''}</span></div>
     <div class="mmcard">
       <div class="mmbox"><span class="label">${picked?'Picked out of order':order==='pallet'?'Next off the pallet':'Next box'}</span><b>${esc(it.hole)} <span class="muted">box</span> ${esc(it.box)}${it.of?`<span class="muted"> of ${esc(it.of)}</span>`:''}</b><span>${esc(fname(it.feature||''))}${outVal(it,'from')!==''||outVal(it,'to')!==''?` · ${esc(outVal(it,'from'))}–${esc(outVal(it,'to'))} m`:''}${boxDims(it,P.DC)?` · ${esc(dimTxt(boxDims(it,P.DC)))} mm`:''}</span>${(mmState(p).orig||{})[it.id]?`<span class="pill held" style="align-self:flex-start">from ${esc(mmState(p).orig[it.id].loc)}</span>`:''}</div>
-      <div class="mmdest"><span class="label">Goes to</span>${dest?`<b class="mono">${esc(dest)}</b><span>Row ${esc(R.rack.rowLetter||'')} · Bay ${esc(R.rack.name.slice((R.rack.rowLetter||'').length))} · Slot ${ps.slot}</span>`:'<b>No slot</b><span>The plan has no slot for this box.</span>'}</div>
+      <div class="mmdest"><span class="label">Goes to</span>${dest?`<b class="mono">${esc(dest)}</b><span>Row ${esc(R.rack.rowLetter||'')} · Bay ${esc(R.rack.name.slice((R.rack.rowLetter||'').length))} · Slot ${ps.slot}</span>`:'<b>No slot</b><span>No open bay in the plan fits this box. Pick a slot below.</span>'}${fitWhy?`<span class="pill missing" style="align-self:flex-start">Doesn’t fit</span>`:''}</div>
       ${bayStrip}
-      <div class="row mmact">${dest?`<button class="primary big" id="mmPlaced" data-act="mm-placed" data-id="${it.id}">✓ Put in ${esc(dest)}</button>`:''}<button class="${alt?'on':''}" data-act="mm-alt" data-id="${it.id}">✗ It didn’t go there</button><span class="spacer"></span>${picked?`<button class="ghost" data-act="mm-pick" data-id="">↩ Back to ${esc(expected.hole)} box ${esc(expected.box)}</button>`:''}<button class="${S.mmNot?'on':''}" data-act="mm-not">Not this box?</button></div>
+      ${fitWhy?`<div class="msg warn"><b>This box doesn’t fit ${esc(dest)}:</b> ${esc(fitWhy)}. Choose another slot below.</div>`:''}
+      <div class="row mmact">${dest&&!fitWhy?`<button class="primary big" id="mmPlaced" data-act="mm-placed" data-id="${it.id}">✓ Put in ${esc(dest)}</button>`:''}${autoAlt?'':`<button class="${alt?'on':''}" data-act="mm-alt" data-id="${it.id}">✗ It didn’t go there</button>`}<span class="spacer"></span>${picked?`<button class="ghost" data-act="mm-pick" data-id="">↩ Back to ${esc(expected.hole)} box ${esc(expected.box)}</button>`:''}<button class="${S.mmNot?'on':''}" data-act="mm-not">Not this box?</button></div>
       ${S.mmNot?(()=>{const idx=new Map(queue.map((x,i)=>[x.id,i]));const at=idx.get(it.id)||0;
         const near=queue.filter(x=>x.id!==it.id).sort((a,b)=>Math.abs(idx.get(a.id)-at)-Math.abs(idx.get(b.id)-at)||idx.get(a.id)-idx.get(b.id));
         return `<div class="mmnot"><div class="row" style="align-items:center;justify-content:space-between"><h4 style="margin:0">Which box do you have?</h4><input id="mmFind" placeholder="Search hole or box" style="width:200px" autocomplete="off"></div>
@@ -1716,10 +1721,11 @@ function onlineRun(p,P,B,order){const mm=mmState(p);const all=mmOrdered(p,P,B,or
           <div class="mmpicks" id="mmNotList">${near.map((x,i)=>`<button class="mmpick" data-act="mm-pick" data-id="${x.id}" data-text="${esc((x.feature+' '+x.hole+' '+x.box).toLowerCase())}" ${i>=8?'hidden data-more="1"':''}><b>${esc(x.hole)} box ${esc(x.box)}</b><span>${esc(fname(x.feature||''))}</span><span class="mono dest">${esc(destOf(P,x)||'no slot')}</span></button>`).join('')}</div>
           ${near.length>8?`<p class="muted small" style="margin:0">Showing the 8 closest. Search to find any of the ${near.length}.</p>`:''}</div>`;})():''}
       ${alt?`<div class="mmalt">
-        <div><h4>It went in a different slot</h4><div class="row"><input id="mmLoc" class="mono" placeholder="e.g. B2-4" style="width:140px"><button data-act="mm-elsewhere" data-id="${it.id}">Record it there</button></div></div>
-        <div><h4>It didn’t fit</h4>${sug===null?`<p class="small muted">This box has no size, so the planner can’t suggest other slots. Put it on the temporary pallet.</p>`:sug.length?`<p class="small muted">Empty slots this box fits${R&&bayDim(R.rack)?', not counting bays the same size as '+esc(R.rack.name):''}:</p><div class="row">${sug.map(l=>`<button class="mono" data-act="mm-altslot" data-id="${it.id}" data-loc="${l}">${l}</button>`).join('')}</div>`:`<p class="small muted">No empty slot fits this box. Put it on the temporary pallet.</p>`}</div>
+        <div><h4>${autoAlt?'Slots it fits':'It didn’t fit'}</h4>${sug===null?`<p class="small muted">This box has no size, so the planner can’t suggest slots. Type a slot below, or put it on the temporary pallet.</p>`:sug.length?`<p class="small muted">Empty slots this box fits${R&&bayDim(R.rack)?', not counting bays the same size as '+esc(R.rack.name):''}${sug.some(x=>x.locked)?'. 🔒 is a locked bay: the box goes in without moving anything else':''}:</p><div class="row">${sug.map(x=>`<button class="mono" data-act="mm-altslot" data-id="${it.id}" data-loc="${x.loc}" title="${x.locked?'Empty slot in a locked bay':'Empty slot'}">${x.locked?'🔒 ':''}${x.loc}</button>`).join('')}</div>`:`<p class="small muted">No empty slot fits this box. Put it on the temporary pallet, or add a bay of the right size.</p>`}</div>
+        <div><h4>${autoAlt?'Or put it in another slot':'It went in a different slot'}</h4><div class="row"><input id="mmLoc" class="mono" placeholder="e.g. B2-4" style="width:140px" value="${ask?esc(ask.txt):''}"><button data-act="mm-elsewhere" data-id="${it.id}">Record it there</button></div>
+          ${ask?`<div class="msg warn" style="margin-top:8px"><b>It doesn’t fit ${esc(ask.where)}:</b> ${esc(ask.why)}. <button class="small" data-act="mm-elsewhere" data-id="${it.id}" data-loc="${esc(ask.txt)}" data-force="1">Record it there anyway</button></div>`:''}</div>
         ${dest?`<div><h4>The slot it was meant for (${esc(dest)})</h4><div class="seg mini-seg"><button data-act="mm-gap" data-v="next" aria-pressed="${S.mmGap!=='empty'}">Use it for the next box</button><button data-act="mm-gap" data-v="empty" aria-pressed="${S.mmGap==='empty'}">Leave it empty</button></div></div>`:''}
-        <div class="row"><button data-act="mm-temp" data-id="${it.id}">Put it on the temporary pallet</button><button class="ghost" data-act="mm-alt" data-id="">Cancel</button></div></div>`:''}
+        <div class="row"><button data-act="mm-temp" data-id="${it.id}">Put it on the temporary pallet</button>${autoAlt?'':`<button class="ghost" data-act="mm-alt" data-id="">Cancel</button>`}</div></div>`:''}
       <p class="muted small">Press Enter to confirm. Each box you confirm is locked into its slot and saved straight away.</p>
     </div>
     ${(()=>{const up=queue.filter(x=>x.id!==it.id).slice(0,3);return up.length?`<div class="mmnext"><h3>Up next <span class="muted small">tap one if that’s the box you’re holding</span></h3><div class="mmpicks">${up.map(x=>`<button class="mmpick" data-act="mm-pick" data-id="${x.id}"><b>${esc(x.hole)} box ${esc(x.box)}</b><span>${esc(fname(x.feature||''))}</span><span class="mono dest">${esc(destOf(P,x)||'no slot')}</span></button>`).join('')}</div>${queue.length-1>3?`<p class="muted small" style="margin:0">and ${queue.length-1-3} more</p>`:''}</div>`:'';})()}
@@ -2453,7 +2459,8 @@ function autoMap(p,imp){
   const find=(names)=>{const ns=names.map(normH);for(const [hi,H] of [[0,hdr],[1,sub]])for(let i=0;i<H.length;i++){if(used.has(i))continue;if(ns.includes(normH(H[i]))){used.add(i);if(hi)imp.sub=true;return i;}}return -1;};
   fieldsFor(imp).forEach(([k,,syn])=>{map[k]=find(syn);auto[k]=map[k]>=0;});
   if(imp.kind==='layout'){guessBayDims(imp,map);BAYDIM_KEYS.forEach(k=>{auto[k]=map[k]>=0;});}
-  p.customCols.forEach(c=>{const k='c:'+c.id;map[k]=find([c.name]);auto[k]=map[k]>=0;});
+  /* size columns match by meaning, so a pallet sheet's “Box Length (mm)” fills the shed's “Box size (mm) Length” */
+  p.customCols.forEach(c=>{const k='c:'+c.id;const dk=Object.keys(DIMSYN).find(x=>DIMSYN[x].includes(normH(c.name)));map[k]=find(dk?[c.name,...DIMSYN[dk]]:[c.name]);auto[k]=map[k]>=0;});
   imp.map=map;imp.auto=auto;
   const data=dataRows(imp);const hi=map.hole;
   imp.split=hi>=0&&data.slice(0,30).some(r=>String(r[hi]??'').includes('-'));}
@@ -2850,11 +2857,14 @@ document.addEventListener('click',e=>{
     case 'mm-overview':S.mmZoom=false;S.mmDir='out';render();window.scrollTo(0,0);break;
     case 'mm-back':{const mm=mmState(p);const hp=!!(p.pallet&&p.pallet.list&&p.pallet.list.length);let st=mmStep(p);st=st===3&&!hp?1:st-1;mm.step=Math.max(0,st);S.mmFix=null;S.mmAlt=null;S.mmDir='back';touch(p);render();window.scrollTo(0,0);break;}
     case 'mm-placed':{S.mmJust=true;S.mmPick=null;S.mmNot=false;if(id===S.mmReturn)S.mmReturn=null;const it=p.items.find(x=>x.id=== id);if(!it)break;const where=pinHere(p,id);if(!where)break;mmState(p).done[id]=where;S.mmAlt=null;commitDraft(true);render();toast(`${it.hole} box ${it.box} placed in ${where}`);break;}
-    case 'mm-alt':S.mmAlt=id||null;S.mmGap='next';render();if(id){const el=$('#mmLoc');if(el)el.focus();}break;
+    case 'mm-alt':S.mmAlt=id||null;S.mmFitAsk=null;S.mmGap='next';render();if(id){const el=$('#mmLoc');if(el)el.focus();}break;
     case 'mm-not':S.mmNot=!S.mmNot;S.mmAlt=null;render();if(S.mmNot){const el=$('#mmFind');if(el)el.focus();}break;
     case 'mm-pick':if(id&&!S.mmReturn)S.mmReturn=S.mmShown||null;S.mmPick=id||null;S.mmNot=false;S.mmAlt=null;render();{const c=$('.mmcard');if(c)c.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}if(id){const it=cur().items.find(x=>x.id===id);if(it)toast(`Showing ${it.hole} box ${it.box}. After it’s placed you’ll go back to the expected box.`);}break;
     case 'mm-gap':S.mmGap=b.dataset.v;render();break;
-    case 'mm-elsewhere':case 'mm-altslot':{S.mmJust=true;S.mmPick=null;S.mmNot=false;if(id===S.mmReturn)S.mmReturn=null;const it=p.items.find(x=>x.id===id);if(!it)break;const txt=act==='mm-altslot'?b.dataset.loc:($('#mmLoc')||{}).value;
+    case 'mm-elsewhere':case 'mm-altslot':{const it=p.items.find(x=>x.id===id);if(!it)break;const txt=b.dataset.loc||($('#mmLoc')||{}).value;
+      if(act==='mm-elsewhere'&&!b.dataset.force&&!palletByName(p,txt)){const L0=parseSlotRef(p,txt);const why=L0&&!L0.bad?fitIssue(p,it,L0.r):'';
+        if(why){S.mmFitAsk={id,txt,why,where:L0.r.name+'-'+L0.slot};render();break;}}
+      S.mmFitAsk=null;S.mmJust=true;S.mmPick=null;S.mmNot=false;if(id===S.mmReturn)S.mmReturn=null;
       {const pl0=palletByName(p,txt);if(pl0){putOnPallet(p,it,pl0.id);S.mmAlt=null;commitDraft(true);render();toast(`${it.hole} box ${it.box} is on ${pl0.text}`);break;}}
       const L=parseSlotRef(p,txt);if(!L||L.bad){toast(!L?'Type a slot like B2-4.':`There’s no bay ${L.bad} in this shed.`);break;}
       const P0=computePlan(p);const before=P0.pos[id];let where;
@@ -2877,7 +2887,8 @@ document.addEventListener('click',e=>{
         if(palletByName(p,r.loc)){putOnPallet(p,it,palletByName(p,r.loc).id);}else{moveItemTo(p,r.id,r.loc);const L=parseSlotRef(p,r.loc);mm.done[r.id]=L.r.name+'-'+L.slot;}
         if(r.gap==='empty')keepEmpty(p,before);});
       const B=mmBoxes(p,computePlan(p),computeMoves(p,computePlan(p)));B.list.forEach(it=>{if(!mm.done[it.id]&&!it.temp){const w=pinHere(p,it.id);if(w)mm.done[it.id]=w;}});
-      mm.finished=true;S.mmFix=null;commitDraft(true);render();toast(`Plan updated with ${plural(rows.length,'change')} and saved`);break;}
+      const misfit=rows.filter(r=>{const it=p.items.find(x=>x.id===r.id);const L=!palletByName(p,r.loc)&&parseSlotRef(p,r.loc);return it&&L&&!L.bad&&fitIssue(p,it,L.r);});
+      mm.finished=true;S.mmFix=null;commitDraft(true);render();toast(`Plan updated with ${plural(rows.length,'change')} and saved${misfit.length?`. Check sizes: ${misfit.map(r=>r.loc.toUpperCase()).join(', ')} ${misfit.length===1?'is':'are'} the wrong size for the box`:''}`);break;}
     case 'mm-reopen':{const mm=mmState(p);mm.finished=false;mm.saved=false;S.mmJust=false;S.mmFix=null;
       if(mm.mode==='online'){mm.step=3;S.open.mmdone=true;}else{mm.step=4;S.mmFix=[{id:'',loc:'',gap:'next'}];}S.mmDir='back';touch(p);render();window.scrollTo(0,0);break;}
     case 'pallet-keep':{const l=p.map.labels.find(x=>x.id===id);if(l){l.kept=true;commitDraft(true);render();toast(`${l.text} is now a permanent storage location`);}break;}
