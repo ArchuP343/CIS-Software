@@ -377,16 +377,20 @@ button.big{font-size:1.1rem;padding:12px 22px;height:auto}
 .noteslines{height:120px;background:repeating-linear-gradient(transparent 0 27px,#999 27px 28px)}
 table.palt td.dest{font-weight:700;font-size:1rem}
 .tick{width:56px;text-align:center}.tickbox{display:inline-block;width:16px;height:16px;border:1.5px solid var(--muted);border-radius:3px}
+#printRoot{display:none}
+/* printing the move sheet: a copy of the sheet goes straight under <body> and everything else is hidden, so the full list flows over as many pages as it needs */
 @media print{
-  body.print-pallet *{visibility:hidden}
-  body.print-pallet #palletSheet,body.print-pallet #palletSheet *{visibility:visible}
-  body.print-pallet #palletSheet{position:absolute;left:0;top:0;width:100%;border:0;box-shadow:none;padding:0;background:#fff;color:#000}
-  body.print-pallet #palletSheet .noprint,body.print-pallet #palletSheet>header,body.print-pallet #palletSheet .msg{display:none}
-  body.print-pallet .printhead,body.print-pallet .printnotes{display:block}
-  body.print-pallet .printhead h1{font-size:18pt;margin:0}body.print-pallet .printhead p{margin:2px 0 10px;font-size:10pt}
-  body.print-pallet table{width:100%;border-collapse:collapse;font-size:10pt}body.print-pallet th,body.print-pallet td{border:1px solid #888;padding:4px 6px;color:#000;background:#fff}
-  body.print-pallet .tablewrap{overflow:visible;border:0}body.print-pallet tr{break-inside:avoid}
-  body.print-pallet .printnotes{break-before:page}body.print-pallet .printnotes td{height:24px}
+  body.print-pallet>:not(#printRoot){display:none!important}
+  body.print-pallet #printRoot{display:block;background:#fff;color:#000}
+  #printRoot .palletSheet{border:0;box-shadow:none;padding:0;background:#fff;color:#000}
+  #printRoot .noprint,#printRoot .msg{display:none!important}
+  #printRoot .printhead,#printRoot .printnotes{display:block}
+  #printRoot .printhead h1{font-size:18pt;margin:0}#printRoot .printhead p{margin:2px 0 10px;font-size:10pt}
+  #printRoot .tablewrap{max-height:none!important;height:auto!important;overflow:visible!important;border:0}
+  #printRoot table{width:100%;border-collapse:collapse;font-size:10pt}#printRoot th,#printRoot td{border:1px solid #888;padding:4px 6px;color:#000;background:#fff}
+  #printRoot thead{display:table-header-group}#printRoot tr{break-inside:avoid;page-break-inside:avoid}
+  #printRoot .printnotes{break-before:page}#printRoot .printnotes td{height:24px}
+}
 }
 .lockstrip{padding:10px 14px}.lockstrip>summary{display:flex;flex-wrap:wrap;align-items:center;gap:14px;cursor:pointer;list-style:none}
 .lockstrip>summary::-webkit-details-marker{display:none}.lockstrip>summary::after{content:'+';margin-left:auto;font-weight:700;color:var(--muted)}.lockstrip[open]>summary::after{content:'−'}
@@ -2848,7 +2852,8 @@ document.addEventListener('click',e=>{
     case 'noop':break;
     case 'pick-pallet':S.palletNext=true;S.pickKind='holes';{const fi=$('#fileSheet');if(fi){fi.value='';fi.click();}}break;
     case 'pallet-clear':delete p.pallet;S.mmZoom=false;if(p.mm){p.mm.step=0;if(p.mm.order==='pallet')p.mm.order='slot';}touch(p);render();toast('Pallet order cleared');break;
-    case 'mm-print':document.body.classList.add('print-pallet');setTimeout(()=>{window.print();},50);break;
+    case 'mm-print':{const src=$('#palletSheet');if(!src)break;let root=$('#printRoot');if(root)root.remove();root=document.createElement('div');root.id='printRoot';const c=src.cloneNode(true);c.removeAttribute('id');c.classList.add('palletSheet');root.appendChild(c);document.body.appendChild(root);
+      document.body.classList.add('print-pallet');setTimeout(()=>{window.print();},50);break;}
     case 'mm-mode':{const mm=mmState(p);mm.mode=b.dataset.v;const hp=!!(p.pallet&&p.pallet.list&&p.pallet.list.length);if(!hp)mm.order='slot';mm.step=hp?2:3;S.mmAlt=null;S.mmDir='next';touch(p);render();window.scrollTo(0,0);break;}
     case 'mm-order':{const mm=mmState(p);mm.order=b.dataset.v;mm.step=3;S.mmDir='next';touch(p);render();window.scrollTo(0,0);break;}
     case 'mm-go':{const mm=mmState(p);mm.step=+b.dataset.v;S.mmDir='next';touch(p);render();window.scrollTo(0,0);break;}
@@ -3243,7 +3248,7 @@ function endDrag(e,cancel){
   else if(r&&before.get(r.id)!==r.name)toast(`This bay is now ${r.name}; the rack plan has been updated.`);
 }
 document.addEventListener('pointerup',e=>endDrag(e,false));
-addEventListener('afterprint',()=>document.body.classList.remove('print-pallet'));
+addEventListener('afterprint',()=>{document.body.classList.remove('print-pallet');const r=$('#printRoot');if(r)r.remove();});
 document.addEventListener('pointercancel',e=>endDrag(e,true));
 
 /* drop a spreadsheet */
