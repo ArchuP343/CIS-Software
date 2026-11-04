@@ -1306,7 +1306,7 @@ function projectReadView(pr){
         <p class="muted" style="max-width:70ch">This is the saved layout of the shed. To change it, plan the change in a core move and save that move to the project.</p>
         <button data-act="new-move" data-id="${pr.id}">+ New core move</button>
       </section>`}
-      ${held&&p.heldIgnore!==held?`<div class="msg info row" style="align-items:center;justify-content:space-between"><span>${plural(held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked. To move them into the best order, open a core move and press “Update unlocked bays to best positions”.</span><button class="ghost" data-act="held-ignore">Ignore</button></div>`:''}
+      ${held&&p.heldIgnore!==held&&S.tab==='plan'?`<div class="msg info row" style="align-items:center;justify-content:space-between"><span>${plural(held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked. To move them into the best order, open a core move and press “Update unlocked bays to best positions”.</span><button class="ghost" data-act="held-ignore">Ignore</button></div>`:''}
       ${S.tab==='map'?mapTab(p,P,true):planTab(p,P,null,true)}
     </div>
     ${S.tab==="map"?"":`<footer class="foot">IDs read Row, Bay, Slot: A1-3 is Row A, Bay 1, Slot 3. Rows are lettered left to right on the shed map, bays numbered top to bottom, and slot 1 is the top of each bay.</footer>`}
@@ -1340,7 +1340,7 @@ function moveView(){
     ${S.tab==="moves"||S.tab==="map"?"":`<div id="summary">${summary(p,P)}</div>`}
     <div class="stack">
       ${conflictBanner()}${filterPanel(p)}${S.tab!=='edit'&&S.tab!=='moves'&&S.tab!=='map'?searchPanel(p,P):''}
-      ${P.held&&p.heldIgnore!==P.held?`<div class="msg info row" style="align-items:center;justify-content:space-between"><span>${plural(P.held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked, so the rest of the plan isn’t disturbed.</span><div class="row"><button class="primary" data-act="reoptimise">Update unlocked bays to best positions</button><button class="ghost" data-act="held-ignore">Ignore</button></div></div>`:''}
+      ${P.held&&p.heldIgnore!==P.held&&(S.tab==='plan'||S.tab==='edit')?`<div class="msg info row" style="align-items:center;justify-content:space-between"><span>${plural(P.held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked, so the rest of the plan isn’t disturbed.</span><div class="row"><button class="primary" data-act="reoptimise">Update unlocked bays to best positions</button><button class="ghost" data-act="held-ignore">Ignore</button></div></div>`:''}
       ${body}
     </div>
     ${S.tab==="moves"||S.tab==="map"?"":`<footer class="foot">IDs read Row, Bay, Slot: A1-3 is Row A, Bay 1, Slot 3. Fill order: feature, then hole ID, then box number, then From depth. When the move is ready, go back to Projects and press “Save move to project”.</footer>`}
