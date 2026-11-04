@@ -406,8 +406,6 @@ table.palt td.dest{font-weight:700;font-size:1rem}
 .lk-chip{font-family:var(--f-mono);font-size:.75rem;padding:3px 8px;border-radius:6px;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);min-width:38px;text-align:center}
 .lk-chip.on{background:var(--ink);color:var(--surface)}.lk-chip.part{background:repeating-linear-gradient(-45deg,var(--accent-soft) 0 4px,var(--surface) 4px 8px)}
 button.lk-chip:hover{outline:2px solid var(--accent);outline-offset:1px}
-.spacesave>summary{cursor:pointer}.spacesave ul{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
-.spacesave li{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid color-mix(in srgb,var(--accent) 25%,transparent)}
 .baytable tr.rowhead td{background:var(--surface-2);border-top:2px solid var(--line)}
 .rowbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:6px 4px}.rowbar .rl{font-family:var(--f-display);font-size:1rem}
 label.mini{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted);font-weight:600}label.mini input{padding:4px 6px;height:30px;border:1px solid var(--line);background:var(--surface);border-radius:6px}
@@ -1046,51 +1044,6 @@ function moveItemTo(p,id,text){
   if(bad){toast(`Warning: box ${it.hole} ${it.box} may not fit ${r.name}-${slot}: ${bad}. It has been put there anyway; check before moving it.`);return !!now;}
   toast(`Box ${it.hole} ${it.box} is now in ${r.name}-${slot}${was?` (was ${was.rackName}-${was.slot})`:''}.${chain.length?' Boxes below it moved down a slot.':''}${r.locked?'':' That slot is now locked so it stays there.'}${released?` ${plural(released,'box','boxes')} pushed past the end of the bay went back into the plan.`:''}`);
   return !!now;}
-/* ---------- space saving: whole features that fit into empty slots of locked bays ---------- */
-function spaceSuggestions(p,P){
-  const dismissed=new Set(p.spaceDismissed||[]);
-  const runs=[];P.rowList.forEach(G=>{let cur=null;G.racks.forEach(R=>R.cells.forEach(c=>{if(c.blocked)return;
-    if(R.locked&&!c.item){if(!cur){cur={cells:[]};runs.push(cur);}cur.cells.push({R,c});}else cur=null;}));});
-  if(!runs.length)return[];
-  const order=[];P.rowList.forEach(G=>G.racks.forEach(R=>R.cells.forEach(c=>{if(!c.blocked)order.push({R,c});})));
-  const idx=new Map(order.map((o,i)=>[o.c,i]));
-  const pinnedIds=new Set();P.racks.forEach(R=>R.cells.forEach(c=>{if(c.pin)slotBoxes(c).forEach(it=>pinnedIds.add(it.id));}));
-  const byF=new Map();P.sorted.forEach(it=>{const f=it.feature||('hole:'+it.hole);if(!byF.has(f))byF.set(f,[]);byF.get(f).push(it);});
-  const used=new Set(),out=[];
-  const take=(cells,n,fromEnd)=>fromEnd?cells.slice(cells.length-n):cells.slice(0,n);
-  /* every box must fit the bay of the slot it would go into */
-  const fitsAll=(cells,its)=>cells&&its.every((it,i)=>cells[i]&&!fitIssue(p,it,cells[i].R.rack,P.DC));
-  const tryTake=(cells,its,fromEnd)=>{const c=take(cells,its.length,fromEnd);return fitsAll(c,its)?c:null;};
-  byF.forEach((all,f)=>{const loose=all.filter(it=>!pinnedIds.has(it.id));const n=loose.length;if(!n||n===0)return;
-    const label=f.startsWith('hole:')?`hole ${f.slice(5)}`:fname(f);
-    /* A: loose boxes of a feature that already sits in a locked bay, with room right next to it */
-    const anchor=all.filter(it=>pinnedIds.has(it.id)&&P.pos[it.id]).map(it=>{const ps=P.pos[it.id];const R=P.racks.find(x=>x.rack.id===ps.rackId);return R&&R.locked?R.cells[ps.slot-1]:null;}).filter(Boolean);
-    let pick=null,kind='';
-    if(anchor.length){const ai=anchor.map(c=>idx.get(c)).filter(v=>v!==undefined);const lo=Math.min(...ai),hi=Math.max(...ai);
-      for(const run of runs){const free=run.cells.filter(x=>!used.has(x.c));if(free.length<n)continue;const first=idx.get(free[0].c),last=idx.get(free[free.length-1].c);
-        if(first===hi+1&&(pick=tryTake(free,loose,false))){kind='join';break;}if(last===lo-1&&(pick=tryTake(free,loose,true))){kind='join';break;}}
-      if(!pick){/* the whole feature won't fit next to it: try whole holes of it, never splitting a hole */
-        const holes=new Map();loose.forEach(it=>{if(!holes.has(it.hole))holes.set(it.hole,[]);holes.get(it.hole).push(it);});
-        for(const[h,hs]of holes){for(const run of runs){const free=run.cells.filter(x=>!used.has(x.c));if(free.length<hs.length)continue;const first=idx.get(free[0].c),last=idx.get(free[free.length-1].c);
-          if(first===hi+1)pick=tryTake(free,hs,false);if(!pick&&last===lo-1)pick=tryTake(free,hs,true);
-          if(pick){loose.splice(0,loose.length,...hs);kind='join';break;}}if(pick)break;}}}
-    /* B: a whole feature that is all loose and fits into one gap */
-    if(!pick&&loose.length===all.length){let best=null,bestPick=null;for(const run of runs){const free=run.cells.filter(x=>!used.has(x.c));if(free.length<n||(best&&free.length>=best.length))continue;
-        /* first stretch of this gap where every box fits */
-        for(let k=0;k+n<=free.length;k++){const c=free.slice(k,k+n);if(fitsAll(c,loose)){best=free;bestPick=c;break;}}}
-      if(bestPick){pick=bestPick;kind='fit';}}
-    if(!pick)return;const n2=loose.length;const key=f+'|'+pick.map(x=>x.R.rack.id+':'+x.c.slot).join(',');if(dismissed.has(key))return;
-    pick.forEach(x=>used.add(x.c));const a=pick[0],z=pick[pick.length-1];
-    const where=a.R===z.R?`${a.R.rack.name}-${a.c.slot}${n2>1?' to '+z.c.slot:''}`:`${a.R.rack.name}-${a.c.slot} to ${z.R.rack.name}-${z.c.slot}`;
-    const from=[...new Set(loose.map(it=>P.pos[it.id]?P.pos[it.id].rackName:'no space'))].join(', ');
-    out.push({key,kind,f,label,n:n2,items:loose,cells:pick,where,from,
-      text:kind==='join'?`Move ${plural(n2,'box','boxes')} of ${loose.length<all.filter(it=>!pinnedIds.has(it.id)).length?`${label} hole ${loose[0].hole}`:label} from ${from} into the empty slots ${where}, right next to the rest of ${label}.`:`All of ${label} (${plural(n,'box','boxes')}, now in ${from}) fits into the empty slots ${where} in a locked bay. Moving it frees up space without splitting it.`});});
-  return out.sort((a,b)=>(a.kind==='join'?0:1)-(b.kind==='join'?0:1)||a.n-b.n).slice(0,8);}
-function applySuggestion(p,sg){if(sg.items.some((it,i)=>!sg.cells[i]||fitIssue(p,it,sg.cells[i].R.rack)))return false;sg.items.forEach((it,i)=>{const x=sg.cells[i];if(!x)return;unpinItem(p,it.id);const r=x.R.rack;r.fixed=r.fixed||{};r.fixed[x.c.slot]=it.id;});}
-function spaceNotice(p,P){const list=spaceSuggestions(p,P);if(!list.length)return'';S.spaceList=list;
-  return `<details class="msg info spacesave" ${S.open.space?'open':''} data-sec="space"><summary><b>Space saving:</b> ${plural(list.length,'suggestion')} to keep core together in empty slots of locked bays.</summary>
-    <ul>${list.map((sg,i)=>`<li><span>${esc(sg.text)}</span><span class="row"><button class="primary" data-act="space-accept" data-i="${i}">Move</button><button class="ghost" data-act="space-dismiss" data-i="${i}">Dismiss</button></span></li>`).join('')}</ul>
-    ${list.length>1?`<div class="row"><button data-act="space-accept-all">Move all ${list.length}</button></div>`:''}</details>`;}
 /* ---------- quick view of which bays are locked ---------- */
 const ICON_LOCK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 const ICON_SEARCH='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
@@ -1388,7 +1341,6 @@ function moveView(){
     <div class="stack">
       ${conflictBanner()}${filterPanel(p)}${S.tab!=='edit'&&S.tab!=='moves'&&S.tab!=='map'?searchPanel(p,P):''}
       ${P.held&&p.heldIgnore!==P.held?`<div class="msg info row" style="align-items:center;justify-content:space-between"><span>${plural(P.held,'box is','boxes are')} being kept where they were when their bay or slot was unlocked, so the rest of the plan isn’t disturbed.</span><div class="row"><button class="primary" data-act="reoptimise">Update unlocked bays to best positions</button><button class="ghost" data-act="held-ignore">Ignore</button></div></div>`:''}
-      ${S.tab==='plan'||S.tab==='edit'?spaceNotice(p,P):''}
       ${body}
     </div>
     ${S.tab==="moves"||S.tab==="map"?"":`<footer class="foot">IDs read Row, Bay, Slot: A1-3 is Row A, Bay 1, Slot 3. Fill order: feature, then hole ID, then box number, then From depth. When the move is ready, go back to Projects and press “Save move to project”.</footer>`}
@@ -2919,10 +2871,6 @@ document.addEventListener('click',e=>{
     case 'rebuild-rows':{const R=clamp(int($('#st_rowsct').value,1),1,50);const b2b=$('#st_b2b').checked;const orient=$('#st_orient').value;p.setup.rowCount=R;p.setup.backToBack=b2b;p.setup.orient=orient;autoLayout(p.racks,R,b2b,orient,p.setup.numbering==='across');S.updated={};deriveNames(p);touch(p);render();toast(`Shed map rebuilt with ${plural(p._rows.length,'row')}`);break;}
     case 'order-reset':delete p.manualOrder;touch(p);render();toast('Back to the automatic order');break;
     case 'hs-step':{const w=document.getElementById(b.dataset.for);if(w)w.scrollBy({left:(+b.dataset.d)*Math.max(200,w.clientWidth*0.6),behavior:'smooth'});break;}
-    case 'space-accept':case 'space-accept-all':{const list=S.spaceList||[];const pick=act==='space-accept-all'?list:[list[+b.dataset.i]].filter(Boolean);if(!pick.length)break;
-      const before=computePlan(p).pos;pick.forEach(sg=>applySuggestion(p,sg));touch(p);render();
-      toast(pick.length===1?`Moved ${plural(pick[0].n,'box','boxes')} of ${pick[0].label} to ${pick[0].where}.`:`Applied ${pick.length} space-saving moves.`);break;}
-    case 'space-dismiss':{const sg=(S.spaceList||[])[+b.dataset.i];if(sg){p.spaceDismissed=(p.spaceDismissed||[]).concat(sg.key);touch(p);render();}break;}
     case 'noop':break;
     case 'pick-pallet':S.palletNext=true;S.pickKind='holes';{const fi=$('#fileSheet');if(fi){fi.value='';fi.click();}}break;
     case 'pallet-clear':delete p.pallet;S.mmZoom=false;if(p.mm){p.mm.step=0;if(p.mm.order==='pallet')p.mm.order='slot';}touch(p);render();toast('Pallet order cleared');break;
