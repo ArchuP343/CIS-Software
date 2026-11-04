@@ -252,7 +252,8 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 .printhead,.printnotes{display:none}
 .symmenu .menu-pop{left:0;right:auto;min-width:190px}.symmenu .menu-pop button{display:flex;align-items:center;gap:10px}.symmenu>summary::after{display:none}
 .rvwrap{display:flex;flex-direction:column;gap:14px}.rvrows{display:flex;flex-direction:column;gap:14px}.rvrow{display:flex;flex-direction:column;gap:6px}.rvrow .rl{font-weight:700}
-.rvbays{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px}.rvrack{width:150px}.rvrack .cell{height:26px;font-size:.7rem}
+.rvbays{display:flex;flex-wrap:nowrap;gap:10px;overflow-x:auto;padding-bottom:8px}.rvbays>.rackcol{flex:0 0 auto}.rvrack{width:124px}.rvrack .cell{height:26px;font-size:.68rem}
+.mmbody:has(.rvwrap){max-width:min(100%,1400px)}
 .rvslot.rvover,.rvpal.rvover{outline:2px dashed var(--accent);outline-offset:1px;background:var(--accent-soft)}
 .rvbox{flex:1;min-width:0;display:flex;align-items:center;gap:4px;height:100%;padding:0 6px;border-radius:2px;background:hsl(var(--h) var(--chipS) var(--chipL));color:var(--chipInk);cursor:grab;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;opacity:.55}
 .rvbox.mv{opacity:1;box-shadow:inset 3px 0 0 var(--accent)}.rvbox.dragging{opacity:.3}.rvbox:active{cursor:grabbing}
@@ -1626,21 +1627,22 @@ function offlineSheet(p,P,B,order){const rows=mmSheetRows(p,P,B,order);if(!rows.
    The order the boxes came out isn't known exactly, so after changes are entered the bays the move touched are shown
    shelf by shelf. Dropping a box on a full slot puts it there and pushes that box and the ones after it down one slot,
    along the row, until a free slot takes up the push. Dragging a box further down a full run moves the boxes between up one. */
-function reviewBays(p,P,B){const ids=new Set(B.list.map(i=>i.id));const want=new Set();
-  P.racks.forEach((R,i)=>{if(R.cells.some(c=>c.item&&slotList(c).some(x=>ids.has(x)))){want.add(R.rack.id);const nx=P.racks[i+1];if(nx&&nx.rack.rowKey===R.rack.rowKey)want.add(nx.rack.id);}});
-  (S.rvExtra||[]).forEach(id=>want.add(id));return P.racks.filter(R=>want.has(R.rack.id));}
+function reviewBays(p,P,B){const ids=new Set(B.list.map(i=>i.id));const rows=new Set();
+  P.racks.forEach(R=>{if(R.cells.some(c=>c.item&&slotList(c).some(x=>ids.has(x))))rows.add(R.rack.rowKey);});
+  (S.rvExtra||[]).forEach(id=>{const r=p.racks.find(x=>x.id===id);if(r)rows.add(r.rowKey);});
+  return P.racks.filter(R=>rows.has(R.rack.rowKey));}
 const slotList=c=>c&&c.item?[].concat(slotIds(c)):[];
 function reviewPanel(p,P,B){const ids=new Set(B.list.map(i=>i.id));const bays=reviewBays(p,P,B);const rows=[];
   bays.forEach(R=>{let g=rows.find(x=>x.key===R.rack.rowKey);if(!g){g={key:R.rack.rowKey,letter:R.rack.rowLetter,bays:[]};rows.push(g);}g.bays.push(R);});
   const byId=new Map(p.items.map(i=>[i.id,i]));
   const box=id=>{const it=byId.get(id);if(!it)return'';return `<span class="rvbox ${ids.has(id)?'mv':''}" draggable="true" data-rvbox="${id}" style="--h:${P.hue.get(it.feature)||200}" title="${esc(boxLabel(it))}"><b>${esc(it.hole)}</b> #${esc(it.box)}</span>`;};
   const onPal=(P.temp||[]).filter(it=>ids.has(it.id));
-  return `<div class="rvwrap"><p class="muted small" style="margin:0">Drag any box that’s in the wrong place. Dropping on a full slot pushes that box and the ones after it down one.</p>
+  return `<div class="rvwrap" style="--rvn:${Math.max(...rows.map(g=>g.bays.length),1)}"><p class="muted small" style="margin:0">Drag any box that’s in the wrong place. Dropping on a full slot pushes that box and the ones after it down one.</p>
     <div class="rvrows">${rows.map(g=>`<div class="rvrow"><span class="rl">Row ${esc(g.letter||'')}</span><div class="rvbays">${g.bays.map(R=>`<div class="rackcol"><div class="rname">${esc(R.rack.name)}${R.locked?' <span class="muted small">🔒</span>':''}</div><div class="rack rvrack">${R.cells.map(c=>c.blocked?`<div class="cell blocked"><span class="n">${c.slot}</span></div>`
       :`<div class="cell rvslot" data-rvdrop="${R.rack.id}|${c.slot}"><span class="n">${c.slot}</span>${slotList(c).map(box).join('')}</div>`).join('')}</div></div>`).join('')}</div></div>`).join('')}</div>
     ${(()=>{const none=B.list.filter(it=>!P.pos[it.id]&&!it.temp);return none.length?`<div class="rvpal rvnone"><span class="label">No slot yet</span>${none.map(it=>box(it.id)).join('')}</div>`:'';})()}
     <div class="rvpal" data-rvdrop="pallet"><span class="label">Temporary pallet</span>${onPal.map(it=>box(it.id)).join('')||'<span class="muted small">Drop a box here if it’s still on the pallet</span>'}</div>
-    <div class="mmbtns"><button class="ghost" data-act="rv-undo" ${(S.rvUndo||[]).length?'':'disabled'}>Undo</button><span class="row" style="gap:6px;align-items:center"><input id="rvBay" class="mono" placeholder="Bay, e.g. B5" style="width:120px"><button data-act="rv-addbay">Show bay</button></span><span class="spacer"></span><button class="primary" data-act="rv-done">Looks right →</button></div></div>`;}
+    <div class="mmbtns"><button class="ghost" data-act="rv-undo" ${(S.rvUndo||[]).length?'':'disabled'}>Undo</button><span class="row" style="gap:6px;align-items:center"><input id="rvBay" class="mono" placeholder="Bay, e.g. B5" style="width:120px"><button data-act="rv-addbay">Show its row</button></span><span class="spacer"></span><button class="primary" data-act="rv-done">Looks right →</button></div></div>`;}
 function rvSnap(p){S.rvUndo=(S.rvUndo||[]).concat(JSON.stringify({racks:p.racks.map(r=>({id:r.id,fixed:r.fixed,slotLocks:r.slotLocks,hold:r.hold})),items:p.items.filter(i=>i.temp).map(i=>[i.id,i.pallet])})).slice(-40);}
 function rvRestore(p,json){const d=JSON.parse(json);const m=new Map(d.racks.map(r=>[r.id,r]));p.racks.forEach(r=>{const o=m.get(r.id);if(o){r.fixed=o.fixed;r.slotLocks=o.slotLocks;r.hold=o.hold;}});
   const t=new Map(d.items);p.items.forEach(i=>{if(t.has(i.id)){i.temp=true;i.pallet=t.get(i.id);}else{delete i.temp;delete i.pallet;}});}
