@@ -251,6 +251,12 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 .rowgroup:last-child{border-right:0;padding-right:0}
 .printhead,.printnotes{display:none}
 .symmenu .menu-pop{left:0;right:auto;min-width:190px}.symmenu .menu-pop button{display:flex;align-items:center;gap:10px}.symmenu>summary::after{display:none}
+.rvwrap{display:flex;flex-direction:column;gap:14px}.rvrows{display:flex;flex-direction:column;gap:14px}.rvrow{display:flex;flex-direction:column;gap:6px}.rvrow .rl{font-weight:700}
+.rvbays{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px}.rvrack{width:150px}.rvrack .cell{height:26px;font-size:.7rem}
+.rvslot.rvover,.rvpal.rvover{outline:2px dashed var(--accent);outline-offset:1px;background:var(--accent-soft)}
+.rvbox{flex:1;min-width:0;display:flex;align-items:center;gap:4px;height:100%;padding:0 6px;border-radius:2px;background:hsl(var(--h) var(--chipS) var(--chipL));color:var(--chipInk);cursor:grab;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;opacity:.55}
+.rvbox.mv{opacity:1;box-shadow:inset 3px 0 0 var(--accent)}.rvbox.dragging{opacity:.3}.rvbox:active{cursor:grabbing}
+.rvpal{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px;border:1.5px dashed var(--warn);border-radius:10px;min-height:44px}.rvpal .label{margin-right:6px}.rvpal .rvbox{flex:0 0 auto;height:26px}.rvnone{border-color:var(--line)}
 .modal .savewarn{width:min(520px,100%);display:flex;flex-direction:column;gap:12px;border-top:6px solid var(--warn)}
 .swhead{display:flex;align-items:center;gap:12px}.swhead h2{margin:0}.swicon{display:grid;place-items:center;width:46px;height:46px;flex:none;border-radius:12px;background:var(--warn-soft);color:var(--warn)}
 .savewarn p{margin:0}.savewarn ul{margin:0;padding:12px 12px 12px 32px;border-radius:10px;background:var(--surface-2);display:flex;flex-direction:column;gap:6px;font-size:1rem}
@@ -1586,6 +1592,21 @@ function pickerResults(p,P,q){if(!String(q||'').trim())return '<p class="muted s
 const boxLabel=it=>[fname(it.feature||''),it.hole].filter(Boolean).join(' · ')+' · box '+it.box+(it.of?' of '+it.of:'');
 /* a finished move is kept as-is; only the Move mode workflow is cleared so a new move can start at step 1 */
 function mmCloseOut(p){delete p.mm;delete p.pallet;Object.assign(S,{mmReturn:null,mmPick:null,mmPicker:false,palConf:null,mmFix:null,mmAlt:null,mmJust:false,mmSaveAsk:false,mmZoom:false,mmDir:'out'});}
+/* online move undo: remember what the slots looked like before a box was placed, so undoing puts the box back in the queue
+   and leaves every slot as it was. Nothing else is re-ordered and no slot is left locked empty. */
+function mmPrior(p,id,spots){const mm=mmState(p);mm.prior=mm.prior||{};const out=[];
+  spots.filter(Boolean).forEach(({r,s:sl})=>{const rk=p.racks.find(x=>x.id===r);if(!rk||out.some(e=>e.r===r&&e.s===sl))return;const e={r,s:sl};
+    ['fixed','slotLocks','hold'].forEach(k=>{const v=(rk[k]||{})[sl];if(v!==undefined)e[k]=JSON.parse(JSON.stringify(v));});out.push(e);});
+  mm.prior[id]=out;}
+function mmUndoPlace(p,id){const mm=mmState(p);
+  /* take the box out of every slot; a slot it leaves empty is simply free again (not locked empty) */
+  p.racks.forEach(r=>['fixed','slotLocks','hold'].forEach(k=>{const M=r[k];if(!M)return;Object.keys(M).forEach(sl=>{const v=M[sl];
+    if(Array.isArray(v)){const keep=v.filter(x=>x!==id);if(keep.length===v.length)return;if(keep.length)M[sl]=keep.length===1?keep[0]:keep;else delete M[sl];}else if(v===id)delete M[sl];});}));
+  const pr=(mm.prior||{})[id];
+  if(pr)pr.forEach(e=>{const r=p.racks.find(x=>x.id===e.r);if(!r)return;['fixed','slotLocks','hold'].forEach(k=>{r[k]=r[k]||{};const cur=r[k][e.s];if(cur!==undefined&&cur!=='')return;
+    let v=e[k];if(Array.isArray(v)){v=v.filter(x=>x!==id);if(!v.length)v=undefined;else if(v.length===1)v=v[0];}else if(v===id)v=undefined;
+    if(v===undefined)delete r[k][e.s];else r[k][e.s]=v;});});
+  if(mm.prior)delete mm.prior[id];}
 function mmState(p){p.mm=p.mm||{};p.mm.done=p.mm.done||{};return p.mm;}
 function pinHere(p,id){const P=computePlan(p);const ps=P.pos[id];if(!ps)return false;const r=p.racks.find(x=>x.id===ps.rackId);if(!r)return false;
   if(r.locked){const ex=r.fixed[ps.slot];if(ex===undefined)r.fixed[ps.slot]=id;else if(ex!==id&&!(Array.isArray(ex)&&ex.includes(id)))r.fixed[ps.slot]=[].concat(ex,id);}
@@ -1649,7 +1670,60 @@ function offlineSheet(p,P,B,order){const rows=mmSheetRows(p,P,B,order);if(!rows.
     <div class="printnotes"><h2>Changes from the plan</h2><p>Write down every box that went somewhere other than its “Goes to” slot, and what happened to the slot it was meant for. Enter these in Move mode → After the move.</p>
       <table><thead><tr><th>Feature</th><th>Hole ID</th><th>Box No.</th><th>Placed in (row-bay-slot)</th><th>Its planned slot was… (left empty / next box moved up)</th></tr></thead><tbody>${'<tr><td></td><td></td><td></td><td></td><td></td></tr>'.repeat(12)}</tbody></table>
       <p style="margin-top:14px"><b>Notes:</b></p><div class="noteslines"></div></div></div>`;}
+/* ---------- offline move: check the bays and drag boxes to where they really are ----------
+   The order the boxes came out isn't known exactly, so after changes are entered the bays the move touched are shown
+   shelf by shelf. Dropping a box on a full slot puts it there and pushes that box and the ones after it down one slot,
+   along the row, until a free slot takes up the push. Dragging a box further down a full run moves the boxes between up one. */
+function reviewBays(p,P,B){const ids=new Set(B.list.map(i=>i.id));const want=new Set();
+  P.racks.forEach((R,i)=>{if(R.cells.some(c=>c.item&&slotList(c).some(x=>ids.has(x)))){want.add(R.rack.id);const nx=P.racks[i+1];if(nx&&nx.rack.rowKey===R.rack.rowKey)want.add(nx.rack.id);}});
+  (S.rvExtra||[]).forEach(id=>want.add(id));return P.racks.filter(R=>want.has(R.rack.id));}
+const slotList=c=>c&&c.item?[].concat(slotIds(c)):[];
+function reviewPanel(p,P,B){const ids=new Set(B.list.map(i=>i.id));const bays=reviewBays(p,P,B);const rows=[];
+  bays.forEach(R=>{let g=rows.find(x=>x.key===R.rack.rowKey);if(!g){g={key:R.rack.rowKey,letter:R.rack.rowLetter,bays:[]};rows.push(g);}g.bays.push(R);});
+  const byId=new Map(p.items.map(i=>[i.id,i]));
+  const box=id=>{const it=byId.get(id);if(!it)return'';return `<span class="rvbox ${ids.has(id)?'mv':''}" draggable="true" data-rvbox="${id}" style="--h:${P.hue.get(it.feature)||200}" title="${esc(boxLabel(it))}"><b>${esc(it.hole)}</b> #${esc(it.box)}</span>`;};
+  const onPal=(P.temp||[]).filter(it=>ids.has(it.id));
+  return `<div class="rvwrap"><p class="muted small" style="margin:0">Drag any box that’s in the wrong place. Dropping on a full slot pushes that box and the ones after it down one.</p>
+    <div class="rvrows">${rows.map(g=>`<div class="rvrow"><span class="rl">Row ${esc(g.letter||'')}</span><div class="rvbays">${g.bays.map(R=>`<div class="rackcol"><div class="rname">${esc(R.rack.name)}${R.locked?' <span class="muted small">🔒</span>':''}</div><div class="rack rvrack">${R.cells.map(c=>c.blocked?`<div class="cell blocked"><span class="n">${c.slot}</span></div>`
+      :`<div class="cell rvslot" data-rvdrop="${R.rack.id}|${c.slot}"><span class="n">${c.slot}</span>${slotList(c).map(box).join('')}</div>`).join('')}</div></div>`).join('')}</div></div>`).join('')}</div>
+    ${(()=>{const none=B.list.filter(it=>!P.pos[it.id]&&!it.temp);return none.length?`<div class="rvpal rvnone"><span class="label">No slot yet</span>${none.map(it=>box(it.id)).join('')}</div>`:'';})()}
+    <div class="rvpal" data-rvdrop="pallet"><span class="label">Temporary pallet</span>${onPal.map(it=>box(it.id)).join('')||'<span class="muted small">Drop a box here if it’s still on the pallet</span>'}</div>
+    <div class="mmbtns"><button class="ghost" data-act="rv-undo" ${(S.rvUndo||[]).length?'':'disabled'}>Undo</button><span class="row" style="gap:6px;align-items:center"><input id="rvBay" class="mono" placeholder="Bay, e.g. B5" style="width:120px"><button data-act="rv-addbay">Show bay</button></span><span class="spacer"></span><button class="primary" data-act="rv-done">Looks right →</button></div></div>`;}
+function rvSnap(p){S.rvUndo=(S.rvUndo||[]).concat(JSON.stringify({racks:p.racks.map(r=>({id:r.id,fixed:r.fixed,slotLocks:r.slotLocks,hold:r.hold})),items:p.items.filter(i=>i.temp).map(i=>[i.id,i.pallet])})).slice(-40);}
+function rvRestore(p,json){const d=JSON.parse(json);const m=new Map(d.racks.map(r=>[r.id,r]));p.racks.forEach(r=>{const o=m.get(r.id);if(o){r.fixed=o.fixed;r.slotLocks=o.slotLocks;r.hold=o.hold;}});
+  const t=new Map(d.items);p.items.forEach(i=>{if(t.has(i.id)){i.temp=true;i.pallet=t.get(i.id);}else{delete i.temp;delete i.pallet;}});}
+/* put one box at a slot; returns a note for the toast */
+function rvMove(p,id,rackId,slot){const P=computePlan(p);const it=p.items.find(x=>x.id===id);if(!it)return'';
+  const key=(r,sl)=>r+'|'+sl;const occ=new Map();P.racks.forEach(R=>R.cells.forEach(c=>occ.set(key(R.rack.id,c.slot),slotList(c))));
+  const T=P.racks.find(R=>R.rack.id===rackId);if(!T)return'';
+  /* the slots of the target's row, in order */
+  const seq=[];P.racks.filter(R=>R.rack.rowKey===T.rack.rowKey).forEach(R=>R.cells.forEach(c=>{if(!c.blocked)seq.push({R,slot:c.slot});}));
+  const ti=seq.findIndex(x=>x.R===T&&x.slot===slot);if(ti<0)return'';
+  const src=P.pos[id];const si=src?seq.findIndex(x=>x.R.rack.id===src.rackId&&x.slot===src.slot):-1;if(si===ti)return'';
+  const touched=new Set([T.rack.id]);if(src)touched.add(src.rackId);
+  let vacated=src?key(src.rackId,src.slot):null;
+  if(src){const k=key(src.rackId,src.slot);occ.set(k,occ.get(k).filter(x=>x!==id));}
+  let overflow=[];
+  const target=occ.get(key(rackId,slot));
+  if(si>=0&&si<ti&&seq.slice(si+1,ti+1).every(x=>occ.get(key(x.R.rack.id,x.slot)).length)){
+    /* moving further down a full run: the boxes in between move up one */
+    for(let i=si;i<ti;i++){const a=seq[i],b=seq[i+1];occ.set(key(a.R.rack.id,a.slot),occ.get(key(b.R.rack.id,b.slot)));touched.add(a.R.rack.id);}
+    occ.set(key(rackId,slot),[id]);vacated=null;}
+  else if(!target.length)occ.set(key(rackId,slot),[id]);
+  else{let carry=[id];for(let i=ti;i<seq.length&&carry;i++){const k=key(seq[i].R.rack.id,seq[i].slot);const cur=occ.get(k);occ.set(k,carry);touched.add(seq[i].R.rack.id);if(k===vacated)vacated=null;carry=cur.length?cur:null;}
+    if(carry)overflow=carry;}
+  /* write the result as pins for the bays that changed */
+  const moved=new Set();P.racks.filter(R=>touched.has(R.rack.id)).forEach(R=>R.cells.forEach(c=>{if(!c.blocked)occ.get(key(R.rack.id,c.slot)).forEach(x=>moved.add(x));}));
+  moved.forEach(x=>unpinItem(p,x));overflow.forEach(x=>unpinItem(p,x));
+  P.racks.filter(R=>touched.has(R.rack.id)).forEach(R=>{const r=R.rack;r.fixed=r.fixed||{};r.slotLocks=r.slotLocks||{};r.hold=r.hold||{};
+    R.cells.forEach(c=>{if(c.blocked)return;const k=key(r.id,c.slot);const v=occ.get(k);['fixed','slotLocks','hold'].forEach(m=>delete r[m][c.slot]);
+      if(v.length)r[r.locked?'fixed':'slotLocks'][c.slot]=v.length===1?v[0]:v.slice();else if(k===vacated&&!r.locked)r.slotLocks[c.slot]='';});});
+  moved.forEach(x=>{const o=p.items.find(i=>i.id===x);if(o){delete o.temp;delete o.pallet;}});
+  overflow.forEach(x=>{const o=p.items.find(i=>i.id===x);if(o)putOnPallet(p,o);});
+  const mm=mmState(p);const P2=computePlan(p);[...moved].forEach(x=>{if(mm.done&&mm.done[x]!==undefined&&P2.pos[x])mm.done[x]=P2.pos[x].rackName+'-'+P2.pos[x].slot;});
+  return overflow.length?`${plural(overflow.length,'box')} ran past the end of the row and went on the temporary pallet`:'';}
 function offlineFinish(p,P,B){const mm=mmState(p);const pr=projRec();
+  if(mm.finished&&mm.review)return `<p style="text-align:center;margin:0"><b>Check the boxes are where they really are</b></p>${reviewPanel(p,P,B)}`;
   if(mm.finished)return finishPanel(p,P,B);
   if(!S.mmFix)return `<p>Back from the move? Did everything go to plan?</p><div class="row"><button class="primary" data-act="mm-allgood">Yes, every box went where the sheet said</button><button data-act="mm-fixstart">No, some boxes went somewhere else</button></div>`;
   const opts=B.list.map(it=>`<option value="${it.id}">${esc(boxLabel(it))} (planned ${esc(destOf(P,it)||'no slot')})</option>`).join('');
@@ -1668,7 +1742,7 @@ function finishPanel(p,P,B){const pr=projRec();const keptF=new Set(pallets(p).fi
     <div class="mmbtns"><details class="menu savemenu" id="mmSaveMenu"><summary>Save</summary><div class="menu-pop" role="menu">
         <button role="menuitem" data-act="mm-save-move">Save to move <span class="hint">keep it in this core move</span></button>
         <button role="menuitem" data-act="mm-save-ask">Save to project… <span class="hint">make it the shed’s saved layout</span></button></div></details>
-      <button data-act="mm-reopen">Make more changes</button><span class="spacer"></span><button class="ghost" data-act="mm-reset">Start over</button></div>
+      <button data-act="mm-reopen">Make more changes</button>${mm.mode==='offline'?'<button data-act="rv-open">Check box positions</button>':''}<span class="spacer"></span><button class="ghost" data-act="mm-reset">Start over</button></div>
     ${S.mmSaveAsk?saveSummary(p,shed):''}`;}
 /* what changed compared with the shed's saved layout, in plain numbers */
 function moveSummary(p){const pr=projRec();const P=computePlan(p);const base=pr&&pr.plan;const BP=base?computePlan(base):null;
@@ -2861,7 +2935,7 @@ document.addEventListener('click',e=>{
     case 'mm-open':S.mmZoom=true;S.mmDir='zoom';render();window.scrollTo(0,0);break;
     case 'mm-overview':S.mmZoom=false;S.mmDir='out';render();window.scrollTo(0,0);break;
     case 'mm-back':{const mm=mmState(p);const hp=!!(p.pallet&&p.pallet.list&&p.pallet.list.length);let st=mmStep(p);st=st===3&&!hp?1:st-1;mm.step=Math.max(0,st);S.mmFix=null;S.mmAlt=null;S.mmDir='back';touch(p);render();window.scrollTo(0,0);break;}
-    case 'mm-placed':{S.mmJust=true;S.mmPick=null;S.mmNot=false;if(id===S.mmReturn)S.mmReturn=null;const it=p.items.find(x=>x.id=== id);if(!it)break;const where=pinHere(p,id);if(!where)break;mmState(p).done[id]=where;S.mmAlt=null;commitDraft(true);render();toast(`${it.hole} box ${it.box} placed in ${where}`);break;}
+    case 'mm-placed':{S.mmJust=true;S.mmPick=null;S.mmNot=false;if(id===S.mmReturn)S.mmReturn=null;const it=p.items.find(x=>x.id=== id);if(!it)break;{const ps0=computePlan(p).pos[id];mmPrior(p,id,[ps0&&{r:ps0.rackId,s:ps0.slot}]);}const where=pinHere(p,id);if(!where)break;mmState(p).done[id]=where;S.mmAlt=null;commitDraft(true);render();toast(`${it.hole} box ${it.box} placed in ${where}`);break;}
     case 'mm-alt':S.mmAlt=id||null;S.mmFitAsk=null;S.mmGap='next';render();if(id){const el=$('#mmLoc');if(el)el.focus();}break;
     case 'mm-not':S.mmNot=!S.mmNot;S.mmAlt=null;render();if(S.mmNot){const el=$('#mmFind');if(el)el.focus();}break;
     case 'mm-pick':if(id&&!S.mmReturn)S.mmReturn=S.mmShown||null;S.mmPick=id||null;S.mmNot=false;S.mmAlt=null;render();{const c=$('.mmcard');if(c)c.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}if(id){const it=cur().items.find(x=>x.id===id);if(it)toast(`Showing ${it.hole} box ${it.box}. After it’s placed you’ll go back to the expected box.`);}break;
@@ -2872,6 +2946,7 @@ document.addEventListener('click',e=>{
       S.mmFitAsk=null;S.mmJust=true;S.mmPick=null;S.mmNot=false;if(id===S.mmReturn)S.mmReturn=null;
       {const pl0=palletByName(p,txt);if(pl0){putOnPallet(p,it,pl0.id);S.mmAlt=null;commitDraft(true);render();toast(`${it.hole} box ${it.box} is on ${pl0.text}`);break;}}
       const L=parseSlotRef(p,txt);if(!L||L.bad){toast(!L?'Type a slot like B2-4.':`There’s no bay ${L.bad} in this shed.`);break;}
+      {const ps0=computePlan(p).pos[id];mmPrior(p,id,[ps0&&{r:ps0.rackId,s:ps0.slot},{r:L.r.id,s:L.slot}]);}
       const P0=computePlan(p);const before=P0.pos[id];let where;
       if(before&&before.rackId===L.r.id&&before.slot===L.slot)where=pinHere(p,id);
       else{if(moveItemTo(p,id,txt)===false&&!computePlan(p).pos[id])break;where=L.r.name+'-'+L.slot;if(S.mmGap==='empty')keepEmpty(p,before);}
@@ -2879,8 +2954,8 @@ document.addEventListener('click',e=>{
     case 'mm-temp':{S.mmJust=true;S.mmPick=null;S.mmNot=false;if(id===S.mmReturn)S.mmReturn=null;const it=p.items.find(x=>x.id===id);if(it){putOnPallet(p,it);S.mmAlt=null;commitDraft(true);render();toast(`${it.hole} box ${it.box} is on the temporary pallet`);}break;}
     case 'mm-temp-back':{const it=p.items.find(x=>x.id===id);if(it){delete it.temp;delete it.pallet;commitDraft(true);render();}break;}
     case 'mm-temp-place':{const it=p.items.find(x=>x.id===id);const txt=($('#tp_'+id)||{}).value;const L=parseSlotRef(p,txt);if(!it||!L||L.bad){toast('Type a slot like B2-4.');break;}
-      delete it.temp;delete it.pallet;moveItemTo(p,id,txt);mmState(p).done[id]=L.r.name+'-'+L.slot;commitDraft(true);render();break;}
-    case 'mm-undo':{const mm=mmState(p);delete mm.done[id];unpinItem(p,id);mm.finished=false;mm.saved=false;mm.step=3;commitDraft(true);render();break;}
+      mmPrior(p,id,[{r:L.r.id,s:L.slot}]);delete it.temp;delete it.pallet;moveItemTo(p,id,txt);mmState(p).done[id]=L.r.name+'-'+L.slot;commitDraft(true);render();break;}
+    case 'mm-undo':{const mm=mmState(p);delete mm.done[id];mmUndoPlace(p,id);mm.finished=false;mm.saved=false;mm.step=3;commitDraft(true);render();break;}
     case 'mm-allgood':{const mm=mmState(p);const B=mmBoxes(p,computePlan(p),computeMoves(p,computePlan(p)));B.list.forEach(it=>{if(!mm.done[it.id]){const w=pinHere(p,it.id);if(w)mm.done[it.id]=w;}});mm.finished=true;commitDraft(true);render();toast('Move recorded and saved');break;}
     case 'mm-fixstart':S.mmFix=[{id:'',loc:'',gap:'next'}];render();break;
     case 'mm-fixadd':S.mmFix=(S.mmFix||[]).concat({id:'',loc:'',gap:'next'});render();break;
@@ -2893,8 +2968,12 @@ document.addEventListener('click',e=>{
         if(r.gap==='empty')keepEmpty(p,before);});
       const B=mmBoxes(p,computePlan(p),computeMoves(p,computePlan(p)));B.list.forEach(it=>{if(!mm.done[it.id]&&!it.temp){const w=pinHere(p,it.id);if(w)mm.done[it.id]=w;}});
       const misfit=rows.filter(r=>{const it=p.items.find(x=>x.id===r.id);const L=!palletByName(p,r.loc)&&parseSlotRef(p,r.loc);return it&&L&&!L.bad&&fitIssue(p,it,L.r);});
-      mm.finished=true;S.mmFix=null;commitDraft(true);render();toast(`Plan updated with ${plural(rows.length,'change')} and saved${misfit.length?`. Check sizes: ${misfit.map(r=>r.loc.toUpperCase()).join(', ')} ${misfit.length===1?'is':'are'} the wrong size for the box`:''}`);break;}
-    case 'mm-reopen':{const mm=mmState(p);mm.finished=false;mm.saved=false;S.mmJust=false;S.mmFix=null;
+      mm.finished=true;mm.review=rows.length>0;S.rvUndo=[];S.rvExtra=[];S.mmFix=null;commitDraft(true);render();toast(`Plan updated with ${plural(rows.length,'change')} and saved${misfit.length?`. Check sizes: ${misfit.map(r=>r.loc.toUpperCase()).join(', ')} ${misfit.length===1?'is':'are'} the wrong size for the box`:''}`);break;}
+    case 'rv-done':{const mm=mmState(p);mm.review=false;S.rvUndo=[];touch(p);render();window.scrollTo(0,0);break;}
+    case 'rv-open':{const mm=mmState(p);mm.review=true;S.rvUndo=[];S.rvExtra=[];render();break;}
+    case 'rv-addbay':{const v=String(($('#rvBay')||{}).value||'').trim().toUpperCase().replace(/\s+/g,'');const r=p.racks.find(x=>String(x.name).toUpperCase()===v);if(!r){toast(v?`There’s no bay ${v} in this shed.`:'Type a bay name, like B5.');break;}S.rvExtra=[...new Set((S.rvExtra||[]).concat(r.id))];render();break;}
+    case 'rv-undo':{const j=(S.rvUndo||[]).pop();if(j){rvRestore(p,j);touch(p);render();}break;}
+    case 'mm-reopen':{const mm=mmState(p);mm.finished=false;mm.saved=false;mm.review=false;S.mmJust=false;S.mmFix=null;
       if(mm.mode==='online'){mm.step=3;S.open.mmdone=true;}else{mm.step=4;S.mmFix=[{id:'',loc:'',gap:'next'}];}S.mmDir='back';touch(p);render();window.scrollTo(0,0);break;}
     case 'pallet-keep':{const l=p.map.labels.find(x=>x.id===id);if(l){l.kept=true;commitDraft(true);render();toast(`${l.text} is now a permanent storage location`);}break;}
     case 'pallet-unkeep':{const l=p.map.labels.find(x=>x.id===id);if(l){l.kept=false;commitDraft(true);render();}break;}
@@ -3255,6 +3334,16 @@ document.addEventListener('pointercancel',e=>endDrag(e,true));
 ['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{const z=e.target.closest&&e.target.closest('.dropzone');if(!z||!e.dataTransfer||![...(e.dataTransfer.types||[])].includes('Files'))return;e.preventDefault();z.classList.add('over');}));
 document.addEventListener('dragleave',e=>{const z=e.target.closest&&e.target.closest('.dropzone');if(z&&!z.contains(e.relatedTarget))z.classList.remove('over');});
 document.addEventListener('drop',e=>{const z=e.target.closest&&e.target.closest('.dropzone');if(!z)return;e.preventDefault();z.classList.remove('over');const file=e.dataTransfer.files&&e.dataTransfer.files[0];if(file&&z.dataset.pallet)S.palletNext=true;if(file)readSheetFile(file,z.dataset.kind).catch(()=>toast('Couldn’t read that file. Try saving it as .xlsx or .csv.'));});
+/* offline move check: drag boxes between slots */
+document.addEventListener('dragstart',e=>{const bx=e.target.closest&&e.target.closest('[data-rvbox]');if(!bx)return;S.rvDrag=bx.dataset.rvbox;bx.classList.add('dragging');e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',S.rvDrag);}catch(_){}});
+document.addEventListener('dragover',e=>{const z=e.target.closest&&e.target.closest('[data-rvdrop]');if(!z||!S.rvDrag)return;e.preventDefault();document.querySelectorAll('.rvover').forEach(x=>x!==z&&x.classList.remove('rvover'));z.classList.add('rvover');});
+document.addEventListener('dragleave',e=>{const z=e.target.closest&&e.target.closest('[data-rvdrop]');if(z&&!z.contains(e.relatedTarget))z.classList.remove('rvover');});
+document.addEventListener('drop',e=>{const z=e.target.closest&&e.target.closest('[data-rvdrop]');if(!z||!S.rvDrag)return;e.preventDefault();const p=cur();const id=S.rvDrag;S.rvDrag=null;if(!p)return;
+  const it=p.items.find(x=>x.id===id);rvSnap(p);let note='';
+  if(z.dataset.rvdrop==='pallet'){if(it&&!it.temp){const P0=computePlan(p);const was=P0.pos[id];putOnPallet(p,it);if(was)keepEmpty(p,was);}else S.rvUndo.pop();}
+  else{const [rid,sl]=z.dataset.rvdrop.split('|');note=rvMove(p,id,rid,+sl);}
+  touch(p);render();const P=computePlan(p);const ps=P.pos[id];if(it)toast(note||(ps?`${it.hole} box ${it.box} is now in ${ps.rackName}-${ps.slot}`:`${it.hole} box ${it.box} is on the temporary pallet`));});
+document.addEventListener('dragend',()=>{if(S.rvDrag){S.rvDrag=null;document.querySelectorAll('.rvover,.rvbox.dragging').forEach(x=>x.classList.remove('rvover','dragging'));}});
 /* drag to reorder features */
 document.addEventListener('dragstart',e=>{const li=e.target.closest&&e.target.closest('#featlist li');if(!li)return;S.drag=li.dataset.feat;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',S.drag);}catch(_){}});
 document.addEventListener('dragover',e=>{const li=e.target.closest&&e.target.closest('#featlist li');if(!li||S.drag==null)return;e.preventDefault();document.querySelectorAll('#featlist li.dragover').forEach(x=>x.classList.remove('dragover'));li.classList.add('dragover');});
@@ -3290,6 +3379,7 @@ document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLower
   if(e.key==='Escape'&&S.leaveAsk){S.leaveAsk=false;render();return;}
   if(e.key==='Escape'&&(S.modal||S.expPrompt)){S.modal=null;S.expPrompt=null;render();return;}
   if(e.key==='Escape'&&e.target.id==='gsearch'&&S.filter.q){e.preventDefault();S.filter.q='';liveRender('gsearch');}
+  if(e.key==='Enter'&&e.target.id==='rvBay'){e.preventDefault();const bt=$('[data-act=rv-addbay]');if(bt)bt.click();return;}
   if(e.key==='Enter'&&e.target.id==='gsearch'){e.preventDefault();clearTimeout(LIVE);liveRender('gsearch');}});
 
 function runImport(p){
