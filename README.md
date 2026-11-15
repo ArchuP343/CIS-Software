@@ -31,6 +31,29 @@ After that:
 
 Tip: make a desktop shortcut to `Core Rack Planner.html`.
 
+## Voice control (online moves)
+
+In an online move you can say boxes out loud instead of tapping. Click the round mic button above the box card (it lights up red while listening) and say a box, like “diamond drill one oh two box fourteen”. The planner shows it and answers “DD102 box 14 into slot A1-2”. Then say **placed**, **what slot**, **doesn’t fit**, **next option**, **pallet**, **undo**, **next box**, **repeat**, **how many left** or **stop listening**. Add the feature first when two holes share a name (“bravo mike alpha one diamond drill one oh two box three”). The gear next to the mic turns on a wake word, so commands only count when they start with “Jasper”. The full list is in *CIS Voice Commands.docx*.
+
+It runs entirely on the laptop using [Vosk](https://alphacephei.com/vosk/) and the computer’s own voices, so it works without internet once the files are in place. Set it up once:
+
+1. Download `vosk.js` from the [vosk-browser](https://github.com/ccoreilly/vosk-browser) project (the `dist/vosk.js` file of its npm package).
+2. Download the small English model, `vosk-model-small-en-us-0.15`, from the [Vosk models page](https://alphacephei.com/vosk/models). Keep it as a `.tar.gz` file (if it came as a `.zip`, re-pack the folder as `.tar.gz`).
+3. Make a folder called `Voice` inside the shared `Data` folder and put both files in it:
+
+```
+Data\
+    Voice\
+        vosk.js
+        vosk-model-small-en-us-0.15.tar.gz
+```
+
+4. In an online move, click **Voice control** and allow the microphone.
+
+If no shared folder is connected, the planner asks you to choose the two files each time you turn voice on.
+
+Hole IDs are matched by their letters and number: `DD102` is said “diamond drill one oh two”. `RC` is said “reverse circulation”. Other codes can be said as letters, plainly or with the phonetic alphabet.
+
 ## Backups
 
 On the home page, open a project's **Manage** menu and choose **Backup**. This saves a dated copy, such as `tinaroo-dam__backup_2026-10-12_1842.json`, into `Data\Backups\`.

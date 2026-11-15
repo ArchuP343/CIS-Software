@@ -1,0 +1,1011 @@
+{
+ "app": "core-rack-planner",
+ "version": 2,
+ "projectRecord": {
+  "id": "ri7yddajpp2",
+  "name": "Example project",
+  "site": "Core shed 2 (example)",
+  "created": 1794721984022,
+  "updated": 1794740137267,
+  "plan": {
+   "stage": "done",
+   "setup": {
+    "rackCount": 6,
+    "defaultRows": "12",
+    "defaultBlocked": "1-2",
+    "letter": "A",
+    "startNum": 1,
+    "rowCount": 2,
+    "backToBack": false,
+    "autoCount": false,
+    "numbering": "down"
+   },
+   "racks": [
+    {
+     "id": "halfqxhmpp2",
+     "name": "A1",
+     "rows": 12,
+     "blocked": [
+      1,
+      2
+     ],
+     "x": 2,
+     "y": 2,
+     "locked": false,
+     "fixed": {},
+     "slotLocks": {},
+     "hold": {},
+     "dir": "v",
+     "rowKey": "halfqxhmpp2",
+     "rowLetter": "A"
+    },
+    {
+     "id": "973x3c8lpp3",
+     "name": "A2",
+     "rows": 12,
+     "blocked": [
+      1,
+      2
+     ],
+     "x": 2,
+     "y": 6,
+     "locked": false,
+     "fixed": {},
+     "slotLocks": {},
+     "hold": {},
+     "dir": "v",
+     "rowKey": "halfqxhmpp2",
+     "rowLetter": "A"
+    },
+    {
+     "id": "q9ayzm6hpp3",
+     "name": "A3",
+     "rows": 12,
+     "blocked": [
+      1,
+      2
+     ],
+     "x": 2,
+     "y": 10,
+     "locked": false,
+     "fixed": {},
+     "slotLocks": {},
+     "hold": {},
+     "dir": "v",
+     "rowKey": "halfqxhmpp2",
+     "rowLetter": "A"
+    },
+    {
+     "id": "8xmvwcr2pp3",
+     "name": "B1",
+     "rows": 12,
+     "blocked": [
+      1,
+      2
+     ],
+     "x": 7,
+     "y": 2,
+     "locked": false,
+     "fixed": {},
+     "slotLocks": {},
+     "hold": {},
+     "dir": "v",
+     "rowKey": "8xmvwcr2pp3",
+     "rowLetter": "B"
+    },
+    {
+     "id": "oi12k02ypp3",
+     "name": "B2",
+     "rows": 12,
+     "blocked": [
+      1,
+      2
+     ],
+     "x": 7,
+     "y": 6,
+     "locked": false,
+     "fixed": {},
+     "slotLocks": {},
+     "hold": {},
+     "dir": "v",
+     "rowKey": "8xmvwcr2pp3",
+     "rowLetter": "B"
+    },
+    {
+     "id": "755mg14tpp3",
+     "name": "B3",
+     "rows": 12,
+     "blocked": [
+      1,
+      2
+     ],
+     "x": 7,
+     "y": 10,
+     "locked": false,
+     "fixed": {},
+     "slotLocks": {},
+     "hold": {},
+     "dir": "v",
+     "rowKey": "8xmvwcr2pp3",
+     "rowLetter": "B"
+    }
+   ],
+   "map": {
+    "title": "Core shed 2",
+    "w": 0,
+    "h": 0,
+    "labels": [
+     {
+      "id": "9feb9998pp3",
+      "x": 2,
+      "y": 16,
+      "text": "Roller door"
+     }
+    ]
+   },
+   "customCols": [
+    {
+     "id": "5eeugd5hpp3",
+     "name": "Core size"
+    }
+   ],
+   "options": {
+    "useCustomOrder": false,
+    "featureOrder": [],
+    "gapAfterHole": 0,
+    "gapAfterFeature": 0,
+    "newRackPerFeature": false
+   },
+   "items": [
+    {
+     "id": "oq4uossspp3",
+     "feature": "ZXY",
+     "hole": "DD101",
+     "box": "1",
+     "of": "4",
+     "from": "0.00",
+     "to": "5.30",
+     "custom": {
+      "5eeugd5hpp3": "NQ"
+     }
+    },
+    {
+     "id": "wnog768ppp3",
+     "feature": "ZXY",
+     "hole": "DD101",
+     "box": "2",
+     "of": "4",
+     "from": "5.30",
+     "to": "10.40",
+     "custom": {
+      "5eeugd5hpp3": "NQ"
+     }
+    },
+    {
+     "id": "8kk4eun7pp3",
+     "feature": "ZXY",
+     "hole": "DD101",
+     "box": "3",
+     "of": "4",
+     "from": "10.40",
+     "to": "15.30",
+     "custom": {
+      "5eeugd5hpp3": "NQ"
+     }
+    },
+    {
+     "id": "i6ee0xs0pp3",
+     "feature": "ZXY",
+     "hole": "DD101",
+     "box": "4",
+     "of": "4",
+     "from": "15.30",
+     "to": "20.00",
+     "custom": {
+      "5eeugd5hpp3": "NQ"
+     }
+    },
+    {
+     "id": "i76qgikfpp3",
+     "feature": "BMA2",
+     "hole": "DD109",
+     "box": "1",
+     "of": "5",
+     "from": "0.00",
+     "to": "4.70",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "6ug9ep1xpp3",
+     "feature": "BMA2",
+     "hole": "DD109",
+     "box": "2",
+     "of": "5",
+     "from": "4.70",
+     "to": "10.10",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "l4kk46r8pp3",
+     "feature": "BMA2",
+     "hole": "DD109",
+     "box": "3",
+     "of": "5",
+     "from": "10.10",
+     "to": "15.30",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "xi4xjqt2pp3",
+     "feature": "BMA2",
+     "hole": "DD109",
+     "box": "4",
+     "of": "5",
+     "from": "15.30",
+     "to": "20.30",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "nrooqng3pp3",
+     "feature": "BMA2",
+     "hole": "DD109",
+     "box": "5",
+     "of": "5",
+     "from": "20.30",
+     "to": "25.10",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "74hclmkupp3",
+     "feature": "BMA1",
+     "hole": "DD101",
+     "box": "1",
+     "of": "4",
+     "from": "0.00",
+     "to": "5.00",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "7y2wwsefpp3",
+     "feature": "BMA1",
+     "hole": "DD101",
+     "box": "2",
+     "of": "4",
+     "from": "5.00",
+     "to": "9.80",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "c8xbrwohpp3",
+     "feature": "BMA1",
+     "hole": "DD101",
+     "box": "3",
+     "of": "4",
+     "from": "9.80",
+     "to": "14.40",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "2rjz5npfpp3",
+     "feature": "BMA1",
+     "hole": "DD101",
+     "box": "4",
+     "of": "4",
+     "from": "14.40",
+     "to": "19.70",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "heeivrpbpp3",
+     "feature": "BMA2",
+     "hole": "DD105",
+     "box": "1",
+     "of": "3",
+     "from": "0.00",
+     "to": "5.30",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "e1q699b7pp3",
+     "feature": "BMA2",
+     "hole": "DD105",
+     "box": "2",
+     "of": "3",
+     "from": "5.30",
+     "to": "10.40",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "diagqbh0pp3",
+     "feature": "BMA2",
+     "hole": "DD105",
+     "box": "3",
+     "of": "3",
+     "from": "10.40",
+     "to": "15.30",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "a8lwp1rkpp3",
+     "feature": "BMA1",
+     "hole": "DD100",
+     "box": "1",
+     "of": "6",
+     "from": "0.00",
+     "to": "4.70",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "1ac4ygxepp3",
+     "feature": "BMA1",
+     "hole": "DD100",
+     "box": "2",
+     "of": "6",
+     "from": "4.70",
+     "to": "10.10",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "jl0be9etpp3",
+     "feature": "BMA1",
+     "hole": "DD100",
+     "box": "3",
+     "of": "6",
+     "from": "10.10",
+     "to": "15.30",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "ms3me085pp3",
+     "feature": "BMA1",
+     "hole": "DD100",
+     "box": "4",
+     "of": "6",
+     "from": "15.30",
+     "to": "20.30",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "h8t1r5lspp3",
+     "feature": "BMA1",
+     "hole": "DD100",
+     "box": "5",
+     "of": "6",
+     "from": "20.30",
+     "to": "25.10",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    },
+    {
+     "id": "953jre1zpp3",
+     "feature": "BMA1",
+     "hole": "DD100",
+     "box": "6",
+     "of": "6",
+     "from": "25.10",
+     "to": "29.70",
+     "custom": {
+      "5eeugd5hpp3": "HQ"
+     }
+    }
+   ],
+   "name": "Example project"
+  },
+  "moves": [
+   {
+    "savedAt": 0,
+    "id": "nhr6c6olpp5",
+    "name": "Add BMA1-DD102",
+    "created": 1794721984025,
+    "updated": 1794740137267,
+    "plan": {
+     "stage": "done",
+     "setup": {
+      "rackCount": 6,
+      "defaultRows": "12",
+      "defaultBlocked": "1-2",
+      "letter": "A",
+      "startNum": 1,
+      "rowCount": 2,
+      "backToBack": false,
+      "autoCount": false,
+      "numbering": "down"
+     },
+     "racks": [
+      {
+       "id": "halfqxhmpp2",
+       "name": "A1",
+       "rows": 12,
+       "blocked": [
+        1,
+        2
+       ],
+       "x": 2,
+       "y": 2,
+       "locked": false,
+       "fixed": {},
+       "slotLocks": {},
+       "hold": {},
+       "dir": "v",
+       "rowKey": "halfqxhmpp2",
+       "rowLetter": "A"
+      },
+      {
+       "id": "973x3c8lpp3",
+       "name": "A2",
+       "rows": 12,
+       "blocked": [
+        1,
+        2
+       ],
+       "x": 2,
+       "y": 6,
+       "locked": false,
+       "fixed": {},
+       "slotLocks": {
+        "3": "6g7efcmvpp5",
+        "7": "e1q699b7pp3",
+        "8": "diagqbh0pp3",
+        "9": "i76qgikfpp3",
+        "10": "6ug9ep1xpp3",
+        "11": "l4kk46r8pp3",
+        "12": "xi4xjqt2pp3"
+       },
+       "hold": {},
+       "dir": "v",
+       "rowKey": "halfqxhmpp2",
+       "rowLetter": "A"
+      },
+      {
+       "id": "q9ayzm6hpp3",
+       "name": "A3",
+       "rows": 12,
+       "blocked": [
+        1,
+        2
+       ],
+       "x": 2,
+       "y": 10,
+       "locked": false,
+       "fixed": {},
+       "slotLocks": {
+        "3": "nrooqng3pp3",
+        "4": "oq4uossspp3",
+        "5": "wnog768ppp3",
+        "6": "8kk4eun7pp3",
+        "7": "i6ee0xs0pp3"
+       },
+       "hold": {},
+       "dir": "v",
+       "rowKey": "halfqxhmpp2",
+       "rowLetter": "A"
+      },
+      {
+       "id": "8xmvwcr2pp3",
+       "name": "B1",
+       "rows": 12,
+       "blocked": [
+        1,
+        2
+       ],
+       "x": 7,
+       "y": 2,
+       "locked": false,
+       "fixed": {},
+       "slotLocks": {},
+       "hold": {},
+       "dir": "v",
+       "rowKey": "8xmvwcr2pp3",
+       "rowLetter": "B"
+      },
+      {
+       "id": "oi12k02ypp3",
+       "name": "B2",
+       "rows": 12,
+       "blocked": [
+        1,
+        2
+       ],
+       "x": 7,
+       "y": 6,
+       "locked": false,
+       "fixed": {},
+       "slotLocks": {},
+       "hold": {},
+       "dir": "v",
+       "rowKey": "8xmvwcr2pp3",
+       "rowLetter": "B"
+      },
+      {
+       "id": "755mg14tpp3",
+       "name": "B3",
+       "rows": 12,
+       "blocked": [
+        1,
+        2
+       ],
+       "x": 7,
+       "y": 10,
+       "locked": false,
+       "fixed": {},
+       "slotLocks": {},
+       "hold": {},
+       "dir": "v",
+       "rowKey": "8xmvwcr2pp3",
+       "rowLetter": "B"
+      }
+     ],
+     "map": {
+      "title": "Core shed 2",
+      "w": 0,
+      "h": 0,
+      "labels": [
+       {
+        "id": "9feb9998pp3",
+        "x": 2,
+        "y": 16,
+        "text": "Roller door"
+       },
+       {
+        "id": "qmau0cmpzuc",
+        "type": "pallet",
+        "text": "Temporary pallet",
+        "x": 11,
+        "y": 2,
+        "w": 5,
+        "h": 3
+       }
+      ]
+     },
+     "customCols": [
+      {
+       "id": "5eeugd5hpp3",
+       "name": "Core size"
+      }
+     ],
+     "options": {
+      "useCustomOrder": false,
+      "featureOrder": [],
+      "gapAfterHole": 0,
+      "gapAfterFeature": 0,
+      "newRackPerFeature": false
+     },
+     "items": [
+      {
+       "id": "oq4uossspp3",
+       "feature": "ZXY",
+       "hole": "DD101",
+       "box": "1",
+       "of": "4",
+       "from": "0.00",
+       "to": "5.30",
+       "custom": {
+        "5eeugd5hpp3": "NQ"
+       }
+      },
+      {
+       "id": "wnog768ppp3",
+       "feature": "ZXY",
+       "hole": "DD101",
+       "box": "2",
+       "of": "4",
+       "from": "5.30",
+       "to": "10.40",
+       "custom": {
+        "5eeugd5hpp3": "NQ"
+       }
+      },
+      {
+       "id": "8kk4eun7pp3",
+       "feature": "ZXY",
+       "hole": "DD101",
+       "box": "3",
+       "of": "4",
+       "from": "10.40",
+       "to": "15.30",
+       "custom": {
+        "5eeugd5hpp3": "NQ"
+       }
+      },
+      {
+       "id": "i6ee0xs0pp3",
+       "feature": "ZXY",
+       "hole": "DD101",
+       "box": "4",
+       "of": "4",
+       "from": "15.30",
+       "to": "20.00",
+       "custom": {
+        "5eeugd5hpp3": "NQ"
+       }
+      },
+      {
+       "id": "i76qgikfpp3",
+       "feature": "BMA2",
+       "hole": "DD109",
+       "box": "1",
+       "of": "5",
+       "from": "0.00",
+       "to": "4.70",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "6ug9ep1xpp3",
+       "feature": "BMA2",
+       "hole": "DD109",
+       "box": "2",
+       "of": "5",
+       "from": "4.70",
+       "to": "10.10",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "l4kk46r8pp3",
+       "feature": "BMA2",
+       "hole": "DD109",
+       "box": "3",
+       "of": "5",
+       "from": "10.10",
+       "to": "15.30",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "xi4xjqt2pp3",
+       "feature": "BMA2",
+       "hole": "DD109",
+       "box": "4",
+       "of": "5",
+       "from": "15.30",
+       "to": "20.30",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "nrooqng3pp3",
+       "feature": "BMA2",
+       "hole": "DD109",
+       "box": "5",
+       "of": "5",
+       "from": "20.30",
+       "to": "25.10",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "74hclmkupp3",
+       "feature": "BMA1",
+       "hole": "DD101",
+       "box": "1",
+       "of": "4",
+       "from": "0.00",
+       "to": "5.00",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "7y2wwsefpp3",
+       "feature": "BMA1",
+       "hole": "DD101",
+       "box": "2",
+       "of": "4",
+       "from": "5.00",
+       "to": "9.80",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "c8xbrwohpp3",
+       "feature": "BMA1",
+       "hole": "DD101",
+       "box": "3",
+       "of": "4",
+       "from": "9.80",
+       "to": "14.40",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "2rjz5npfpp3",
+       "feature": "BMA1",
+       "hole": "DD101",
+       "box": "4",
+       "of": "4",
+       "from": "14.40",
+       "to": "19.70",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "heeivrpbpp3",
+       "feature": "BMA2",
+       "hole": "DD105",
+       "box": "1",
+       "of": "3",
+       "from": "0.00",
+       "to": "5.30",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "e1q699b7pp3",
+       "feature": "BMA2",
+       "hole": "DD105",
+       "box": "2",
+       "of": "3",
+       "from": "5.30",
+       "to": "10.40",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "diagqbh0pp3",
+       "feature": "BMA2",
+       "hole": "DD105",
+       "box": "3",
+       "of": "3",
+       "from": "10.40",
+       "to": "15.30",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "a8lwp1rkpp3",
+       "feature": "BMA1",
+       "hole": "DD100",
+       "box": "1",
+       "of": "6",
+       "from": "0.00",
+       "to": "4.70",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "1ac4ygxepp3",
+       "feature": "BMA1",
+       "hole": "DD100",
+       "box": "2",
+       "of": "6",
+       "from": "4.70",
+       "to": "10.10",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "jl0be9etpp3",
+       "feature": "BMA1",
+       "hole": "DD100",
+       "box": "3",
+       "of": "6",
+       "from": "10.10",
+       "to": "15.30",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "ms3me085pp3",
+       "feature": "BMA1",
+       "hole": "DD100",
+       "box": "4",
+       "of": "6",
+       "from": "15.30",
+       "to": "20.30",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "h8t1r5lspp3",
+       "feature": "BMA1",
+       "hole": "DD100",
+       "box": "5",
+       "of": "6",
+       "from": "20.30",
+       "to": "25.10",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "953jre1zpp3",
+       "feature": "BMA1",
+       "hole": "DD100",
+       "box": "6",
+       "of": "6",
+       "from": "25.10",
+       "to": "29.70",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "6g7efcmvpp5",
+       "feature": "BMA1",
+       "hole": "DD102",
+       "box": "1",
+       "of": "3",
+       "from": "",
+       "to": "",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      },
+      {
+       "id": "mlisf2eppp5",
+       "feature": "BMA1",
+       "hole": "DD102",
+       "box": "2",
+       "of": "3",
+       "from": "",
+       "to": "",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       },
+       "temp": true,
+       "pallet": "qmau0cmpzuc"
+      },
+      {
+       "id": "fs4unt3qpp5",
+       "feature": "BMA1",
+       "hole": "DD102",
+       "box": "3",
+       "of": "3",
+       "from": "",
+       "to": "",
+       "custom": {
+        "5eeugd5hpp3": "HQ"
+       }
+      }
+     ],
+     "name": "Example project – Add BMA1-DD102",
+     "mm": {
+      "done": {
+       "e1q699b7pp3": "A2-7",
+       "diagqbh0pp3": "A2-8",
+       "i76qgikfpp3": "A2-9",
+       "6ug9ep1xpp3": "A2-10",
+       "l4kk46r8pp3": "A2-11",
+       "xi4xjqt2pp3": "A2-12",
+       "nrooqng3pp3": "A3-3",
+       "oq4uossspp3": "A3-4",
+       "wnog768ppp3": "A3-5",
+       "8kk4eun7pp3": "A3-6",
+       "i6ee0xs0pp3": "A3-7",
+       "6g7efcmvpp5": "A2-3"
+      },
+      "step": 3,
+      "mode": "online",
+      "order": "slot",
+      "prior": {
+       "e1q699b7pp3": [
+        {
+         "r": "973x3c8lpp3",
+         "s": 7
+        }
+       ],
+       "diagqbh0pp3": [
+        {
+         "r": "973x3c8lpp3",
+         "s": 8
+        }
+       ],
+       "i76qgikfpp3": [
+        {
+         "r": "973x3c8lpp3",
+         "s": 9
+        }
+       ],
+       "6ug9ep1xpp3": [
+        {
+         "r": "973x3c8lpp3",
+         "s": 10
+        }
+       ],
+       "l4kk46r8pp3": [
+        {
+         "r": "973x3c8lpp3",
+         "s": 11
+        }
+       ],
+       "xi4xjqt2pp3": [
+        {
+         "r": "973x3c8lpp3",
+         "s": 12
+        }
+       ],
+       "nrooqng3pp3": [
+        {
+         "r": "q9ayzm6hpp3",
+         "s": 3
+        }
+       ],
+       "oq4uossspp3": [
+        {
+         "r": "q9ayzm6hpp3",
+         "s": 4
+        }
+       ],
+       "wnog768ppp3": [
+        {
+         "r": "q9ayzm6hpp3",
+         "s": 5
+        }
+       ],
+       "8kk4eun7pp3": [
+        {
+         "r": "q9ayzm6hpp3",
+         "s": 6
+        }
+       ],
+       "i6ee0xs0pp3": [
+        {
+         "r": "q9ayzm6hpp3",
+         "s": 7
+        }
+       ],
+       "6g7efcmvpp5": [
+        {
+         "r": "973x3c8lpp3",
+         "s": 3
+        }
+       ]
+      },
+      "finished": false,
+      "saved": false,
+      "review": false
+     }
+    }
+   }
+  ]
+ }
+}

@@ -522,6 +522,18 @@ tr.hit td{background:var(--accent-soft)}
 .chipbtn button.icon{padding:4px 8px 4px 2px}
 .condrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .condrow select{min-width:130px}
+/* voice control (online move): one round mic button that lights up, and a gear for the wake word */
+.vcbar{display:flex;align-items:center;gap:6px;margin-bottom:12px;position:relative}
+.vcmic{width:52px;height:52px;padding:0;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1.5px solid var(--line);color:var(--muted)}
+.vcmic svg{width:24px;height:24px}.vcmic:hover{border-color:var(--accent);color:var(--accent)}
+.vcmic.on{background:#e5484d;border-color:#e5484d;color:#fff;animation:vcpulse 1.6s infinite}
+.vcmic.busy{border-color:var(--warn);color:var(--warn);animation:vcbusy .9s ease-in-out infinite alternate;opacity:1}
+@keyframes vcpulse{0%{box-shadow:0 0 0 0 rgba(229,72,77,.55)}70%{box-shadow:0 0 0 12px rgba(229,72,77,0)}100%{box-shadow:0 0 0 0 rgba(229,72,77,0)}}
+@keyframes vcbusy{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--warn) 40%,transparent)}to{box-shadow:0 0 0 8px color-mix(in srgb,var(--warn) 0%,transparent)}}
+@media (prefers-reduced-motion: reduce){.vcmic.on,.vcmic.busy{animation:none}}
+.vcgear summary{list-style:none;cursor:pointer;width:34px;height:34px;display:grid;place-items:center;border-radius:50%;color:var(--muted)}
+.vcgear summary::-webkit-details-marker{display:none}.vcgear summary:hover,.vcgear[open] summary{color:var(--accent);background:var(--surface-2)}.vcgear svg{width:18px;height:18px}
+.vcpop{position:absolute;left:0;top:60px;z-index:20;display:flex;flex-direction:column;gap:6px;padding:12px 14px;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
 </style>
 
 <div id="app"></div>
@@ -1767,7 +1779,7 @@ function onlineRun(p,P,B,order){const mm=mmState(p);const all=mmOrdered(p,P,B,or
   const fitWhy=dest&&R?fitIssue(p,it,R.rack,P.DC):'';const autoAlt=!dest||!!fitWhy;const alt=S.mmAlt===it.id||autoAlt;
   const bayStrip=R?`<div class="mmbay"><span class="label">Bay ${esc(R.rack.name)}</span><div class="mmslots">${R.cells.map(c=>`<span class="${c.slot===ps.slot?'here':c.blocked?'blk':c.item?'full':''}" title="${esc(R.rack.name)}-${c.slot}">${c.slot}</span>`).join('')}</div></div>`:'';
   const sug=alt?altSlots(p,P,it,ps?ps.rackId:null,true):null;const ask=S.mmFitAsk&&S.mmFitAsk.id===it.id?S.mmFitAsk:null;
-  return `<div class="mmprogress"><div class="bar"><span style="width:${pct}%"></span></div><span class="small">${done.length} of ${total} placed${temp.length?` · ${temp.length} on the temporary pallet`:''}</span></div>
+  return `${voicePanel()}<div class="mmprogress"><div class="bar"><span style="width:${pct}%"></span></div><span class="small">${done.length} of ${total} placed${temp.length?` · ${temp.length} on the temporary pallet`:''}</span></div>
     <div class="mmcard">
       <div class="mmbox"><span class="label">${picked?'Picked out of order':order==='pallet'?'Next off the pallet':'Next box'}</span><b>${esc(it.hole)} <span class="muted">box</span> ${esc(it.box)}${it.of?`<span class="muted"> of ${esc(it.of)}</span>`:''}</b><span>${esc(fname(it.feature||''))}${outVal(it,'from')!==''||outVal(it,'to')!==''?` · ${esc(outVal(it,'from'))}–${esc(outVal(it,'to'))} m`:''}${boxDims(it,P.DC)?` · ${esc(dimTxt(boxDims(it,P.DC)))} mm`:''}</span>${(mmState(p).orig||{})[it.id]?`<span class="pill held" style="align-self:flex-start">from ${esc(mmState(p).orig[it.id].loc)}</span>`:''}</div>
       <div class="mmdest"><span class="label">Goes to</span>${dest?`<b class="mono">${esc(dest)}</b><span>Row ${esc(R.rack.rowLetter||'')} · Bay ${esc(R.rack.name.slice((R.rack.rowLetter||'').length))} · Slot ${ps.slot}</span>`:'<b>No slot</b><span>No open bay in the plan fits this box. Pick a slot below.</span>'}${fitWhy?`<span class="pill missing" style="align-self:flex-start">Doesn’t fit</span>`:''}</div>
@@ -3401,6 +3413,246 @@ function runImport(p){
   else toast(`Imported ${added} box${added===1?'':'es'}${skipped?`, skipped ${skipped} already in the plan`:''}${imp.pallet&&stack.length?'. Pallet order ready in Move mode':''}`);
 }
 
+
+/* ---------- Voice control for online moves (Vosk speech recognition + the computer's own voices) ----------
+   Say a box ("diamond drill one oh two box fourteen") and the planner shows it and reads out where it goes.
+   Then say "placed", "doesn't fit", "next option", "pallet", "undo"… Everything runs on this computer:
+   vosk.js and the model are read from a folder called Voice inside the shared Data folder (or picked by hand),
+   so no internet is needed. Speech goes through the same buttons as the screen, so the move records the same way. */
+const VC={on:false,status:'off',msg:'',heard:'',model:null,rec:null,ctx:null,stream:null,node:null,src:null,
+  alt:null,last:null,lastSaid:'',speaking:false,speakingUntil:0,gram:'',loading:false,
+  prefs:Object.assign({prefixes:'DD = diamond drill\nRC = reverse circulation',announceNext:false,wake:false,rate:'1'},
+    (()=>{try{return JSON.parse(localStorage.getItem('cis-voice')||'{}');}catch(e){return{};}})())};
+function vcSavePrefs(){try{localStorage.setItem('cis-voice',JSON.stringify(VC.prefs));}catch(e){}}
+
+/* numbers, both ways */
+const VC_ONES=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+const VC_TENS=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+function vcNumWords(n){n=Math.floor(+n);if(!(n>=0))return'';if(n<20)return VC_ONES[n];if(n<100)return VC_TENS[Math.floor(n/10)]+(n%10?' '+VC_ONES[n%10]:'');
+  if(n<1000)return VC_ONES[Math.floor(n/100)]+' hundred'+(n%100?' and '+vcNumWords(n%100):'');
+  return vcNumWords(Math.floor(n/1000))+' thousand'+(n%1000?' '+(n%1000<100?'and ':'')+vcNumWords(n%1000):'');}
+const vcDigitWords=s=>String(s).split('').map(d=>d==='0'?'oh':VC_ONES[+d]).join(' ');
+/* "one oh two", "one zero two", "one hundred and two", "one twenty", "fourteen" → digits as a string; null if it isn't a number */
+function vcParseNum(toks){const val=t=>{const i=VC_ONES.indexOf(t);if(i>=0)return i;if(t==='oh'||t==='o')return 0;const j=VC_TENS.indexOf(t);return j>=2?j*10:null;};
+  const chunks=[];let cur=null;
+  for(let i=0;i<toks.length;i++){const t=toks[i];if(t==='and')continue;
+    if(t==='hundred'||t==='thousand'){cur=(cur===null?1:cur)*(t==='hundred'?100:1000);continue;}
+    if(t==='a'&&(toks[i+1]==='hundred'||toks[i+1]==='thousand')){cur=1;continue;}
+    const v=val(t);if(v===null)return null;
+    if(cur===null)cur=v;
+    else if(cur>=100&&cur%100===0&&v<100)cur+=v;
+    else if(cur>=100&&cur%10===0&&cur%100>=20&&v>0&&v<10)cur+=v;
+    else if(cur>=20&&cur<100&&cur%10===0&&v>0&&v<10)cur+=v;
+    else{chunks.push(cur);cur=v;}}
+  if(cur!==null)chunks.push(cur);return chunks.length?chunks.join(''):null;}
+
+/* hole IDs: "DD102", "BFA1-DD102" → letters DD, number 102 */
+function vcHoleParts(h){const seg=String(h||'').trim().split(/[-_\s\/]/).filter(Boolean).pop()||'';const m=/^([A-Za-z]*)(\d+)([A-Za-z]*)$/.exec(seg);
+  return m?{letters:m[1].toUpperCase(),num:String(+m[2]),raw:m[2],suffix:m[3].toUpperCase()}:null;}
+function vcPrefixes(){const m={};String(VC.prefs.prefixes||'').split(/\n|;/).forEach(l=>{const x=/^\s*([A-Za-z]+)\s*[=:]\s*(.+?)\s*$/.exec(l);
+  if(x){const w=x[2].toLowerCase().replace(/[^a-z' ]/g,' ').replace(/\s+/g,' ').trim();if(w)m[x[1].toUpperCase()]=w;}});return m;}
+const vcLetters=s=>String(s).toLowerCase().split('').join(' ');
+const vcSpell=s=>String(s).toUpperCase().replace(/[^A-Z0-9]+/g,'').split('').join(' ');
+
+/* what was said → which box */
+/* letters can be said plainly ("b m a"), with the phonetic alphabet ("bravo mike alpha"), or as "double d" */
+const VC_NATO={alpha:'A',alfa:'A',bravo:'B',charlie:'C',delta:'D',echo:'E',foxtrot:'F',golf:'G',hotel:'H',india:'I',juliet:'J',juliett:'J',kilo:'K',lima:'L',mike:'M',
+  november:'N',oscar:'O',papa:'P',quebec:'Q',romeo:'R',sierra:'S',tango:'T',uniform:'U',victor:'V',whiskey:'W',whisky:'W',xray:'X',yankee:'Y',zulu:'Z',zed:'Z',zee:'Z',bee:'B',dee:'D',em:'M',en:'N',ex:'X'};
+const vcLetterOf=t=>/^[a-z]$/.test(t)&&t!=='a'?t.toUpperCase():VC_NATO[t]||null;
+const vcFeat=it=>{const f=String(it.feature||'').trim()||String(it.hole||'').split(/[-_\s\/]/).filter(Boolean).slice(0,-1).join('');return f.toUpperCase().replace(/[^A-Z0-9]/g,'');};
+/* what was said → which box. Everything before the last run of numbers is read as letters and numbers ("BMA1DD"),
+   so "bravo mike alpha one diamond drill one oh two box three" gives BMA1DD / 102 / 3. If the feature's number runs
+   straight into the hole number ("b m a one one oh two"), every split is tried. */
+function vcParseBox(w){w=w.join(' ').replace(/\bx ray\b/g,'xray').split(' ');const bi=w.lastIndexOf('box');if(bi<1)return null;
+  let right=w.slice(bi+1);const oi=right.indexOf('of');if(oi>=0)right=right.slice(0,oi);const box=vcParseNum(right);if(box===null)return null;
+  const pm=vcPrefixes();const names=Object.entries(pm).map(([L,n])=>[L,n.split(' ')]).sort((a,b)=>b[1].length-a[1].length);
+  const left=w.slice(0,bi);const parts=[];const isNum=t=>t==='and'||t==='hundred'||t==='thousand'||vcParseNum([t])!==null;
+  for(let i=0;i<left.length;){const t=left[i];
+    const nm=names.find(([L,nw])=>nw.every((x,k)=>left[i+k]===x));if(nm){parts.push({L:nm[0]});i+=nm[1].length;continue;}
+    if(t==='double'&&(left[i+1]==='a'||vcLetterOf(left[i+1]||''))){const l=left[i+1]==='a'?'A':vcLetterOf(left[i+1]);parts.push({L:l+l});i+=2;continue;}
+    const nx=left[i+1]||'';const l=t==='a'?(nx==='hundred'||nx==='thousand'?null:'A'):vcLetterOf(t);if(l&&!(t==='o'&&isNum(nx))){parts.push({L:l});i++;continue;}
+    if(isNum(t)){const run=[];while(i<left.length&&isNum(left[i])&&!names.some(([L,nw])=>nw[0]===left[i]))run.push(left[i++]);parts.push({N:run});continue;}
+    i++;}
+  if(!parts.length||!parts[parts.length-1].N)return null;const last=parts.pop().N.filter(x=>x!=='and');
+  const pre=parts.map(p=>p.L||vcParseNum(p.N)||'').join('');const out=[];
+  for(let k=0;k<last.length;k++){const a=k?vcParseNum(last.slice(0,k)):'',b=vcParseNum(last.slice(k));if(b===null||(k&&a===null))continue;out.push({P:pre+a,hole:String(+b),box:String(+box)});}
+  return out.length?out:null;}
+function vcMatch(items,q){return items.filter(it=>{const h=vcHoleParts(it.hole);if(!h||h.num!==q.hole||String(+it.box)!==q.box)return false;const F=vcFeat(it);
+  return q.P===''||q.P===h.letters||q.P===F||q.P===F+h.letters;});}
+/* the words Vosk listens for: commands plus every box in this move, said both common ways */
+/* wake word: “Jasper” (a rock, and a name the speech model knows) */
+const VC_WAKE=new Set(['jasper']);
+const VC_CMDS=['placed','done','box placed',"doesn't fit",'does not fit','too big',"won't fit",'next option','another slot','pallet','on the pallet','temporary pallet',
+  'repeat','say again','undo','next box',"what's next",'how many left','stop listening','help','what slot','which slot','zero oh one two three four five six seven eight nine ten',
+  'b c d e f g h i j k l m n o p q r s t u v w x y z double',Object.keys(VC_NATO).join(' ')];
+function vcGrammar(list){const ph=new Set(VC_CMDS);const pm=vcPrefixes();Object.values(pm).forEach(w=>ph.add(w));
+  const natoOf={};Object.entries(VC_NATO).forEach(([w,L])=>{if(!natoOf[L]&&w.length>3)natoOf[L]=w;});
+  const say=(code,nato)=>code.split('').map(ch=>/\d/.test(ch)?VC_ONES[+ch]:nato?natoOf[ch]||ch.toLowerCase():ch.toLowerCase()).join(' ');
+  (list||[]).forEach(it=>{const h=vcHoleParts(it.hole);if(!h)return;const bx=+it.box;const bw=isNaN(bx)?String(it.box).toLowerCase():vcNumWords(bx);
+    const holes=[`${pm[h.letters]||vcLetters(h.letters)} ${vcDigitWords(h.raw)}`,`${pm[h.letters]||vcLetters(h.letters)} ${vcNumWords(+h.num)}`,`${say(h.letters,true)} ${vcDigitWords(h.raw)}`];
+    const F=vcFeat(it);holes.forEach(x=>ph.add(`${x} box ${bw}`));if(F)[say(F,false),say(F,true)].forEach(f=>ph.add(`${f} ${holes[0]} box ${bw}`));});
+  let arr=[...ph];if(VC.prefs.wake)arr=arr.map(x=>'jasper '+x).concat(['jasper']);arr.push('[unk]');return JSON.stringify(arr);}
+/* what gets read out */
+/* replies are short codes, like "DD101 box 3 into slot A1-2" */
+function vcBoxCode(it){const h=vcHoleParts(it.hole);const code=`${h?h.letters+h.raw+h.suffix:String(it.hole||'')} box ${it.box}`;
+  /* name the feature when the same hole and box number is in more than one feature in this move */
+  const twin=h&&(VC.moveList||[]).some(x=>x!==it&&vcFeat(x)!==vcFeat(it)&&String(+x.box)===String(+it.box)&&(vcHoleParts(x.hole)||{}).num===h.num&&(vcHoleParts(x.hole)||{}).letters===h.letters);
+  return twin&&vcFeat(it)?vcFeat(it)+' '+code:code;}
+/* the same words, written the way people say them: "D D one oh one, box 3 into slot A 1 dash 2" */
+function vcSpeakable(t){return String(t)
+  .replace(/\b([A-Z]{1,3})(\d+)-(\d+)\b/g,(m,a,b,c)=>`${a.split('').join(' ')} ${b} dash ${c}`)
+  .replace(/\b([A-Z]{1,4})(\d+)([A-Z]?)\b/g,(m,a,b,c)=>`${a.split('').join(' ')} ${vcDigitWords(b)}${c?' '+c:''}`)
+  .replace(/ box (\d+)/g,', box $1');}
+
+
+/* speaking: the computer's own voices (Windows has offline ones); the mic is ignored while it talks */
+/* everyone hears the same voice: the computer's own English voice, picked automatically: an offline Premium/Enhanced/Natural voice if the computer has one, Australian first */
+function vcVoice(){if(!('speechSynthesis' in window))return null;const vs=speechSynthesis.getVoices();
+  const good=v=>/premium|enhanced|natural/i.test(v.name),loc=vs.filter(v=>v.localService&&/^en/i.test(v.lang)),au=loc.filter(v=>/en.AU/i.test(v.lang));
+  return au.find(good)||loc.find(good)||au[0]||loc[0]||vs.find(v=>/^en/i.test(v.lang))||null;}
+function vcSay(text,again){if(!again)VC.lastSaid=text;const el=$('#vcSaid');if(el)el.textContent=text;else if($('.vcinfo'))render();
+  const words=vcSpeakable(text);const tok=VC.sayN=(VC.sayN||0)+1;VC.speaking=true;VC.speakingUntil=Date.now()+30000;
+  const done=()=>{if(tok!==VC.sayN)return;VC.speaking=false;VC.speakingUntil=Date.now()+350;};
+  if(!('speechSynthesis' in window))return done();speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(words);const v=vcVoice();if(v){u.voice=v;u.lang=v.lang;}u.rate=+VC.prefs.rate||1;
+  u.onend=u.onerror=done;speechSynthesis.speak(u);}
+function vcShowHeard(t){VC.heard=t;const el=$('#vcHeard');if(el)el.textContent=t||'…';}
+
+/* run the same buttons the screen uses, so voice and taps record a move the same way */
+function vcAct(act,data){const b=document.createElement('button');b.hidden=true;b.dataset.act=act;Object.entries(data||{}).forEach(([k,v])=>b.dataset[k]=v);document.body.appendChild(b);b.click();b.remove();}
+function vcCtx(){if(!$('.vcbar'))return null;const p=cur();if(!p)return null;const mm=mmState(p);const P=computePlan(p);const B=mmBoxes(p,P,computeMoves(p,P));
+  const order=mm.order==='pallet'&&B.src==='pallet'?'pallet':'slot';const all=mmOrdered(p,P,B,order);VC.moveList=B.list;return{p,P,B,mm,order,all,queue:all.filter(it=>!mm.done[it.id]&&!it.temp)};}
+/* voice commands only act on the box last named by voice (or by "next box"), never on whatever box the screen
+   moved on to, so a repeated or misheard "pallet" or "placed" can't touch a box nobody asked about */
+function vcTarget(c){const id=VC.active;const it=id&&c.p.items.find(x=>x.id===id);if(!it){VC.active=null;vcSay('Say a box first.');return null;}
+  if(c.mm.done[id]){vcSay(`${vcBoxCode(it)} is already in ${c.mm.done[id]}.`);return null;}
+  if(it.temp){vcSay(`${vcBoxCode(it)} is already on the pallet.`);return null;}
+  if(!c.queue.some(x=>x.id===id)){vcSay(`${vcBoxCode(it)} isn't in this move.`);return null;}
+  const shown=S.mmPick||S.mmShown;if(shown!==id)vcAct('mm-pick',{id:id===S.mmShown?'':id});
+  return it;}
+function vcAltSay(c){const a=VC.alt;if(!a||!a.list.length)return 'No slots fit. Say pallet.';if(a.i>=a.list.length)return 'No more slots. Say pallet.';return `Try ${a.list[a.i]}.`;}
+function vcAltStart(c,it){const ps=c.P.pos[it.id];const list=altSlots(c.p,c.P,it,ps?ps.rackId:null,true);
+  if(list===null){VC.alt=null;return 'No size on record. Pick a slot on screen.';}VC.alt={id:it.id,list:list.map(x=>x.loc),i:0};return vcAltSay(c);}
+function vcDescText(c,id){const it=c.p.items.find(x=>x.id===id);if(!it)return'';const ps=c.P.pos[id];const R=ps&&c.P.racks.find(x=>x.rack.id===ps.rackId);const why=ps&&R?fitIssue(c.p,it,R.rack,c.P.DC):'';
+  const code=vcBoxCode(it),loc=ps?ps.rackName+'-'+ps.slot:'';if(ps&&R&&!why){VC.alt=null;return `${code} into slot ${loc}.`;}
+  return (ps&&R?`${code} doesn't fit ${loc}. `:`${code} has no slot. `)+vcAltStart(c,it);}
+function vcSelect(c,it){const id=it.id;VC.active=id;
+  if(c.mm.done[id]){VC.last=id;return vcSay(`${vcBoxCode(it)} is already in ${c.mm.done[id]}. Say undo to put it back.`);}
+  let pre='';if(it.temp){vcAct('mm-temp-back',{id});pre='Off the pallet. ';}
+  if(id!==S.mmShown||S.mmPick)vcAct('mm-pick',{id:id===S.mmShown?'':id});
+  VC.alt=null;const c2=vcCtx()||c;vcSay(pre+vcDescText(c2,id));}
+function vcBoxCmd(w){const qs=vcParseBox(w);if(!qs)return false;const c=vcCtx();if(!c)return true;const inMove=new Set(c.B.list.map(x=>x.id));
+  let q=qs[0],all=[],hits=[];for(const q0 of qs){const a=vcMatch(c.p.items,q0);if(!a.length)continue;if(!all.length){all=a;q=q0;}const h=a.filter(x=>inMove.has(x.id));if(h.length){q=q0;all=a;hits=h;break;}}
+  const said=`${q.P}${q.P&&/\d$/.test(q.P)?' ':''}${q.hole} box ${q.box}`;
+  if(!hits.length){vcSay(all.length?`${said} isn't in this move.`:`No ${said} in this shed.`);return true;}
+  if(hits.length>1){const left=hits.filter(x=>!c.mm.done[x.id]);if(left.length===1)hits=left;else{vcSay(`${hits.length} boxes match ${said}. Say the feature too.`);return true;}}
+  vcSelect(c,hits[0]);return true;}
+function vcPlaced(){const c=vcCtx();if(!c)return;const it=vcTarget(c);if(!it)return;const id=it.id;
+  if(VC.alt&&VC.alt.id===id&&VC.alt.list[VC.alt.i])vcAct('mm-altslot',{id,loc:VC.alt.list[VC.alt.i]});
+  else{const ps=c.P.pos[id];const R=ps&&c.P.racks.find(x=>x.rack.id===ps.rackId);if(!ps||!R||fitIssue(c.p,it,R.rack,c.P.DC))return vcSay("No slot fits yet. Say doesn't fit.");vcAct('mm-placed',{id});}
+  const p=cur();const where=p&&(mmState(p).done||{})[id];if(!where)return vcSay('Not placed. Check the screen.');
+  VC.last=id;VC.alt=null;let s=`Placed in ${where}.`;const c2=vcCtx();
+  if(!c2||!c2.queue.length){s+=' Last box. Voice off.';setTimeout(()=>vcStop(false),0);}
+  vcSay(s);}
+function vcNoFit(){const c=vcCtx();if(!c)return;const it=vcTarget(c);if(!it)return;
+  if(VC.alt&&VC.alt.id===it.id)return vcSay(vcAltSay(c));vcAct('mm-alt',{id:it.id});vcSay("Doesn't fit. "+vcAltStart(vcCtx()||c,it));}
+function vcNextOpt(){const c=vcCtx();if(!c)return;const it=vcTarget(c);if(!it)return;if(!VC.alt||VC.alt.id!==it.id)return vcNoFit();VC.alt.i++;vcSay(vcAltSay(c));}
+function vcPallet(){const c=vcCtx();if(!c)return;const it=vcTarget(c);if(!it)return;vcAct('mm-temp',{id:it.id});VC.alt=null;VC.last=null;vcSay('On the pallet.');}
+function vcUndo(){const c=vcCtx();if(!c)return;const id=VC.last;const it=id&&c.p.items.find(x=>x.id===id);if(!it||!c.mm.done[id])return vcSay('Nothing to undo.');
+  vcAct('mm-undo',{id});VC.last=null;VC.active=id;VC.alt=null;vcSay(`Undone. ${vcBoxCode(it)} is back in the list.`);}
+function vcNextBox(){if(S.mmPick)vcAct('mm-pick',{id:''});const c=vcCtx();if(!c)return;if(!c.queue.length)return vcSay('All boxes placed.');
+  const id=S.mmShown||c.queue[0].id;VC.active=id;VC.alt=null;vcSay('Next: '+vcDescText(c,id));}
+function vcLeft(){const c=vcCtx();if(!c)return;const pal=c.all.filter(it=>it.temp).length;vcSay(`${c.queue.length} left${pal?`, ${pal} on the pallet`:''}.`);}
+function vcWhatSlot(){const c=vcCtx();if(!c)return;const id=VC.active;const it=id&&c.p.items.find(x=>x.id===id);if(!it)return vcSay('Say a box first.');
+  if(c.mm.done[id])return vcSay(`${vcBoxCode(it)} is in ${c.mm.done[id]}.`);if(it.temp)return vcSay(`${vcBoxCode(it)} is on the pallet.`);
+  if(VC.alt&&VC.alt.id===id)return vcSay(vcAltSay(c));const ps=c.P.pos[id];vcSay(ps?`Slot ${ps.rackName}-${ps.slot}.`:'No slot yet.');}
+function vcHeard(t){vcShowHeard(t);if(!$('.vcbar')||Date.now()<VC.speakingUntil)return;
+  let w=t.toLowerCase().replace(/\[unk\]/g,' ').replace(/[^a-z' ]/g,' ').split(/\s+/).filter(Boolean);if(!w.length)return;
+  if(VC.prefs.wake){const i=w.findIndex(x=>VC_WAKE.has(x));if(i<0)return;w=w.slice(i+1);if(!w.length)return;}
+  const s=' '+w.join(' ')+' ';const has=(...xs)=>xs.some(x=>s.includes(' '+x+' '));
+  if(w.includes('box')&&w.length>2&&vcBoxCmd(w))return;
+  if(has('stop listening'))return vcStop(true);
+  if(has("doesn't fit",'does not fit','too big',"won't fit",'not fit'))return vcNoFit();
+  if(has('next option','another slot','other slot'))return vcNextOpt();
+  if(has('what slot','which slot','what was the slot','where does it go'))return vcWhatSlot();
+  if(has('pallet'))return vcPallet();
+  if(has('undo'))return vcUndo();
+  if(has('repeat','say again'))return vcSay(VC.lastSaid||'Nothing to repeat yet.',true);
+  if(has('next box',"what's next"))return vcNextBox();
+  if(has('how many left'))return vcLeft();
+  if(has('help'))return vcSay(`Say a box, like diamond drill one oh two box fourteen. Add the feature if you need to, like bravo mike alpha one.${VC.prefs.wake?' Start each one with Jasper.':''} Then say placed, what slot, doesn't fit, next option, pallet, undo, repeat, next box, or how many left.`);
+  if(has('placed','done'))return vcPlaced();}
+
+/* starting and stopping: the Vosk files come from <shared folder>/Voice, or are picked by hand */
+async function vcFindFiles(){if(!(FS.status==='connected'&&FS.handle))return null;let dir;try{dir=await FS.handle.getDirectoryHandle('Voice');}catch(e){return null;}
+  let lib=null,model=null;for await(const [name,h] of dir.entries()){if(h.kind!=='file')continue;const n=name.toLowerCase();if(n.endsWith('.js'))lib=h;else if(/\.(tar\.gz|tgz|zip)$/.test(n))model=h;}
+  return lib&&model?{lib:await lib.getFile(),model:await model.getFile()}:null;}
+function vcPickFiles(){return new Promise(res=>{let inp=$('#vcFiles');if(!inp){inp=document.createElement('input');inp.type='file';inp.id='vcFiles';inp.multiple=true;inp.accept='.js,.gz,.tgz,.zip';inp.hidden=true;document.body.appendChild(inp);}
+  inp.value='';inp.onchange=()=>{VC.needPick=null;const fs=[...inp.files];res({lib:fs.find(f=>/\.js$/i.test(f.name)),model:fs.find(f=>/\.(tar\.gz|tgz|zip)$/i.test(f.name))});};inp.oncancel=()=>{VC.needPick=null;res(null);};
+  /* the browser only opens a file picker straight after a click: if that moment has passed, show a button instead */
+  if(navigator.userActivation&&!navigator.userActivation.isActive){VC.needPick=()=>inp.click();render();}else inp.click();});}
+function vcLoadScript(file){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=URL.createObjectURL(file);s.onload=()=>res();s.onerror=()=>rej(new Error(`Couldn’t run ${file.name}.`));document.head.appendChild(s);});}
+function vcMakeRec(){const c=vcCtx();const g=vcGrammar(c?c.B.list:[]);if(VC.rec&&VC.gram===g)return;if(VC.rec){try{VC.rec.remove();}catch(e){}}
+  VC.gram=g;const r=new VC.model.KaldiRecognizer(VC.ctx.sampleRate,g);
+  r.on('result',m=>{const t=((m&&m.result&&m.result.text)||'').trim();if(t)vcHeard(t);});
+  r.on('partialresult',m=>{const t=((m&&m.result&&m.result.partial)||'').trim();if(t)vcShowHeard(t);});VC.rec=r;}
+const vcGetMic=()=>navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});
+async function vcStartAudio(){if(!VC.stream||!VC.stream.active)VC.stream=await vcGetMic();
+  VC.ctx=new AudioContext();vcMakeRec();VC.src=VC.ctx.createMediaStreamSource(VC.stream);VC.node=VC.ctx.createScriptProcessor(4096,1,1);
+  VC.node.onaudioprocess=e=>{if(!VC.on||!VC.rec||VC.speaking||!$('.vcbar'))return;try{VC.rec.acceptWaveform(e.inputBuffer);}catch(err){}};
+  VC.src.connect(VC.node);VC.node.connect(VC.ctx.destination);}
+/* Vosk's worker normally downloads the model with fetch(), which fails when CIS is opened as a file (or from S:),
+   and its createModel() never reports the failure. So CIS starts the same worker code itself with a small shim in front:
+   the shim answers the model "download" with the file the user's folder already has, and lets the worker build a full
+   address when its own page address is "null/…" (as it is for a file). A fixed model address means the
+   unpacked model is cached in the browser, so later starts are quick. Errors from the worker are shown on the voice bar. */
+async function vcCreateModel(files){const libText=await files.lib.text();const m=/createBase64WorkerFactory\('([A-Za-z0-9+\/=]+)'/.exec(libText);
+  const key='https://cis.local/cis-voice-model/'+files.model.name.replace(/\W/g,'_')+'_'+files.model.size;
+  const RealWorker=window.Worker;let model;
+  if(m){const src=atob(m[1]);const body=src.substring(src.indexOf('\n',10)+1);
+    const shim="const __CisURL=self.URL;self.URL=class extends __CisURL{constructor(u,b){if(b===undefined){super(u);return;}try{super(u,b);}catch(e){super(u);}}};"
+      +"const __cisModel=new Promise(r=>{self.addEventListener('message',function h(e){if(e.data&&e.data.cisModel){self.removeEventListener('message',h,true);e.stopImmediatePropagation();r(e.data.cisModel);}},true);});"
+      +"const __cisFetch=self.fetch.bind(self);self.fetch=(u,...a)=>String(u).indexOf('cis-voice-model')>=0?__cisModel.then(b=>new Response(b,{headers:{'Content-Length':String(b.byteLength)}})):__cisFetch(u,...a);\n";
+    const url=URL.createObjectURL(new Blob([shim+body],{type:'application/javascript'}));
+    window.Worker=function(u,o){return new RealWorker(url,o);};}
+  try{model=new Vosk.Model(m?key:URL.createObjectURL(files.model));}finally{window.Worker=RealWorker;}
+  if(m){const buf=await files.model.arrayBuffer();model.worker.postMessage({cisModel:buf},[buf]);}
+  return new Promise((res,rej)=>{const t=setTimeout(()=>rej(new Error('the model took more than two minutes to load. Reload the page and try again.')),120000);
+    model.on('load',msg=>{clearTimeout(t);if(msg&&msg.result)res(model);else rej(new Error('the model didn’t load. Check the model file is the .tar.gz from Vosk.'));});
+    model.on('error',msg=>{clearTimeout(t);rej(new Error('the model didn’t load ('+((msg&&msg.error)||'unknown error')+').'));});});}
+function vcNote(m,long){VC.msg=m;if(m){toast(m);if(long){clearTimeout(toast._t);toast._t=setTimeout(()=>{$('#toast').hidden=true;},9000);}}render();}
+async function vcToggle(){if(VC.on)return vcStop(true);if(VC.loading)return;
+  if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia))return vcNote('This browser can’t use a microphone here. Use Microsoft Edge or Google Chrome.',true);
+  VC.loading=true;VC.status='loading';vcNote('Allow the microphone if the browser asks');
+  try{VC.stream=await vcGetMic();
+    if(!VC.model){let files=await vcFindFiles();
+      if(!files){vcNote('Choose the two voice files: vosk.js and the model (.tar.gz)');files=await vcPickFiles();}
+      if(!files)throw new Error('No voice files chosen.');if(!files.lib||!files.model)throw new Error('Choose both files together: vosk.js and the model (.tar.gz).');
+      if(!window.Vosk)await vcLoadScript(files.lib);if(!window.Vosk)throw new Error('vosk.js didn’t load. Check it’s the file from vosk-browser.');
+      vcNote('Loading the voice model. The first time takes up to a minute');VC.model=await vcCreateModel(files);}
+    await vcStartAudio();VC.on=true;VC.loading=false;VC.status='on';VC.msg='';render();vcSay(VC.prefs.wake?'Voice on. Say Jasper first.':'Voice on.');}
+  catch(e){VC.loading=false;vcStop(false,true);VC.status='error';
+    vcNote(e&&(e.name==='NotAllowedError'||/shutdown/i.test(e.message||''))?'The browser didn’t get the microphone. Click the mic again and choose Allow. If it still fails, allow the microphone with the icon in the address bar (on a Mac, also for Chrome in System Settings → Privacy & Security → Microphone).':e&&e.name==='NotFoundError'?'No microphone found. Connect your headset and try again.':`Voice control couldn’t start: ${(e&&e.message)||e}`,true);}}
+function vcStop(say,keep){VC.on=false;try{VC.node&&VC.node.disconnect();VC.src&&VC.src.disconnect();}catch(e){}try{VC.stream&&VC.stream.getTracks().forEach(t=>t.stop());}catch(e){}
+  try{VC.ctx&&VC.ctx.close();}catch(e){}try{VC.rec&&VC.rec.remove();}catch(e){}VC.node=VC.src=VC.stream=VC.ctx=VC.rec=null;VC.gram='';VC.alt=null;VC.active=null;
+  if(!keep){VC.status='off';VC.msg='';}if(say)vcSay('Voice off.');render();}
+
+/* the bar above the box card in an online move */
+const VC_MIC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+const VC_GEAR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
+function voicePanel(){const on=VC.on,busy=VC.loading;const lab=on?'Voice control on. Click to stop':busy?'Starting voice control…':'Voice control. Click to start';
+  return `<div class="vcbar"><button class="vcmic ${on?'on':''} ${busy?'busy':''}" data-vact="toggle" ${busy?'disabled':''} aria-pressed="${on}" aria-label="${lab}" title="${lab}">${VC_MIC}</button>
+    <details class="vcgear" data-sec="vcgear" ${S.open.vcgear?'open':''}><summary aria-label="Voice settings" title="Voice settings">${VC_GEAR}</summary>
+      <div class="vcpop"><label class="check"><input type="checkbox" data-vpref="wake" ${VC.prefs.wake?'checked':''}> Wake word: only listen after “Jasper”</label>
+        <p class="small muted" style="margin:0">e.g. “Jasper, diamond drill one oh two box three”, “Jasper, placed”</p></div></details>
+    ${VC.needPick?'<button class="small" data-vact="pick">Choose voice files…</button>':''}</div>`;}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-vact]');if(!b)return;const a=b.dataset.vact;
+  if(a==='pick'){if(VC.needPick)VC.needPick();}
+  else if(a==='toggle')vcToggle();
+  });
+document.addEventListener('change',e=>{const el=e.target.closest&&e.target.closest('[data-vpref]');if(!el)return;const k=el.dataset.vpref;
+  VC.prefs[k]=el.type==='checkbox'?el.checked:el.value;vcSavePrefs();if((k==='prefixes'||k==='wake')&&VC.on&&VC.model&&VC.ctx)vcMakeRec();if(k==='wake')toast(VC.prefs.wake?'Wake word on: start each command with “Jasper”':'Wake word off');if(k!=='prefixes')render();});
+/* for testing without a microphone: in the browser console, type cisVoice('diamond drill one oh two box fourteen') */
+window.cisVoice=t=>{if(!$('.vcbar'))return 'Open an online move first (Move mode → Online → Start Move).';vcHeard(String(t||''));return VC.lastSaid;};
 
 load();render();fsInit();
 })();
