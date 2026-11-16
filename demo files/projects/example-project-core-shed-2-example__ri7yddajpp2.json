@@ -6,7 +6,7 @@
   "name": "Example project",
   "site": "Core shed 2 (example)",
   "created": 1794721984022,
-  "updated": 1794745301277,
+  "updated": 1794825346205,
   "plan": {
    "stage": "done",
    "setup": {
@@ -430,7 +430,7 @@
     "id": "nhr6c6olpp5",
     "name": "Add BMA1-DD102",
     "created": 1794721984025,
-    "updated": 1794745301277,
+    "updated": 1794825346205,
     "plan": {
      "stage": "done",
      "setup": {

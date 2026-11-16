@@ -539,12 +539,12 @@ tr.hit td{background:var(--accent-soft)}
 .vcgear summary::-webkit-details-marker{display:none}.vcgear summary:hover,.vcgear[open] summary{color:var(--accent);background:var(--surface-2)}.vcgear svg{width:18px;height:18px}
 .vcpop{position:absolute;left:0;top:60px;z-index:20;display:flex;flex-direction:column;gap:6px;padding:12px 14px;width:max-content;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
 /* "Move with Jasper" on the move page, and the on-screen controls dropdown */
-.jlaunch{display:flex;justify-content:center;margin:2px 0 16px}
+.jlaunch{display:flex;justify-content:center;margin:0}
 .jl-btn{display:inline-flex;align-items:center;gap:12px;padding:6px 22px 6px 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 22px rgba(15,36,51,.08);color:var(--ink);text-align:left}
 .jl-btn:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));box-shadow:0 8px 26px rgba(15,36,51,.13)}
 canvas.jorb.small{width:96px;height:96px;margin:-25px;display:block;pointer-events:none;position:relative;z-index:1}
 .jl-txt{display:flex;flex-direction:column;line-height:1.25}.jl-txt b{font-family:var(--f-display);font-size:1rem}.jl-txt small{color:var(--muted);font-size:.8rem}
-.mmctl>summary{cursor:pointer;width:max-content;margin:0 auto 4px;color:var(--muted);font-weight:600;font-size:.85rem}.mmctl-body{margin-top:12px}
+.mmctl>summary{cursor:pointer;width:max-content;margin:0 auto 4px;color:var(--muted);font-weight:600;font-size:.85rem}.mmctl-body{display:flex;flex-direction:column;gap:18px;margin-top:14px}
 body.vcstage-open{overflow:hidden}
 #toast{z-index:1000}
 /* Jasper's full-screen page: white, the orb in the middle */
@@ -569,6 +569,35 @@ canvas.stagecv{position:absolute;inset:0;width:100%;height:100%;pointer-events:n
 .vcs-round{width:58px;height:58px;padding:0;border-radius:50%;display:grid;place-items:center;border:0;background:#f1f4f5;color:#0f2433;box-shadow:none}
 .vcs-round:hover{background:#e6ebed}.vcs-round svg{width:24px;height:24px}
 .vcs-mic.on{background:#0f2433;color:#fff}.vcs-mic.on:hover{background:#1c3a4f}
+/* Jasper notes: the icon in the header, and its layout in the full-window Jasper view */
+.tab-jasper{display:inline-grid;place-items:center;padding:6px 12px 3px}
+canvas.tabjorb{width:44px;height:44px;margin:-10px;display:block;pointer-events:none}
+.jns,.jns-only{display:none}
+.vcstage.notes .vcs-main,.vcstage.notes .vcs-bottom{display:none}
+.vcstage.notes .jns{grid-row:2;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:0;padding:0 24px 22px;position:relative;z-index:1}
+.vcstage.notes .jns-only{display:grid}
+.jns-orb{width:min(170px,22vh);height:min(170px,22vh);flex:0 0 auto;padding:0;border:0;border-radius:50%;background:transparent;box-shadow:none}
+.jns-orb,.jns-orb:hover,.jns-orb:active,.jns-orb:focus,.jns-orb:focus-visible{outline:none;background:transparent;box-shadow:none}
+.jns-state{font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8a99a3;text-align:center}.jns-state.on{color:var(--accent)}
+.jns-pick:empty{display:none}
+.jns-panel{width:min(1150px,100%);flex:1;min-height:0;overflow:auto;margin-top:6px;background:#fff;color:#0f2433;display:flex;flex-direction:column;gap:12px}
+.jns-panel .tablewrap{border-radius:12px}
+.vcs-fs.ask{color:var(--bad);background:var(--bad-soft)}
+.jn-table input{width:100%;min-width:60px}.jn-table td:nth-child(8) input{min-width:160px}
+.jn-table tr.jn-review td{background:var(--accent-soft)}
+.jn-table tr.jn-live td{background:#f3f6f7;font-style:italic;color:#5a6b76}
+.jn-addrow td{padding:4px;text-align:center;background:transparent}
+.jn-plus{width:34px;height:34px;padding:0;font-size:1.5rem;line-height:1;font-weight:500;color:var(--accent);background:transparent;border:0;box-shadow:none}
+.jn-plus:hover,.jn-plus:focus-visible{background:transparent;color:#0f2433;outline:none}
+.vcstage.notes .vcs-gear,.vcstage.notes [data-vact="fullscreen"]{display:none}
+.vcstage .jns-help{display:none;position:relative}.vcstage.notes .jns-help{display:block}.vcstage.notes .vcs-top{z-index:5}
+.jns-help summary{list-style:none;cursor:pointer;width:38px;height:38px;display:grid;place-items:center;border-radius:50%;color:#5a6b76}
+.jns-help summary::-webkit-details-marker{display:none}.jns-help summary:hover,.jns-help[open] summary{background:#f1f4f5;color:#0f2433}.jns-help summary svg{width:20px;height:20px}
+.jns-help .vcpop{top:44px;width:min(440px,calc(100vw - 40px));max-width:none;max-height:calc(100vh - 110px);overflow:auto;gap:10px}
+.jns-help .vcpop details summary{width:auto;height:auto;display:block;border-radius:0;cursor:pointer;color:var(--accent);font-weight:600;font-size:.9rem;background:transparent}
+.jns-help .vcpop details summary::before{content:'▸ ';}.jns-help .vcpop details[open] summary::before{content:'▾ ';}
+.jns-help ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.jns-nato{display:grid;grid-template-columns:repeat(4,1fr);gap:4px 12px;margin-top:8px;font-size:.88rem}.jns-nato b{display:inline-block;width:1.3em;color:#0f2433}
 </style>
 
 <div id="app"></div>
@@ -1394,7 +1423,7 @@ function moveView(){
       <button role="menuitem" data-act="export-xlsx-full">Excel, full planner layout <span class="hint">.xlsx</span></button>
       <button role="menuitem" data-act="save-file">Project file <span class="hint">.json</span></button></div></details>
   </div>
-  <div class="wrap tabrow"><nav class="tabs" role="tablist">${tabs.map(([k,l,c])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-tab="${k}">${l}${c!==''?`<span class="count">${c}</span>`:''}</button>`).join('')}</nav>${searchBar()}</div>
+  <div class="wrap tabrow"><nav class="tabs" role="tablist">${tabs.map(([k,l,c])=>`<button class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-tab="${k}">${l}${c!==''?`<span class="count">${c}</span>`:''}</button>`).join('')}<button class="tab tab-jasper" data-vact="jn-open" title="Jasper notes: dictate a pallet list" aria-label="Jasper notes: dictate a pallet list"><canvas class="jorb tabjorb" aria-hidden="true"></canvas></button></nav>${searchBar()}</div>
   </div>
   <main class="wrap ${S.tab==='map'?'wide':''}">
     ${S.tab==="moves"||S.tab==="map"?"":`<div id="summary">${summary(p,P)}</div>`}
@@ -3533,12 +3562,11 @@ function vcGrammar(list,racks){const ph=new Set(VC_CMDS);const pm=vcPrefixes();O
   let arr=[...ph];if(VC.prefs.wake)arr=arr.map(x=>'jasper '+x).concat(['jasper']);arr.push('[unk]');return JSON.stringify(arr);}
 /* what gets read out */
 /* replies are short codes, like "DD101 box 3 into slot A1-2" */
-function vcBoxCode(it){const h=vcHoleParts(it.hole);const code=`${h?h.letters+h.raw+h.suffix:String(it.hole||'')} box ${it.box}`;
-  /* name the feature when the same hole and box number is in more than one feature in this move */
-  const twin=h&&(VC.moveList||[]).some(x=>x!==it&&vcFeat(x)!==vcFeat(it)&&String(+x.box)===String(+it.box)&&(vcHoleParts(x.hole)||{}).num===h.num&&(vcHoleParts(x.hole)||{}).letters===h.letters);
-  return twin&&vcFeat(it)?vcFeat(it)+' '+code:code;}
+function vcBoxCode(it){const h=vcHoleParts(it.hole);const F=vcFeat(it);
+  return `${F?F+' ':''}${h?h.letters+h.raw+h.suffix:String(it.hole||'')} box ${it.box}`;}
 /* the same words, written the way people say them: "D D one oh one, box 3 into slot A 1 dash 2" */
 function vcSpeakable(t){return String(t)
+  .replace(/\b([A-Z]{1,4}\d+[A-Z]?) (?=[A-Z]{1,4}\d)/g,'$1, ')  /* a short pause between the feature and the hole */
   .replace(/\b([A-Z]{1,3})(\d+)-(\d+)\b/g,(m,a,b,c)=>`${a.split('').join(' ')} ${b} dash ${c}`)
   .replace(/\b([A-Z]{1,4})(\d+)([A-Z]?)\b/g,(m,a,b,c)=>`${a.split('').join(' ')} ${vcDigitWords(b)}${c?' '+c:''}`)
   .replace(/ box (\d+)/g,', box $1');}
@@ -3549,10 +3577,10 @@ function vcSpeakable(t){return String(t)
 function vcVoice(){if(!('speechSynthesis' in window))return null;const vs=speechSynthesis.getVoices();
   const good=v=>/premium|enhanced|natural/i.test(v.name),loc=vs.filter(v=>v.localService&&/^en/i.test(v.lang)),au=loc.filter(v=>/en.AU/i.test(v.lang));
   return au.find(good)||loc.find(good)||au[0]||loc[0]||vs.find(v=>/^en/i.test(v.lang))||null;}
-function vcSay(text,again){if(!again)VC.lastSaid=text;const el=$('#vcSaid');if(el)el.textContent=text;
+function vcSay(text,again,rate){if(!again)VC.lastSaid=text;const el=$('#vcSaid');if(el)el.textContent=text;
   const words=vcSpeakable(text);const tok=VC.sayN=(VC.sayN||0)+1;VC.speaking=true;VC.speakingUntil=Date.now()+30000;
   const done=()=>{if(tok!==VC.sayN)return;VC.speaking=false;VC.speakingUntil=Date.now()+350;vcOrbState();};vcOrbState();
-  if(!('speechSynthesis' in window))return done();speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(words);const v=vcVoice();if(v){u.voice=v;u.lang=v.lang;}u.rate=+VC.prefs.rate||1;
+  if(!('speechSynthesis' in window))return done();speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(words);const v=vcVoice();if(v){u.voice=v;u.lang=v.lang;}u.rate=rate||+VC.prefs.rate||1;
   u.onstart=()=>{if(tok===VC.sayN){VC.talkOn=true;VC.talkKick=performance.now();}};
   u.onboundary=e=>{if(tok===VC.sayN&&(!e.name||e.name==='word'))VC.talkKick=performance.now();};
   u.onend=u.onerror=()=>{if(tok===VC.sayN)VC.talkOn=false;done();};speechSynthesis.speak(u);}
@@ -3626,7 +3654,7 @@ function vcConfirm(){const pd=VC.pending;VC.pending=null;if(!pd)return vcSay('No
 function vcWhatSlot(){const c=vcCtx();if(!c)return;const id=VC.active;const it=id&&c.p.items.find(x=>x.id===id);if(!it)return vcSay('Say a box first.');
   if(c.mm.done[id])return vcSay(`${vcBoxCode(it)} is in ${c.mm.done[id]}.`);if(it.temp)return vcSay(`${vcBoxCode(it)} is on the pallet.`);
   if(VC.alt&&VC.alt.id===id)return vcSay(vcAltSay(c));const ps=c.P.pos[id];vcSay(ps?`Slot ${ps.rackName}-${ps.slot}.`:'No slot yet.');}
-function vcHeard(t){vcShowHeard(t);if(!VC.inRun||Date.now()<VC.speakingUntil)return;
+function vcHeard(t){vcShowHeard(t);if(Date.now()<VC.speakingUntil)return;if(VC.inNotes)return jnHeard(t);if(!VC.inRun)return;
   let w=t.toLowerCase().replace(/\[unk\]/g,' ').replace(/[^a-z' ]/g,' ').split(/\s+/).filter(Boolean);if(!w.length)return;
   if(VC.prefs.wake){const i=w.findIndex(x=>VC_WAKE.has(x));if(i<0)return;w=w.slice(i+1);if(!w.length)return;}
   const s=' '+w.join(' ')+' ';const has=(...xs)=>xs.some(x=>s.includes(' '+x+' '));
@@ -3660,17 +3688,19 @@ function vcPickFiles(){return new Promise(res=>{let inp=$('#vcFiles');if(!inp){i
   /* the browser only opens a file picker straight after a click: if that moment has passed, show a button instead */
   if(navigator.userActivation&&!navigator.userActivation.isActive){VC.needPick=()=>inp.click();render();}else inp.click();});}
 function vcLoadScript(file){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=URL.createObjectURL(file);s.onload=()=>res();s.onerror=()=>rej(new Error(`Couldn’t run ${file.name}.`));document.head.appendChild(s);});}
-function vcMakeRec(){const c=vcCtx();const g=vcGrammar(c?c.B.list:[],c?c.P.racks:[]);if(VC.rec&&VC.gram===g)return;if(VC.rec){try{VC.rec.remove();}catch(e){}}
+function vcMakeRec(){const notes=!!VC.inNotes;VC.gramMode=notes?'notes':'move';const c=notes?null:vcCtx();const g=notes?jnGrammar():vcGrammar(c?c.B.list:[],c?c.P.racks:[]);if(VC.rec&&VC.gram===g)return;if(VC.rec){try{VC.rec.remove();}catch(e){}}
   VC.gram=g;const r=new VC.model.KaldiRecognizer(VC.ctx.sampleRate,g);
-  r.on('result',m=>{const t=((m&&m.result&&m.result.text)||'').trim();if(t)vcHeard(t);});
-  r.on('partialresult',m=>{const t=((m&&m.result&&m.result.partial)||'').trim();if(t)vcShowHeard(t);});VC.rec=r;}
+  r.on('result',m=>{const t=((m&&m.result&&m.result.text)||'').trim();
+    /* notes page: speech that began while Jasper was talking is Jasper's own voice coming back through the mic */
+    const echo=VC.inNotes&&VC.uttEcho;VC.uttOn=false;VC.uttEcho=false;if(echo)return;if(t)vcHeard(t);});
+  r.on('partialresult',m=>{const t=((m&&m.result&&m.result.partial)||'').trim();if(t){if(!VC.uttOn){VC.uttOn=true;VC.uttEcho=VC.speaking||Date.now()<VC.speakingUntil;}vcShowHeard(t);}});VC.rec=r;}
 const vcGetMic=()=>navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});
 async function vcStartAudio(){if(!VC.stream||!VC.stream.active)VC.stream=await vcGetMic();
   VC.ctx=new AudioContext();vcMakeRec();VC.src=VC.ctx.createMediaStreamSource(VC.stream);VC.node=VC.ctx.createScriptProcessor(4096,1,1);
   VC.node.onaudioprocess=e=>{if(!VC.on||!VC.rec)return;
     /* how loud the mic is, for the orb */
     {const d=e.inputBuffer.getChannelData(0);let q=0;for(let i=0;i<d.length;i+=8)q+=d[i]*d[i];VC.level=Math.min(1,Math.sqrt(q/(d.length/8))*6);}
-    if(VC.speaking||!VC.inRun)return;try{VC.rec.acceptWaveform(e.inputBuffer);}catch(err){}};
+    if(VC.speaking||!(VC.inRun||VC.inNotes))return;try{VC.rec.acceptWaveform(e.inputBuffer);}catch(err){}};
   VC.src.connect(VC.node);VC.node.connect(VC.ctx.destination);}
 /* Vosk's worker normally downloads the model with fetch(), which fails when CIS is opened as a file (or from S:),
    and its createModel() never reports the failure. So CIS starts the same worker code itself with a small shim in front:
@@ -3701,7 +3731,7 @@ async function vcToggle(){if(VC.on)return vcStop(true);if(VC.loading)return;
       if(!files)throw new Error('No voice files chosen.');if(!files.lib||!files.model)throw new Error('Choose both files together: vosk.js and the model (.tar.gz).');
       if(!window.Vosk)await vcLoadScript(files.lib);if(!window.Vosk)throw new Error('vosk.js didn’t load. Check it’s the file from vosk-browser.');
       vcNote('Loading the voice model. The first time takes up to a minute');VC.model=await vcCreateModel(files);}
-    await vcStartAudio();VC.on=true;VC.loading=false;VC.status='on';VC.msg='';render();vcSay(VC.prefs.wake?'Voice on. Say Jasper first.':'Voice on.');}
+    await vcStartAudio();VC.on=true;VC.loading=false;VC.status='on';VC.msg='';render();(VC.inNotes?jnSay(jn().rows.length?'Ready. Read the next box.':'Ready. Read the first box.'):vcSay(VC.prefs.wake?'Voice on. Say Jasper first.':'Voice on.'));}
   catch(e){VC.loading=false;vcStop(false,true);VC.status='error';
     vcNote(e&&(e.name==='NotAllowedError'||/shutdown/i.test(e.message||''))?'The browser didn’t get the microphone. Click the mic again and choose Allow. If it still fails, allow the microphone with the icon in the address bar (on a Mac, also for Chrome in System Settings → Privacy & Security → Microphone).':e&&e.name==='NotFoundError'?'No microphone found. Connect your headset and try again.':`Voice control couldn’t start: ${(e&&e.message)||e}`,true);}}
 function vcStop(say,keep){VC.on=false;try{VC.node&&VC.node.disconnect();VC.src&&VC.src.disconnect();}catch(e){}try{VC.stream&&VC.stream.getTracks().forEach(t=>t.stop());}catch(e){}
@@ -3730,49 +3760,78 @@ const VC_FS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 const VC_FSX='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
 const VC_X='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const VC_MICOFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 9.3V6a3 3 0 0 0-5.7-1.3M9 9v2a3 3 0 0 0 4.9 2.3M5 11a7 7 0 0 0 11.3 5.5M19 11a7 7 0 0 1-.6 2.8M12 18v3M3 3l18 18"/></svg>';
-function vcStageEl(){let st=$('#vcStage');if(st)return st;st=document.createElement('div');st.id='vcStage';st.className='vcstage';st.hidden=true;st.setAttribute('role','dialog');st.setAttribute('aria-label','Move with Jasper');
-  st.innerHTML=`<canvas class="jorb stagecv" aria-hidden="true"></canvas><div class="vcs-top"><span class="vcs-gear"></span><span class="spacer"></span><button class="vcs-fs" data-vact="fullscreen" title="Full screen" aria-label="Full screen">${VC_FS}</button></div>
+const VC_UP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>';
+const VC_BIN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
+const VC_HELP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.4-2.7 4"/><path d="M12 17.6h.01"/></svg>';
+/* the ? in the notes view's top-left: how to dictate, and the phonetic alphabet, each under its own drop-down */
+function jnHelpHtml(){const nato=['Alpha','Bravo','Charlie','Delta','Echo','Foxtrot','Golf','Hotel','India','Juliet','Kilo','Lima','Mike','November','Oscar','Papa','Quebec','Romeo','Sierra','Tango','Uniform','Victor','Whiskey','X-ray','Yankee','Zulu'];
+  return `<details class="jns-help"><summary title="Help" aria-label="Help">${VC_HELP}</summary><div class="vcpop">
+    <details><summary>How to dictate</summary><ul class="small">
+      <li>Read a box: <b>“bravo mike alpha one, diamond drill one oh two, box three out of eight, from twelve point five until fifteen point two”</b>, then <b>“done”</b>.</li>
+      <li>Or say field names in any order: <b>“depth ten until twelve, hole diamond drill one hundred, box one out of four”</b>. Use <b>“until”</b> for the end depth, not “to”, and <b>“out of”</b> for the number of boxes.</li>
+      <li>For a feature with no number, say <b>“dash”</b> or <b>“hole”</b> before the hole: <b>“B M A dash D D one oh two”</b>.</li>
+      <li>After the read-back say <b>“next”</b>, or <b>“edit”</b>, a field (feature, hole, box, out of, from, until, depth), the new value and <b>“done”</b>: <b>“edit out of eight done”</b>.</li>
+      <li><b>“Scratch that”</b> clears the box you’re reading. <b>“Delete”</b> or <b>“delete last box”</b> removes one. <b>“Jasper finished”</b> stops and opens the export.</li></ul></details>
+    <details><summary>Phonetic alphabet</summary><div class="jns-nato">${nato.map(w=>`<span><b>${w[0]}</b>${w}</span>`).join('')}</div>
+      <p class="small muted" style="margin:8px 0 0">Plain letters work too (“B M A”), and “double D” for DD.</p></details></div></details>`;}
+function vcStageEl(){let st=$('#vcStage');if(st)return st;st=document.createElement('div');st.id='vcStage';st.className='vcstage';st.hidden=true;st.setAttribute('role','dialog');st.setAttribute('aria-label','Jasper');
+  st.innerHTML=`<canvas class="jorb stagecv" aria-hidden="true"></canvas><div class="vcs-top"><span class="vcs-gear"></span>${jnHelpHtml()}<span class="spacer"></span>
+      <button class="vcs-fs jns-only" data-vact="jn-export" title="Export the pallet list" aria-label="Export the pallet list">${VC_UP}</button>
+      <button class="vcs-fs jns-only" data-vact="jn-clear" title="Clear the list" aria-label="Clear the list">${VC_BIN}</button>
+      <button class="vcs-fs" data-vact="fullscreen" title="Full screen" aria-label="Full screen">${VC_FS}</button>
+      <button class="vcs-fs jns-only" data-vact="close" title="Close (Esc)" aria-label="Close Jasper">${VC_X}</button></div>
     <div class="vcs-main"><button class="vcs-orb" data-vact="toggle" aria-label="Voice control"></button>
       <div class="vcs-state" id="vcState"></div>
       <div class="vcs-box" id="vcBox"></div><div class="vcs-pick"></div></div>
-    <div class="vcs-bottom"><button class="vcs-round vcs-mic" data-vact="toggle"></button><button class="vcs-round vcs-close" data-vact="close" title="Close (Esc)" aria-label="Close Jasper">${VC_X}</button></div>`;
+    <div class="vcs-bottom"><button class="vcs-round vcs-mic" data-vact="toggle"></button><button class="vcs-round vcs-close" data-vact="close" title="Close (Esc)" aria-label="Close Jasper">${VC_X}</button></div>
+    <div class="jns"><button class="jns-orb" data-vact="toggle" aria-label="Start or stop dictating"></button><div class="jns-state" id="jnState" aria-live="polite"></div>
+      <div class="jns-pick"></div><div class="jns-panel"></div><div class="jns-modal"></div></div>`;
   document.body.appendChild(st);return st;}
 function vcOrbState(){const st=$('#vcStage');if(!st)return;const lab=VC.on?'Listening. Click to stop':VC.loading?'Starting…':'Click to start listening';
-  st.querySelector('.vcs-orb').title=lab;const mic=st.querySelector('.vcs-mic');mic.classList.toggle('on',VC.on);mic.disabled=!!VC.loading;mic.innerHTML=VC.on?VC_MIC:VC_MICOFF;mic.title=lab;mic.setAttribute('aria-label',lab);
-  const sEl=$('#vcState');if(sEl)sEl.textContent=VC.speaking?'Jasper':VC.on?(VC.prefs.wake?'Listening · say “Jasper” first':'Listening'):VC.loading?'Starting…':'Paused · tap the orb to listen';}
+  st.querySelector('.vcs-orb').title=lab;st.querySelector('.jns-orb').title=lab;const mic=st.querySelector('.vcs-mic');mic.classList.toggle('on',VC.on);mic.disabled=!!VC.loading;mic.innerHTML=VC.on?VC_MIC:VC_MICOFF;mic.title=lab;mic.setAttribute('aria-label',lab);
+  const sEl=$('#vcState');if(sEl)sEl.textContent=VC.speaking?'Jasper':VC.on?(VC.prefs.wake?'Listening · say “Jasper” first':'Listening'):VC.loading?'Starting…':'Paused · tap the orb to listen';
+  const js=$('#jnState');if(js){js.textContent=jnState();js.classList.toggle('on',!!VC.on);}}
 /* opening: the small orb pulses, then its button grows to fill the window and the orb flies to the middle.
    Closing runs it backwards into the button. Skipped for people who turn animations off. */
 const vcRect=r=>`inset(${Math.max(0,r.top)}px ${Math.max(0,innerWidth-r.right)}px ${Math.max(0,innerHeight-r.bottom)}px ${Math.max(0,r.left)}px round ${r.height/2}px)`;
 const VC_EASE='cubic-bezier(.2,.8,.2,1)';
 function vcFrom(btn){const sc=btn&&btn.querySelector('canvas');const r=sc&&sc.getBoundingClientRect();if(!r||!r.width)return null;
   return{fx:r.left+r.width/2,fy:r.top+r.height/2,fr:r.width*.18,span:Math.hypot(innerWidth,innerHeight)*.6};}
-const vcFade='.vcs-top,.vcs-state,.vcs-box,.vcs-bottom';
+const vcFade='.vcs-top,.vcs-state,.vcs-box,.vcs-bottom,.jns-state,.jns-panel';
+const vcLauncher=()=>S.jnOpen?$('.tab-jasper'):$('.jl-btn');
 /* Jasper's animations are tracked here and cancelled by hand, so a fade from closing can never stay stuck on the
    controls (browsers don't reliably list animations on a page that's already hidden) */
 function vcAnim(el,kf,opt){const a=el.animate(kf,opt);(VC.anims=VC.anims||[]).push(a);return a;}
 function vcAnimClear(){(VC.anims||[]).forEach(a=>{try{a.cancel();}catch(e){}});VC.anims=[];}
-function vcOpen(btn){if(S.vcOpen)return;btn=btn&&btn.isConnected?btn:$('.jl-btn');const still=jorbStill.matches||!document.body.animate;
-  const r=btn&&btn.getBoundingClientRect(),from=vcFrom(btn);S.vcOpen=true;render();const st=$('#vcStage');
+function vcOpen(btn,notes){if(S.vcOpen||S.jnOpen)return;btn=btn&&btn.isConnected?btn:$(notes?'.tab-jasper':'.jl-btn');const still=jorbStill.matches||!document.body.animate;
+  const r=btn&&btn.getBoundingClientRect(),from=vcFrom(btn);if(notes)S.jnOpen=true;else S.vcOpen=true;render();const st=$('#vcStage');
   if(st){vcAnimClear();
     if(!still&&r&&from){VC.trans=Object.assign({dir:'open',t0:performance.now()},from);
       vcAnim(st,[{clipPath:vcRect(r)},{clipPath:'inset(0px 0px 0px 0px round 0px)'}],{duration:520,easing:'cubic-bezier(.65,0,.35,1)'});
       st.querySelectorAll(vcFade).forEach(el=>vcAnim(el,[{opacity:0},{opacity:1}],{duration:380,delay:VC_T_ALL-300,easing:'ease-out',fill:'backwards'}));}}
-  jorbStart();if(!VC.on&&!VC.loading)vcToggle();}
-function vcClose(){if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#vcStage'))document.activeElement.blur();const st=$('#vcStage');let btn=$('.jl-btn');const done=()=>{VC.trans=null;VC.closing=false;S.vcOpen=false;if(VC.on)vcStop(false);else render();};
+  jorbStart();if(!notes&&!VC.on&&!VC.loading)vcToggle();}
+function vcClose(){if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#vcStage'))document.activeElement.blur();const st=$('#vcStage');let btn=vcLauncher();const done=()=>{VC.trans=null;VC.closing=false;S.vcOpen=false;S.jnOpen=false;S.jnExport=false;if(VC.on)vcStop(false);else render();};
   if(!st||st.hidden||jorbStill.matches||!btn||!st.animate)return done();if(VC.closing)return;VC.closing=true;
   vcAnimClear();if(VC.on)vcStop(false);
-  btn=$('.jl-btn');if(!btn){VC.closing=false;return done();}const r=btn.getBoundingClientRect(),from=vcFrom(btn);if(!from){VC.closing=false;return done();}VC.trans=Object.assign({dir:'close',t0:performance.now()},from);
+  btn=vcLauncher();if(!btn){VC.closing=false;return done();}const r=btn.getBoundingClientRect(),from=vcFrom(btn);if(!from){VC.closing=false;return done();}VC.trans=Object.assign({dir:'close',t0:performance.now()},from);
   st.querySelectorAll(vcFade).forEach(el=>vcAnim(el,[{opacity:1},{opacity:0}],{duration:200,fill:'forwards'}));
   const an=vcAnim(st,[{clipPath:'inset(0px 0px 0px 0px round 0px)'},{clipPath:vcRect(r)}],{duration:520*VC_CLOSE,delay:(VC_T_ALL-560)*VC_CLOSE,easing:'cubic-bezier(.65,0,.35,1)',fill:'both'});
-  an.onfinish=()=>{st.hidden=true;vcAnimClear();VC.closing=false;VC.trans=null;S.vcOpen=false;render();};}
-function vcStageSync(){VC.inRun=!!VC._wrapped;VC._wrapped=false;if(!VC.inRun)S.vcOpen=false;const show=VC.inRun&&!!S.vcOpen&&!!VC.stage;
+  an.onfinish=()=>{st.hidden=true;vcAnimClear();VC.closing=false;VC.trans=null;S.vcOpen=false;S.jnOpen=false;S.jnExport=false;render();};}
+function vcStageSync(){VC.inRun=!!VC._wrapped;VC._wrapped=false;if(!(S.view==='work'&&cur()))S.jnOpen=false;VC.inNotes=!!S.jnOpen;if(!VC.inNotes&&VC.jnAudio)jnMediaDisarm();
+  /* switch Jasper's word list between Move mode and the notes view */
+  if(VC.on&&VC.model&&VC.ctx&&VC.gramMode!==(VC.inNotes?'notes':'move'))vcMakeRec();if(!VC.inRun)S.vcOpen=false;
+  const mode=S.jnOpen?'notes':VC.inRun&&S.vcOpen&&VC.stage?'move':null,show=!!mode;
   const st=show?vcStageEl():$('#vcStage');document.body.classList.toggle('vcstage-open',show);
-  if(st){st.hidden=!show;if(show){const d=VC.stage,it=d.it;vcOrbState();
-    $('#vcBox').innerHTML=`<span class="mono"><b>${esc((it.feature?vcFeat(it)+'-':'')+it.hole)}</b> box <b>${esc(it.box)}</b> → <b>${esc(d.dest||'no slot')}</b></span><span class="vcs-count">${d.done} of ${d.total}</span>`;
+  if(st){st.hidden=!show;st.classList.toggle('notes',mode==='notes');if(show){vcOrbState();
+    if(mode==='move'){const d=VC.stage,it=d.it;$('#vcBox').innerHTML=`<span class="mono"><b>${esc((it.feature?vcFeat(it)+'-':'')+it.hole)}</b> box <b>${esc(it.box)}</b> → <b>${esc(d.dest||'no slot')}</b></span><span class="vcs-count">${d.done} of ${d.total}</span>`;
+      st.querySelector('.vcs-pick').innerHTML=VC.needPick?'<button data-vact="pick">Choose voice files…</button>':'';}
+    else{/* don't redraw the table under someone who is typing in it */
+      const panel=st.querySelector('.jns-panel'),h=jnPanel();if(panel.dataset.h!==h&&!(document.activeElement&&panel.contains(document.activeElement)&&document.activeElement.tagName==='INPUT')){panel.innerHTML=h;panel.dataset.h=h;}
+      st.querySelector('.jns-modal').innerHTML=jnModal();st.querySelector('.jns-pick').innerHTML=VC.needPick?'<button data-vact="pick">Choose voice files…</button>':'';
+      const clr=st.querySelector('[data-vact="jn-clear"]');clr.classList.toggle('ask',!!S.jnClearAsk);clr.title=S.jnClearAsk?'Click again to clear the list':'Clear the list';}
     const gear=st.querySelector('.vcs-gear');if(gear.dataset.h!==String(VC.prefs.wake)){gear.dataset.h=String(VC.prefs.wake);gear.innerHTML=`<details class="vcgear" data-sec="vcgear"><summary aria-label="Voice settings" title="Voice settings">${VC_GEAR}</summary>
-      <div class="vcpop"><label class="check"><input type="checkbox" data-vpref="wake" ${VC.prefs.wake?'checked':''}> Wake word: only listen after “Jasper”</label>
-        <p class="small muted" style="margin:0">e.g. “Jasper, diamond drill one oh two box three”</p></div></details>`;}
-    st.querySelector('.vcs-pick').innerHTML=VC.needPick?'<button data-vact="pick">Choose voice files…</button>':'';}}
+      <div class="vcpop"><label class="check"><input type="checkbox" data-vpref="wake" ${VC.prefs.wake?'checked':''}> Wake word: only listen after “Jasper” (Move mode)</label>
+        <p class="small muted" style="margin:0">e.g. “Jasper, diamond drill one oh two box three”</p></div></details>`;}}}
   if(!show&&document.fullscreenElement&&VC.fsByStage){VC.fsByStage=false;document.exitFullscreen().catch(()=>{});}
   jorbStart();}
 /* ---------- the orb: a sphere of dots that ripples, drawn on a canvas ----------
@@ -3792,7 +3851,7 @@ function jorbDraw(cv,t){const dpr=Math.min(2,devicePixelRatio||1),w=cv.clientWid
   if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
   const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
   if(!cv.classList.contains('stagecv'))return jorbPaint(x,jorbPts(520),w/2,h/2,Math.min(w,h)*.18,1.15,t,-1,null,1);
-  const hole=$('#vcStage .vcs-orb');if(!hole)return;const r=hole.getBoundingClientRect();
+  const hole=$('#vcStage').classList.contains('notes')?$('#vcStage .jns-orb'):$('#vcStage .vcs-orb');if(!hole)return;const r=hole.getBoundingClientRect();
   /* where we are in an opening or closing: ph runs 0 → VC_T_ALL for opening, backwards for closing */
   let ph=-1;const tr=VC.trans;
   if(tr){const e=performance.now()-tr.t0;if(tr.dir==='open'){if(e>=VC_T_ALL)VC.trans=null;else ph=e;}else ph=Math.max(0,VC_T_ALL-e/VC_CLOSE);}
@@ -3841,13 +3900,168 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-vact]');if
   else if(a==='toggle')vcToggle();
   });
 /* Esc closes Jasper */
-document.addEventListener('keydown',e=>{if(e.key!=='Escape'||!document.body.classList.contains('vcstage-open')||document.fullscreenElement)return;if($('#vcStage details[open]')){$('#vcStage details[open]').open=false;return;}vcClose();});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape'||!document.body.classList.contains('vcstage-open')||document.fullscreenElement)return;if($('#vcStage details[open]')){$('#vcStage details[open]').open=false;return;}if(S.jnExport){S.jnExport=false;render();return;}vcClose();});
 /* the full-screen button shows whether the browser is full screen */
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement)VC.fsByStage=false;const bt=$('#vcStage .vcs-fs');if(bt){const fs=!!document.fullscreenElement;bt.innerHTML=fs?VC_FSX:VC_FS;bt.title=fs?'Exit full screen':'Full screen';bt.setAttribute('aria-label',bt.title);}});
 document.addEventListener('change',e=>{const el=e.target.closest&&e.target.closest('[data-vpref]');if(!el)return;const k=el.dataset.vpref;
   VC.prefs[k]=el.type==='checkbox'?el.checked:el.value;vcSavePrefs();if((k==='prefixes'||k==='wake')&&VC.on&&VC.model&&VC.ctx)vcMakeRec();if(k==='wake')toast(VC.prefs.wake?'Wake word on: start each command with “Jasper”':'Wake word off');if(k!=='prefixes')render();});
 /* for testing without a microphone: in the browser console, type cisVoice('diamond drill one oh two box fourteen') */
 window.cisVoice=t=>{if(!VC.inRun)return 'Open an online move first (Move mode → Online → Start Move).';vcHeard(String(t||''));return VC.lastSaid;};
+/* ---------- Jasper notes: dictate a pallet list ----------
+   Read a box out ("bravo mike alpha one diamond drill one oh two box three out of eight from twelve point five to fifteen
+   point two"), then "done". Jasper reads it back a little faster than normal and waits for "next" or "edit". "Edit hole
+   ... done" changes one field. "Jasper finished" stops and offers the export. The table is also editable on screen.
+   Rows are kept per project in this browser; the exported file is the copy to keep. Move mode's Jasper is separate. */
+const JN_FIELDS=[['feature','Feature'],['hole','Hole ID'],['box','Box'],['of','Out of'],['from','From (m)'],['to','To (m)']];
+function jnKey(){const pr=projRec();return 'cis-jn-'+(pr?pr.id:'none');}
+function jn(){const k=jnKey();if(!S.jn||S.jn.key!==k){let rows=[];try{rows=JSON.parse(localStorage.getItem(k)||'[]');}catch(e){}S.jn={key:k,rows:Array.isArray(rows)?rows:[],st:'entry',buf:[],ebuf:[],editField:null,reviewId:null};}return S.jn;}
+function jnSave(){const J=jn();try{localStorage.setItem(J.key,JSON.stringify(J.rows));}catch(e){}}
+/* letters and numbers said one after another → a code: "b m a one" → BMA1, "diamond drill one oh two" → DD102 */
+function jnGroups(tokens){const pm=vcPrefixes();const names=Object.entries(pm).map(([L,n])=>[L,n.split(' ')]).sort((a,b)=>b[1].length-a[1].length);
+  const isNum=t=>t==='and'||t==='hundred'||t==='thousand'||vcParseNum([t])!==null;const g=[];
+  for(let i=0;i<tokens.length;){const t=tokens[i],nx=tokens[i+1]||'';
+    const nm=names.find(([L,nw])=>nw.every((x,k)=>tokens[i+k]===x));if(nm){g.push({L:nm[0],word:true});i+=nm[1].length;continue;}
+    if(t==='double'&&(nx==='a'||vcLetterOf(nx))){const l=nx==='a'?'A':vcLetterOf(nx);g.push({L:l+l});i+=2;continue;}
+    const l=t==='a'?(nx==='hundred'||nx==='thousand'?null:'A'):vcLetterOf(t);if(l&&!(t==='o'&&isNum(nx))){const last=g[g.length-1];if(last&&last.L&&!last.word&&!last.N)last.L+=l;else g.push({L:l});i++;continue;}
+    if(isNum(t)){const run=[];while(i<tokens.length&&isNum(tokens[i])&&!names.some(([L,nw])=>nw[0]===tokens[i]))run.push(tokens[i++]);const n=vcParseNum(run.filter(x=>x!=='and'));
+      const last=g[g.length-1];if(last&&last.L&&last.N===undefined)last.N=n||'';else g.push({L:'',N:n||''});continue;}
+    i++;}
+  return g.map(x=>({L:x.L||'',N:x.N||''}));}
+const jnCode=tokens=>jnGroups(tokens).map(x=>x.L+x.N).join('');
+function jnDec(tokens){const t=tokens.filter(x=>!['metres','meters','metre','meter','m','depth'].includes(x));if(!t.length)return'';const pi=t.indexOf('point');
+  if(pi<0){const n=vcParseNum(t);return n===null?'':String(+n);}const a=pi?vcParseNum(t.slice(0,pi)):'0',b=vcParseNum(t.slice(pi+1));if(a===null)return'';return b===null?String(+a):`${+a}.${b}`;}
+/* one box's words → its fields. Field names work as labels, in any order: "depth ten metres, hole diamond drill one
+   hundred, box one of four". Words before the first label are read in order (feature, then hole); "dash" or "hole"
+   between them marks where the feature ends. Anything not said stays empty. */
+/* "until" marks the end depth: "to" sounds the same as "two". "out of" marks the number of boxes: a lone "of" is
+   easy to miss. "to" and "of" still work if Jasper hears them. */
+const JN_HEAD={feature:'feature',hole:'hole',box:'box',of:'of',total:'of',from:'from',until:'to',to:'to',end:'to',depth:'depth'};
+function jnParse(w){const r={feature:'',hole:'',box:'',of:'',from:'',to:''};const lead=[],segs=[];let cur=null;
+  for(let i=0;i<w.length;i++){const t=w[i];
+    if(t==='out'){cur={k:'of',v:[]};segs.push(cur);if(w[i+1]==='of')i++;continue;}   /* "out of eight" */
+    if(t==='box'&&(w[i+1]==='out'||w[i+1]==='of')&&!(w[i+2]&&w[i+2]!=='of'&&vcParseNum([w[i+2]])===null)){cur={k:'of',v:[]};segs.push(cur);i+=w[i+1]==='out'&&w[i+2]==='of'?2:1;continue;}
+    const k=JN_HEAD[t];if(k&&!(k==='to'&&cur&&cur.k==='depth')){cur={k,v:[]};segs.push(cur);continue;}
+    (cur?cur.v:lead).push(t);}
+  const holeSaid=segs.some(x=>x.k==='hole'),featSaid=segs.some(x=>x.k==='feature');
+  if(lead.length){const di=lead.indexOf('dash');
+    if(di>=0){r.feature=jnCode(lead.slice(0,di));r.hole=jnCode(lead.slice(di+1));}
+    else if(holeSaid&&!featSaid)r.feature=jnCode(lead);          /* "b m a hole d d one oh two" */
+    else if(featSaid&&!holeSaid)r.hole=jnCode(lead);
+    else{const g=jnGroups(lead).filter(x=>x.L||x.N);if(g.length>=2){r.hole=g[g.length-1].L+g[g.length-1].N;r.feature=g.slice(0,-1).map(x=>x.L+x.N).join('');}else if(g.length===1)r.hole=g[0].L+g[0].N;}}
+  for(const x of segs){const v=x.v;
+    if(x.k==='feature'){const di=v.indexOf('dash');if(di>=0){r.feature=jnCode(v.slice(0,di));r.hole=jnCode(v.slice(di+1));}else r.feature=jnCode(v);}
+    else if(x.k==='hole')r.hole=jnCode(v.filter(t=>t!=='dash'));
+    else if(x.k==='box'||x.k==='of'){const n=jnNum(v);if(n!=='')r[x.k]=n;}
+    else if(x.k==='from'||x.k==='to'){const d=jnDec(v);if(d!=='')r[x.k]=d;}
+    else if(x.k==='depth'){const ti=v.findIndex(t=>t==='until'||t==='to'||t==='end');if(ti>=0){r.from=jnDec(v.slice(0,ti));r.to=jnDec(v.slice(ti+1));}else{const d=jnDec(v);if(d!=='')r.from=d;}}}
+  return r;}
+/* a whole number from the words, ignoring anything that isn't a number word ("of", "the", a misheard word) */
+function jnNum(tokens){const t=tokens.filter(x=>x==='hundred'||x==='thousand'||vcParseNum([x])!==null);if(!t.length)return'';const n=vcParseNum(t);return n===null?'':String(+n);}
+const jnId=r=>[r.feature,r.hole].filter(Boolean).join(' ')||'no hole';
+function jnReadback(r){const miss=[];if(!r.feature)miss.push('feature');if(!r.hole)miss.push('hole');if(!r.box)miss.push('box');if(!r.of)miss.push('out of');
+  const id=[r.feature,r.hole].filter(Boolean).join(' ');let s=`${id?id+', box':'Box'} ${r.box||'missing'}${r.of?' out of '+r.of:''}`;s+=r.from||r.to?`, ${r.from||'?'} to ${r.to||'?'}.`:', no depth.';
+  return s+(miss.length?` Missing ${miss.length>1?miss.slice(0,-1).join(', ')+' and '+miss[miss.length-1]:miss[0]}.`:'')+' Next or edit?';}
+function jnSay(t){vcSay(t,false,1.3);}
+const JN_FIELD_WORDS={feature:'feature',hole:'hole',box:'box',out:'of',of:'of',total:'of',from:'from',start:'from',top:'from',until:'to',to:'to',end:'to',bottom:'to',base:'to',depth:'depth'};
+function jnHeard(t){try{console.info('[Jasper notes] heard:',t);}catch(e){}const J=jn();let w=t.toLowerCase().replace(/\[unk\]/g,' ').replace(/[^a-z' ]/g,' ').replace(/\bx ray\b/g,'xray').split(/\s+/).filter(Boolean);if(!w.length)return;
+  const s=' '+w.join(' ')+' ',has=(...xs)=>xs.some(x=>s.includes(' '+x+' '));
+  if(has('finished','jasper finished','all finished'))return jnFinish();
+  const last=J.rows[J.rows.length-1];
+  if(J.st==='review'){
+    if(has('next')){J.st='entry';J.reviewId=null;J.buf=[];render();return jnSay('Next.');}
+    if(has('repeat','say again')){const r=J.rows.find(x=>x.id===J.reviewId);if(r)jnSay(jnReadback(r));return;}
+    if(has('delete','delete that','scratch that')){J.rows=J.rows.filter(x=>x.id!==J.reviewId);jnSave();J.st='entry';J.reviewId=null;render();return jnSay('Deleted. Read the next box.');}
+    if(w.includes('edit')){J.st='edit';J.editField=null;J.ebuf=[];w=w.slice(w.indexOf('edit')+1);if(!w.length){render();return jnSay('Which field?');}}
+    else if(w.includes('box')){J.st='entry';J.reviewId=null;J.buf=[];}  /* started reading the next box straight away */
+    else return;}
+  if(J.st==='edit'){const r=J.rows.find(x=>x.id===J.reviewId);if(!r){J.st='entry';return;}
+    if(has('cancel')){J.st='review';J.editField=null;render();return jnSay(jnReadback(r));}
+    if(!J.editField){let k=-1;if(w[0]==='box'&&(w[1]==='of'||w[1]==='out')){J.editField='of';k=w[1]==='out'&&w[2]==='of'?2:1;}else{k=w.findIndex(x=>JN_FIELD_WORDS[x]);if(k>=0){J.editField=JN_FIELD_WORDS[w[k]];if(w[k]==='out'&&w[k+1]==='of')k++;}}
+      if(!J.editField){render();return jnSay('Which field? Feature, hole, box, out of, from, until, or depth.');}w=w.slice(k+1);
+      if(!w.includes('done')){J.ebuf=w.slice();render();if(!w.length)jnSay(`New ${J.editField==='of'?'out of':J.editField==='to'?'until':J.editField}?`);return;}}
+    const d=w.indexOf('done');J.ebuf=J.ebuf.concat(d>=0?w.slice(0,d):w);if(d<0){render();return;}
+    const v=J.ebuf,f=J.editField;
+    /* work out the new value first; if nothing usable was heard, keep the old value and ask again (never blank it) */
+    let nv=null;
+    if(f==='feature'||f==='hole'){const c=jnCode(v);if(c)nv={[f]:c};}
+    else if(f==='box'||f==='of'){const n=jnNum(v);if(n!=='')nv={[f]:n};}
+    else if(f==='from'||f==='to'){const d=jnDec(v);if(d!=='')nv={[f]:d};}
+    else if(f==='depth'){const ti=v.findIndex(t=>t==='until'||t==='to'||t==='end');const a=jnDec(ti>=0?v.slice(0,ti):v),b=ti>=0?jnDec(v.slice(ti+1)):'';if(a!==''||b!==''){nv={};if(a!=='')nv.from=a;if(b!=='')nv.to=b;}}
+    const heardWords=J.ebuf.length;J.ebuf=[];
+    if(!nv&&!heardWords){render();return;}
+    if(!nv){render();return jnSay(`I didn't catch the new ${f==='of'?'out of':f==='to'?'until':f}. Say it again, then done. Or cancel.`);}
+    Object.assign(r,nv);J.st='review';J.editField=null;jnSave();render();return jnSay(jnReadback(r));}
+  /* entry: words build up until "done" */
+  if(has('scratch that','start again')){J.buf=[];render();return jnSay('Cleared. Read the box again.');}
+  if(has('delete last box','remove last box')&&!J.buf.length){if(!last)return jnSay('Nothing to delete.');J.rows.pop();jnSave();render();return jnSay(`Deleted ${jnId(last)} box ${last.box}.`);}
+  if(has('repeat','say again')&&!J.buf.length){if(last)jnSay(jnReadback(last));return;}
+  if(w.length===1&&w[0]==='next')return;
+  const d=w.indexOf('done');J.buf=J.buf.concat(d>=0?w.slice(0,d):w);if(d<0){render();return;}
+  const r=jnParse(J.buf,last);J.buf=[];if(!r.hole&&!r.box){render();return jnSay("I didn't get that. Read the box again.");}
+  r.id=uid();r.notes='';J.rows.push(r);jnSave();J.st='review';J.reviewId=r.id;render();jnSay(jnReadback(r));}
+/* the headphones' play/pause button toggles listening on the notes page. Browsers only send that button to a page
+   that is playing audio, so a silent sound loops once you've clicked in the page (a click is needed to start sound). */
+function jnSilence(){const n=8000,b=new ArrayBuffer(44+n),v=new DataView(b),w=(o,t)=>[...t].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+  w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,8000,true);v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,'data');v.setUint32(40,n,true);
+  for(let i=0;i<n;i++)v.setUint8(44+i,128);return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));}
+function jnMediaArm(){if(!('mediaSession' in navigator))return;if(!VC.jnAudio){const a=new Audio(jnSilence());a.loop=true;VC.jnAudio=a;
+    const t=()=>{if(!VC.inNotes)return;if(Date.now()-(VC.jnKeyAt||0)<600)return;VC.jnKeyAt=Date.now();vcToggle();setTimeout(()=>{if(VC.jnAudio&&VC.inNotes)VC.jnAudio.play().catch(()=>{});navigator.mediaSession.playbackState='playing';},50);};
+    ['play','pause','stop','togglePlayPause'].forEach(k=>{try{navigator.mediaSession.setActionHandler(k,t);}catch(e){}});
+    try{navigator.mediaSession.metadata=new MediaMetadata({title:'Jasper notes',artist:'CIS'});}catch(e){}}
+  if(VC.inNotes&&VC.jnAudio.paused)VC.jnAudio.play().then(()=>{navigator.mediaSession.playbackState='playing';}).catch(()=>{});}
+function jnMediaDisarm(){if(VC.jnAudio&&!VC.jnAudio.paused)VC.jnAudio.pause();}
+document.addEventListener('pointerdown',()=>{if(VC.inNotes)jnMediaArm();},true);
+document.addEventListener('keydown',e=>{if(e.key==='MediaPlayPause'&&VC.inNotes){e.preventDefault();if(Date.now()-(VC.jnKeyAt||0)<600)return;VC.jnKeyAt=Date.now();vcToggle();}});
+function jnFinish(){const J=jn();J.buf=[];J.st='entry';J.reviewId=null;J.editField=null;const n=J.rows.length;
+  if(VC.on)vcStop(false);S.jnExport=n>0;render();jnSay(n?`Finished. ${plural(n,'box','boxes')}. Export when you're ready.`:'Finished. The list is empty.');}
+/* the words Jasper listens for while taking notes */
+function jnGrammar(){const ph=new Set(['done','next','edit','repeat','say again','cancel','scratch that','start again','delete','delete last box','finished','jasper finished',
+  'feature','hole','box','out of','box out of','total','from','until','depth','start','end','metres','point','and','double','dash','hundred','thousand','oh','zero',
+  VC_ONES.join(' '),VC_TENS.filter(Boolean).join(' '),'a b c d e f g h i j k l m n o p q r s t u v w x y z',Object.keys(VC_NATO).join(' ')]);
+  Object.values(vcPrefixes()).forEach(x=>{ph.add(x);ph.add(`${x} one oh two box three out of eight from twelve point five until fifteen point two done`);});
+  ph.add('b m a one diamond drill one oh two box three out of eight from twelve point five until fifteen point two done');
+  ph.add('bravo mike alpha one diamond drill one oh two box four out of eight from fifteen point two until eighteen point nine done');
+  ph.add('depth ten until twelve hole diamond drill one hundred box one out of four done');ph.add('b m a dash d d one oh two box three done');ph.add('feature b m a hole d d one oh two box three out of eight done');
+  ph.add('edit hole diamond drill one oh three done');ph.add('edit depth twelve point five until fifteen point two done');ph.add('edit until fifteen point two done');ph.add('edit from twelve point five done');ph.add('edit out of eight done');ph.add('edit box out of eight done');
+  const p=cur();if(p){const seen=new Set();p.items.forEach(it=>{const F=vcFeat(it),h=vcHoleParts(it.hole);if(!h)return;const k=F+'|'+h.letters+h.raw;if(seen.has(k)||seen.size>400)return;seen.add(k);
+    ph.add(`${F?F.split('').map(c=>/\d/.test(c)?VC_ONES[+c]:c.toLowerCase()).join(' ')+' ':''}${vcPrefixes()[h.letters]||vcLetters(h.letters)} ${vcDigitWords(h.raw)} box`);});}
+  return JSON.stringify([...ph,'[unk]']);}
+function jnState(){const J=jn();if(VC.loading)return 'Starting…';if(!VC.on)return 'Not listening';
+  if(VC.speaking)return 'Jasper is reading back';
+  if(J.st==='review')return 'Say “next”, or “edit” and a field';
+  if(J.st==='edit')return J.editField?`Editing ${J.editField==='of'?'out of':J.editField==='to'?'until':J.editField}: say the new value, then “done”`:'Which field? Feature, hole, box, out of, from, until or depth';
+  return J.buf.length?'Listening… say “done” at the end of the box':'Listening · read a box, then say “done”';}
+/* the notes view: the table under the orb, with a + row to add a box by hand */
+function jnPanel(){const J=jn();const live=J.st==='entry'&&J.buf.length?jnParse(J.buf):null;
+  const cell=(r,f)=>`<td><input class="mono" data-jn="${r.id}" data-f="${f}" value="${esc(r[f]||'')}" aria-label="${f}"></td>`;
+  const rows=J.rows.map((r,i)=>`<tr class="jn-row ${r.id===J.reviewId?'jn-review':''}"><td class="num muted">${i+1}</td>${JN_FIELDS.map(([f])=>cell(r,f)).join('')}
+      <td><input data-jn="${r.id}" data-f="notes" value="${esc(r.notes||'')}" placeholder="Notes" aria-label="Notes"></td><td><button class="icon ghost danger" data-vact="jn-del" data-id="${r.id}" aria-label="Delete row" title="Delete row">✕</button></td></tr>`).join('');
+  const liveRow=live?`<tr class="jn-live"><td class="num">${J.rows.length+1}</td>${JN_FIELDS.map(([f])=>`<td class="mono">${esc(live[f]||'')}</td>`).join('')}<td class="muted small">hearing…</td><td></td></tr>`:'';
+  return `<div class="tablewrap"><table class="edit jn-table"><thead><tr><th class="num">#</th>${JN_FIELDS.map(([,l])=>`<th>${l}</th>`).join('')}<th>Notes</th><th></th></tr></thead>
+      <tbody>${rows}${liveRow}<tr class="jn-addrow"><td colspan="9"><button class="jn-plus" data-vact="jn-add" title="Add a row" aria-label="Add a row">+</button></td></tr></tbody></table></div>`;}
+function jnModal(){const J=jn();if(!S.jnExport)return'';
+  return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="jnExT"><div class="box stack"><h2 id="jnExT">Export the pallet list</h2>
+      <p class="muted" style="margin:0">${plural(J.rows.length,'box','boxes')}. The columns match CIS’s pallet sheet, so the file can be uploaded in Move mode.</p>
+      <label class="check"><input type="checkbox" id="jnRev" ${S.jnRev?'checked':''}> Reverse the order: the first box I read is the <b>last</b> one on the pallet</label>
+      <p class="small muted" style="margin:0">Unticked, the first box read is No. 1, the first on the pallet (at the bottom).</p>
+      <div class="row" style="justify-content:flex-end"><button class="ghost" data-vact="jn-ex-cancel">Cancel</button><button data-vact="jn-ex" data-v="csv" ${J.rows.length?'':'disabled'}>CSV</button><button class="primary" data-vact="jn-ex" data-v="xlsx" ${J.rows.length?'':'disabled'}>Excel</button></div></div></div>`;}
+document.addEventListener('input',e=>{const t=e.target;if(!t.dataset||!t.dataset.jn)return;const J=jn();const r=J.rows.find(x=>x.id===t.dataset.jn);if(r){r[t.dataset.f]=t.value;jnSave();}});
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='jnRev')S.jnRev=e.target.checked;});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-vact^="jn-"]');if(!b)return;const a=b.dataset.vact,J=jn();
+  if(a!=='jn-clear')S.jnClearAsk=false;
+  if(a==='jn-add'){J.rows.push({id:uid(),feature:'',hole:'',box:'',of:'',from:'',to:'',notes:''});jnSave();render();
+    const ins=document.querySelectorAll('#vcStage .jn-table tr.jn-row input[data-f="feature"]');if(ins.length)ins[ins.length-1].focus();}
+  else if(a==='jn-del'){J.rows=J.rows.filter(x=>x.id!==b.dataset.id);if(J.reviewId===b.dataset.id){J.reviewId=null;J.st='entry';}jnSave();render();}
+  else if(a==='jn-clear'){if(!J.rows.length)return;if(!S.jnClearAsk){S.jnClearAsk=true;render();toast('Click the bin again to clear the list');return;}S.jnClearAsk=false;J.rows=[];J.st='entry';J.buf=[];J.reviewId=null;jnSave();render();toast('Pallet list cleared');}
+  else if(a==='jn-open')vcOpen(b,true);
+  else if(a==='jn-export'){S.jnExport=true;render();}
+  else if(a==='jn-ex-cancel'){S.jnExport=false;render();}
+  else if(a==='jn-ex'){const list=S.jnRev?J.rows.slice().reverse():J.rows.slice();const head=['No.','Feature','Hole ID','Box','Of','From (m)','To (m)','Notes'];
+    const aoa=[head,...list.map((r,i)=>[i+1,r.feature||'',r.hole||'',numOr(r.box),numOr(r.of),numOr(r.from),numOr(r.to),r.notes||''])];
+    const d=new Date(),name=safeName(`${(projRec()||{}).name||'CIS'} - pallet list ${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    if(b.dataset.v==='xlsx'&&window.XLSX&&XLSX.utils){const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=head.map(h=>({wch:h==='Notes'?30:Math.max(9,h.length+2)}));XLSX.utils.book_append_sheet(wb,ws,'Pallet order');XLSX.writeFile(wb,name+'.xlsx');}
+    else{if(b.dataset.v==='xlsx')toast('Excel export isn’t available offline, so it was saved as CSV.');const csv=aoa.map(r=>r.map(v=>{const x=String(v??'');return /[",\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x;}).join(',')).join('\r\n');download(name+'.csv',new Blob(['﻿'+csv],{type:'text/csv'}));}
+    S.jnExport=false;render();}});
 
 load();render();fsInit();
 })();
