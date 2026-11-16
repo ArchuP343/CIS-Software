@@ -522,18 +522,53 @@ tr.hit td{background:var(--accent-soft)}
 .chipbtn button.icon{padding:4px 8px 4px 2px}
 .condrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .condrow select{min-width:130px}
-/* voice control (online move): one round mic button that lights up, and a gear for the wake word */
-.vcbar{display:flex;align-items:center;gap:6px;margin-bottom:12px;position:relative}
+/* voice control (online move): Voice view with a big mic, Screen view with the original layout */
+.vctop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.vcswitch{display:inline-flex;padding:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px}
+.vcswitch button{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:0;border-radius:999px;background:transparent;color:var(--muted);font-weight:600;box-shadow:none}
+.vcswitch button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}.vcswitch svg{width:16px;height:16px}
+.vcbar{display:flex;align-items:center;gap:6px;position:relative}
 .vcmic{width:52px;height:52px;padding:0;border-radius:50%;display:grid;place-items:center;background:var(--surface);border:1.5px solid var(--line);color:var(--muted)}
 .vcmic svg{width:24px;height:24px}.vcmic:hover{border-color:var(--accent);color:var(--accent)}
-.vcmic.on{background:#e5484d;border-color:#e5484d;color:#fff;animation:vcpulse 1.6s infinite}
-.vcmic.busy{border-color:var(--warn);color:var(--warn);animation:vcbusy .9s ease-in-out infinite alternate;opacity:1}
-@keyframes vcpulse{0%{box-shadow:0 0 0 0 rgba(229,72,77,.55)}70%{box-shadow:0 0 0 12px rgba(229,72,77,0)}100%{box-shadow:0 0 0 0 rgba(229,72,77,0)}}
-@keyframes vcbusy{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--warn) 40%,transparent)}to{box-shadow:0 0 0 8px color-mix(in srgb,var(--warn) 0%,transparent)}}
+.vcmic.on{background:var(--accent);border-color:var(--accent);color:#fff;animation:vcpulse 1.8s infinite}
+.vcmic.busy{border-color:var(--brand);color:var(--brand);animation:vcbusy .9s ease-in-out infinite alternate;opacity:1}
+@keyframes vcpulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--brand) 60%,transparent)}70%{box-shadow:0 0 0 16px color-mix(in srgb,var(--brand) 0%,transparent)}100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--brand) 0%,transparent)}}
+@keyframes vcbusy{from{box-shadow:0 0 0 0 color-mix(in srgb,var(--brand) 45%,transparent)}to{box-shadow:0 0 0 10px color-mix(in srgb,var(--brand) 0%,transparent)}}
 @media (prefers-reduced-motion: reduce){.vcmic.on,.vcmic.busy{animation:none}}
 .vcgear summary{list-style:none;cursor:pointer;width:34px;height:34px;display:grid;place-items:center;border-radius:50%;color:var(--muted)}
 .vcgear summary::-webkit-details-marker{display:none}.vcgear summary:hover,.vcgear[open] summary{color:var(--accent);background:var(--surface-2)}.vcgear svg{width:18px;height:18px}
-.vcpop{position:absolute;left:0;top:60px;z-index:20;display:flex;flex-direction:column;gap:6px;padding:12px 14px;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.vcpop{position:absolute;left:0;top:60px;z-index:20;display:flex;flex-direction:column;gap:6px;padding:12px 14px;width:max-content;max-width:340px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+/* "Move with Jasper" on the move page, and the on-screen controls dropdown */
+.jlaunch{display:flex;justify-content:center;margin:2px 0 16px}
+.jl-btn{display:inline-flex;align-items:center;gap:12px;padding:6px 22px 6px 6px;border-radius:999px;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 22px rgba(15,36,51,.08);color:var(--ink);text-align:left}
+.jl-btn:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--line));box-shadow:0 8px 26px rgba(15,36,51,.13)}
+canvas.jorb.small{width:96px;height:96px;margin:-25px;display:block;pointer-events:none;position:relative;z-index:1}
+.jl-txt{display:flex;flex-direction:column;line-height:1.25}.jl-txt b{font-family:var(--f-display);font-size:1rem}.jl-txt small{color:var(--muted);font-size:.8rem}
+.mmctl>summary{cursor:pointer;width:max-content;margin:0 auto 4px;color:var(--muted);font-weight:600;font-size:.85rem}.mmctl-body{margin-top:12px}
+body.vcstage-open{overflow:hidden}
+#toast{z-index:1000}
+/* Jasper's full-screen page: white, the orb in the middle */
+.vcstage{position:fixed;inset:0;z-index:900;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:#fff;color:#0f2433;overflow:hidden}
+.vcstage[hidden]{display:none}
+.vcs-top{display:flex;align-items:center;padding:16px 20px;min-height:66px;position:relative}
+.vcstage .vcgear summary{color:#5a6b76}.vcstage .vcgear summary:hover,.vcstage .vcgear[open] summary{background:#f1f4f5;color:#0f2433}.vcstage .vcpop{top:42px;color:#0f2433;background:#fff;border-color:#dbe3e7}
+.vcs-main{min-height:0;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:0 24px}
+.vcs-orb{padding:0;border:0;background:transparent;box-shadow:none;border-radius:50%;cursor:pointer}
+.vcs-orb,.vcs-orb:hover,.vcs-orb:active,.vcs-orb:focus,.vcs-orb:focus-visible{outline:none;background:transparent;box-shadow:none}
+.vcs-orb{--o:min(56vmin,440px,calc(100vh - 250px));width:max(160px,var(--o));height:max(160px,var(--o));display:block}
+canvas.stagecv{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.vcs-top,.vcs-main,.vcs-bottom{position:relative;z-index:1}
+.vcs-state{font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#8a99a3}
+.vcs-said{margin:0;max-width:30ch;min-height:1.3em;text-align:center;font-family:var(--f-display);font-size:clamp(1.3rem,2.6vw,1.9rem);font-weight:600;line-height:1.3;color:#0f2433}
+.vcs-heard{margin:0;min-height:1.2em;color:#a3b0b8;font-size:.9rem;font-style:italic}
+.vcs-box{display:flex;align-items:center;gap:10px;padding:7px 16px;border-radius:999px;background:#f3f6f7;font-size:.9rem;color:#33454f}.vcs-box b{color:#0f2433;font-weight:600}.vcs-count{color:#8a99a3;font-size:.8rem}
+.vcs-pick:empty{display:none}
+.vcs-bottom{display:flex;justify-content:center;gap:18px;padding:18px 0 calc(30px + env(safe-area-inset-bottom,0px))}
+.vcs-fs{width:38px;height:38px;padding:0;border-radius:50%;display:grid;place-items:center;border:0;background:transparent;color:#5a6b76;box-shadow:none}.vcs-fs:hover{background:#f1f4f5;color:#0f2433}.vcs-fs svg{width:18px;height:18px}
+.vcs-top .spacer{flex:1}
+.vcs-round{width:58px;height:58px;padding:0;border-radius:50%;display:grid;place-items:center;border:0;background:#f1f4f5;color:#0f2433;box-shadow:none}
+.vcs-round:hover{background:#e6ebed}.vcs-round svg{width:24px;height:24px}
+.vcs-mic.on{background:#0f2433;color:#fff}.vcs-mic.on:hover{background:#1c3a4f}
 </style>
 
 <div id="app"></div>
@@ -1189,7 +1224,7 @@ function render(){
   app.innerHTML=html+modalView()+exportModal()+leaveModal();
   const mc2=$('#mapcanvas');if(mc2&&keep){mc2.scrollLeft=keep.l;mc2.scrollTop=keep.t;}
   if(S.focusAfter){const el=document.getElementById(S.focusAfter);S.focusAfter=null;if(el){el.focus();if(el.select)el.select();}}
-  S.dirty=false;syncHS();fitReview();
+  S.dirty=false;syncHS();fitReview();vcStageSync();
   if(S.mapFitNext&&$('#mapcanvas')){S.mapFitNext=false;requestAnimationFrame(()=>mapFit());}
 }
 function leaveModal(){if(!S.leaveAsk||!draftDirty())return'';return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="leaveTitle"><div class="box" style="width:min(480px,100%)">
@@ -1779,7 +1814,7 @@ function onlineRun(p,P,B,order){const mm=mmState(p);const all=mmOrdered(p,P,B,or
   const fitWhy=dest&&R?fitIssue(p,it,R.rack,P.DC):'';const autoAlt=!dest||!!fitWhy;const alt=S.mmAlt===it.id||autoAlt;
   const bayStrip=R?`<div class="mmbay"><span class="label">Bay ${esc(R.rack.name)}</span><div class="mmslots">${R.cells.map(c=>`<span class="${c.slot===ps.slot?'here':c.blocked?'blk':c.item?'full':''}" title="${esc(R.rack.name)}-${c.slot}">${c.slot}</span>`).join('')}</div></div>`:'';
   const sug=alt?altSlots(p,P,it,ps?ps.rackId:null,true):null;const ask=S.mmFitAsk&&S.mmFitAsk.id===it.id?S.mmFitAsk:null;
-  return `${voicePanel()}<div class="mmprogress"><div class="bar"><span style="width:${pct}%"></span></div><span class="small">${done.length} of ${total} placed${temp.length?` · ${temp.length} on the temporary pallet`:''}</span></div>
+  const body=`<div class="mmprogress"><div class="bar"><span style="width:${pct}%"></span></div><span class="small">${done.length} of ${total} placed${temp.length?` · ${temp.length} on the temporary pallet`:''}</span></div>
     <div class="mmcard">
       <div class="mmbox"><span class="label">${picked?'Picked out of order':order==='pallet'?'Next off the pallet':'Next box'}</span><b>${esc(it.hole)} <span class="muted">box</span> ${esc(it.box)}${it.of?`<span class="muted"> of ${esc(it.of)}</span>`:''}</b><span>${esc(fname(it.feature||''))}${outVal(it,'from')!==''||outVal(it,'to')!==''?` · ${esc(outVal(it,'from'))}–${esc(outVal(it,'to'))} m`:''}${boxDims(it,P.DC)?` · ${esc(dimTxt(boxDims(it,P.DC)))} mm`:''}</span>${(mmState(p).orig||{})[it.id]?`<span class="pill held" style="align-self:flex-start">from ${esc(mmState(p).orig[it.id].loc)}</span>`:''}</div>
       <div class="mmdest"><span class="label">Goes to</span>${dest?`<b class="mono">${esc(dest)}</b><span>Row ${esc(R.rack.rowLetter||'')} · Bay ${esc(R.rack.name.slice((R.rack.rowLetter||'').length))} · Slot ${ps.slot}</span>`:'<b>No slot</b><span>No open bay in the plan fits this box. Pick a slot below.</span>'}${fitWhy?`<span class="pill missing" style="align-self:flex-start">Doesn’t fit</span>`:''}</div>
@@ -1801,7 +1836,8 @@ function onlineRun(p,P,B,order){const mm=mmState(p);const all=mmOrdered(p,P,B,or
       <p class="muted small">Press Enter to confirm. Each box you confirm is locked into its slot and saved straight away.</p>
     </div>
     ${(()=>{const up=queue.filter(x=>x.id!==it.id).slice(0,3);return up.length?`<div class="mmnext"><h3>Up next <span class="muted small">tap one if that’s the box you’re holding</span></h3><div class="mmpicks">${up.map(x=>`<button class="mmpick" data-act="mm-pick" data-id="${x.id}"><b>${esc(x.hole)} box ${esc(x.box)}</b><span>${esc(fname(x.feature||''))}</span><span class="mono dest">${esc(destOf(P,x)||'no slot')}</span></button>`).join('')}</div>${queue.length-1>3?`<p class="muted small" style="margin:0">and ${queue.length-1-3} more</p>`:''}</div>`:'';})()}
-    ${tempPanel}${doneList}`;}
+    ${tempPanel}${doneList}`;
+  return vcWrap(body,it,dest,picked,order,done.length,total);}
 function movesList(p,P,M){
   const pr=projRec();
   if(!pr.plan)return `<div class="notice info"><strong>This is the first core move for ${esc(pr.name)}.</strong> There’s no saved layout to compare against yet. When you save this move to the project, later moves will list the boxes that need to shift.</div>`;
@@ -2939,7 +2975,7 @@ document.addEventListener('click',e=>{
       {const ps0=computePlan(p).pos[id];mmPrior(p,id,[ps0&&{r:ps0.rackId,s:ps0.slot},{r:L.r.id,s:L.slot}]);}
       const P0=computePlan(p);const before=P0.pos[id];let where;
       if(before&&before.rackId===L.r.id&&before.slot===L.slot)where=pinHere(p,id);
-      else{if(moveItemTo(p,id,txt)===false&&!computePlan(p).pos[id])break;where=L.r.name+'-'+L.slot;if(S.mmGap==='empty')keepEmpty(p,before);}
+      else{moveItemTo(p,id,txt);const now=computePlan(p).pos[id];if(!now||now.rackId!==L.r.id||now.slot!==L.slot)break;where=L.r.name+'-'+L.slot;if(S.mmGap==='empty')keepEmpty(p,before);}
       mmState(p).done[id]=where;S.mmAlt=null;commitDraft(true);render();break;}
     case 'mm-temp':{S.mmJust=true;S.mmPick=null;S.mmNot=false;if(id===S.mmReturn)S.mmReturn=null;const it=p.items.find(x=>x.id===id);if(it){putOnPallet(p,it);S.mmAlt=null;commitDraft(true);render();toast(`${it.hole} box ${it.box} is on the temporary pallet`);}break;}
     case 'mm-temp-back':{const it=p.items.find(x=>x.id===id);if(it){delete it.temp;delete it.pallet;commitDraft(true);render();}break;}
@@ -3376,7 +3412,7 @@ document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLower
       const mv={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
       if(mv&&sl.locked){e.preventDefault();toast('It’s locked in place. Unlock it to move it.');return;}
       if(mv){e.preventDefault();const st=e.shiftKey||S.mapSnap===false?0.25:1;mapSnap(p);const b=shapeBox(sl);const dx=Math.max(-b.x,mv[0]*st),dy=Math.max(-b.y,mv[1]*st);sl.x+=dx;sl.y+=dy;if(isLine(sl)){sl.x2+=dx;sl.y2+=dy;}touch(p);render();return;}}}
-  if(e.key==='Enter'&&S.tab==='moves'&&!S.leaveAsk){const a=document.activeElement;if(!a||!/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(a.tagName)){const bt=$('#mmPlaced');if(bt){e.preventDefault();bt.click();return;}}}
+  if(e.key==='Enter'&&S.tab==='moves'&&!S.leaveAsk){const a=document.activeElement;if(!a||!/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(a.tagName)){const bt=$('#mmPlaced');if(bt&&!bt.closest('details:not([open])')){e.preventDefault();bt.click();return;}}}
   if(e.key==='Escape'&&S.leaveAsk){S.leaveAsk=false;render();return;}
   if(e.key==='Escape'&&(S.modal||S.expPrompt)){S.modal=null;S.expPrompt=null;render();return;}
   if(e.key==='Escape'&&e.target.id==='gsearch'&&S.filter.q){e.preventDefault();S.filter.q='';liveRender('gsearch');}
@@ -3482,15 +3518,18 @@ function vcMatch(items,q){return items.filter(it=>{const h=vcHoleParts(it.hole);
 /* the words Vosk listens for: commands plus every box in this move, said both common ways */
 /* wake word: “Jasper” (a rock, and a name the speech model knows) */
 const VC_WAKE=new Set(['jasper']);
-const VC_CMDS=['placed','done','box placed',"doesn't fit",'does not fit','too big',"won't fit",'next option','another slot','pallet','on the pallet','temporary pallet',
+const VC_CMDS=['yes','correct','placed in','placed at','put it in','went in','goes in','it went in','slot changed to','changed to','moved to','new slot','put it in','confirmed','confirm','cancel','dash','placed','done','box placed',"doesn't fit",'does not fit','too big',"won't fit",'next option','another slot','pallet','on the pallet','temporary pallet',
   'repeat','say again','undo','next box',"what's next",'how many left','stop listening','help','what slot','which slot','zero oh one two three four five six seven eight nine ten',
   'b c d e f g h i j k l m n o p q r s t u v w x y z double',Object.keys(VC_NATO).join(' ')];
-function vcGrammar(list){const ph=new Set(VC_CMDS);const pm=vcPrefixes();Object.values(pm).forEach(w=>ph.add(w));
+function vcGrammar(list,racks){const ph=new Set(VC_CMDS);const pm=vcPrefixes();Object.values(pm).forEach(w=>ph.add(w));
   const natoOf={};Object.entries(VC_NATO).forEach(([w,L])=>{if(!natoOf[L]&&w.length>3)natoOf[L]=w;});
   const say=(code,nato)=>code.split('').map(ch=>/\d/.test(ch)?VC_ONES[+ch]:nato?natoOf[ch]||ch.toLowerCase():ch.toLowerCase()).join(' ');
   (list||[]).forEach(it=>{const h=vcHoleParts(it.hole);if(!h)return;const bx=+it.box;const bw=isNaN(bx)?String(it.box).toLowerCase():vcNumWords(bx);
     const holes=[`${pm[h.letters]||vcLetters(h.letters)} ${vcDigitWords(h.raw)}`,`${pm[h.letters]||vcLetters(h.letters)} ${vcNumWords(+h.num)}`,`${say(h.letters,true)} ${vcDigitWords(h.raw)}`];
     const F=vcFeat(it);holes.forEach(x=>ph.add(`${x} box ${bw}`));if(F)[say(F,false),say(F,true)].forEach(f=>ph.add(`${f} ${holes[0]} box ${bw}`));});
+  /* every bay and slot, so "slot changed to a two dash one" is heard well */
+  (racks||[]).forEach(R=>{const m=/^([A-Za-z]+)(\d+)$/.exec(String(R.rack.name||''));if(!m)return;const L=vcLetters(m[1]),b=vcNumWords(+m[2]);
+    R.cells.forEach(c0=>{if(!c0.blocked&&ph.size<8000){const sw=`${L} ${b} dash ${vcNumWords(+c0.slot)}`;ph.add(`slot changed to ${sw}`);ph.add(`placed in ${sw}`);}});});
   let arr=[...ph];if(VC.prefs.wake)arr=arr.map(x=>'jasper '+x).concat(['jasper']);arr.push('[unk]');return JSON.stringify(arr);}
 /* what gets read out */
 /* replies are short codes, like "DD101 box 3 into slot A1-2" */
@@ -3510,16 +3549,18 @@ function vcSpeakable(t){return String(t)
 function vcVoice(){if(!('speechSynthesis' in window))return null;const vs=speechSynthesis.getVoices();
   const good=v=>/premium|enhanced|natural/i.test(v.name),loc=vs.filter(v=>v.localService&&/^en/i.test(v.lang)),au=loc.filter(v=>/en.AU/i.test(v.lang));
   return au.find(good)||loc.find(good)||au[0]||loc[0]||vs.find(v=>/^en/i.test(v.lang))||null;}
-function vcSay(text,again){if(!again)VC.lastSaid=text;const el=$('#vcSaid');if(el)el.textContent=text;else if($('.vcinfo'))render();
+function vcSay(text,again){if(!again)VC.lastSaid=text;const el=$('#vcSaid');if(el)el.textContent=text;
   const words=vcSpeakable(text);const tok=VC.sayN=(VC.sayN||0)+1;VC.speaking=true;VC.speakingUntil=Date.now()+30000;
-  const done=()=>{if(tok!==VC.sayN)return;VC.speaking=false;VC.speakingUntil=Date.now()+350;};
+  const done=()=>{if(tok!==VC.sayN)return;VC.speaking=false;VC.speakingUntil=Date.now()+350;vcOrbState();};vcOrbState();
   if(!('speechSynthesis' in window))return done();speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(words);const v=vcVoice();if(v){u.voice=v;u.lang=v.lang;}u.rate=+VC.prefs.rate||1;
-  u.onend=u.onerror=done;speechSynthesis.speak(u);}
+  u.onstart=()=>{if(tok===VC.sayN){VC.talkOn=true;VC.talkKick=performance.now();}};
+  u.onboundary=e=>{if(tok===VC.sayN&&(!e.name||e.name==='word'))VC.talkKick=performance.now();};
+  u.onend=u.onerror=()=>{if(tok===VC.sayN)VC.talkOn=false;done();};speechSynthesis.speak(u);}
 function vcShowHeard(t){VC.heard=t;const el=$('#vcHeard');if(el)el.textContent=t||'…';}
 
 /* run the same buttons the screen uses, so voice and taps record a move the same way */
 function vcAct(act,data){const b=document.createElement('button');b.hidden=true;b.dataset.act=act;Object.entries(data||{}).forEach(([k,v])=>b.dataset[k]=v);document.body.appendChild(b);b.click();b.remove();}
-function vcCtx(){if(!$('.vcbar'))return null;const p=cur();if(!p)return null;const mm=mmState(p);const P=computePlan(p);const B=mmBoxes(p,P,computeMoves(p,P));
+function vcCtx(){if(!VC.inRun)return null;const p=cur();if(!p)return null;const mm=mmState(p);const P=computePlan(p);const B=mmBoxes(p,P,computeMoves(p,P));
   const order=mm.order==='pallet'&&B.src==='pallet'?'pallet':'slot';const all=mmOrdered(p,P,B,order);VC.moveList=B.list;return{p,P,B,mm,order,all,queue:all.filter(it=>!mm.done[it.id]&&!it.temp)};}
 /* voice commands only act on the box last named by voice (or by "next box"), never on whatever box the screen
    moved on to, so a repeated or misheard "pallet" or "placed" can't touch a box nobody asked about */
@@ -3562,15 +3603,43 @@ function vcUndo(){const c=vcCtx();if(!c)return;const id=VC.last;const it=id&&c.p
 function vcNextBox(){if(S.mmPick)vcAct('mm-pick',{id:''});const c=vcCtx();if(!c)return;if(!c.queue.length)return vcSay('All boxes placed.');
   const id=S.mmShown||c.queue[0].id;VC.active=id;VC.alt=null;vcSay('Next: '+vcDescText(c,id));}
 function vcLeft(){const c=vcCtx();if(!c)return;const pal=c.all.filter(it=>it.temp).length;vcSay(`${c.queue.length} left${pal?`, ${pal} on the pallet`:''}.`);}
+/* "slot changed to A two dash one" → which slot. Letters can be plain or phonetic; "dash" is optional. */
+function vcParseSlot(p,w){let k=-1;w.forEach((t,i)=>{if(['to','slot','in','into','at'].includes(t))k=i;});if(k<0)return null;
+  const rest=w.slice(k+1).join(' ').replace(/\bx ray\b/g,'xray').split(' ').filter(Boolean);let L='',i=0;
+  while(i<rest.length){const t=rest[i],nx=rest[i+1]||'';const l=t==='a'?(nx==='hundred'?null:'A'):t==='double'&&vcLetterOf(nx)?vcLetterOf(nx)+vcLetterOf(nx):vcLetterOf(t);if(!l)break;L+=l;i+=t==='double'?2:1;}
+  if(!L)return null;const nums=rest.slice(i);const di=nums.indexOf('dash');const found=new Map();
+  const tryP=(b,sl)=>{if(b===null||sl===null)return;const R=parseSlotRef(p,`${L}${+b}-${+sl}`);if(R&&!R.bad)found.set(`${R.r.name}-${R.slot}`,{loc:`${R.r.name}-${R.slot}`,r:R.r});};
+  if(di>=0)tryP(vcParseNum(nums.slice(0,di)),vcParseNum(nums.slice(di+1)));else for(let j=1;j<nums.length;j++)tryP(vcParseNum(nums.slice(0,j)),vcParseNum(nums.slice(j)));
+  return [...found.values()];}
+function vcSlotChange(w,fromPlaced){const c=vcCtx();if(!c)return;const it=vcTarget(c);if(!it)return;const opts=vcParseSlot(c.p,w);
+  if(!opts||!opts.length)return vcSay("I didn't catch a slot. Say it like placed in A two dash one.");
+  if(opts.length>1)return vcSay(`Did you mean ${opts.map(o=>o.loc).join(' or ')}? Say it with dash, like A two dash one.`);
+  const o=opts[0];const sl=+o.loc.split('-').pop();if(sl<1||sl>o.r.rows)return vcSay(`Bay ${o.r.name} has slots 1 to ${o.r.rows}.`);if((o.r.blocked||[]).includes(sl))return vcSay(`${o.loc} is a blocked slot.`);
+  const ps=c.P.pos[it.id];if(ps&&ps.rackId===o.r.id&&ps.slot===sl){VC.pending=null;return fromPlaced?vcPlaced():vcSay(`That's already its slot. Say placed.`);}
+  const why=fitIssue(c.p,it,o.r,c.P.DC);VC.pending={id:it.id,loc:o.loc,force:!!why};
+  vcSay(why?`${vcBoxCode(it)} to ${o.loc}. It may not fit: ${why}. Say confirmed to go ahead.`:`${vcBoxCode(it)} to ${o.loc}. Say confirmed.`);}
+function vcConfirm(){const pd=VC.pending;VC.pending=null;if(!pd)return vcSay('Nothing to confirm.');const c=vcCtx();if(!c)return;
+  if(VC.active!==pd.id)return vcSay('Say the slot again.');const it=vcTarget(c);if(!it)return;
+  vcAct('mm-elsewhere',Object.assign({id:pd.id,loc:pd.loc},pd.force?{force:'1'}:{}));
+  const p=cur();const where=p&&(mmState(p).done||{})[pd.id];if(!where)return vcSay('Not moved. Check the screen.');
+  VC.last=pd.id;VC.alt=null;let s=`Placed in ${where}.`;const c2=vcCtx();if(!c2||!c2.queue.length){s+=' Last box. Voice off.';setTimeout(()=>vcStop(false),0);}vcSay(s);}
 function vcWhatSlot(){const c=vcCtx();if(!c)return;const id=VC.active;const it=id&&c.p.items.find(x=>x.id===id);if(!it)return vcSay('Say a box first.');
   if(c.mm.done[id])return vcSay(`${vcBoxCode(it)} is in ${c.mm.done[id]}.`);if(it.temp)return vcSay(`${vcBoxCode(it)} is on the pallet.`);
   if(VC.alt&&VC.alt.id===id)return vcSay(vcAltSay(c));const ps=c.P.pos[id];vcSay(ps?`Slot ${ps.rackName}-${ps.slot}.`:'No slot yet.');}
-function vcHeard(t){vcShowHeard(t);if(!$('.vcbar')||Date.now()<VC.speakingUntil)return;
+function vcHeard(t){vcShowHeard(t);if(!VC.inRun||Date.now()<VC.speakingUntil)return;
   let w=t.toLowerCase().replace(/\[unk\]/g,' ').replace(/[^a-z' ]/g,' ').split(/\s+/).filter(Boolean);if(!w.length)return;
   if(VC.prefs.wake){const i=w.findIndex(x=>VC_WAKE.has(x));if(i<0)return;w=w.slice(i+1);if(!w.length)return;}
   const s=' '+w.join(' ')+' ';const has=(...xs)=>xs.some(x=>s.includes(' '+x+' '));
   if(w.includes('box')&&w.length>2&&vcBoxCmd(w))return;
   if(has('stop listening'))return vcStop(true);
+  /* "placed in A two dash five", "put it in…", "went in…", "goes at…": a slot is being named */
+  const slotTalk=/\b(in|into|at|to)\b [a-z]/.test(w.join(' '))&&has('placed','place','put','went','goes','go','done','moved','changed','slot','its',"it's");
+  if(has('confirmed','confirm')||(VC.pending&&!slotTalk&&has('placed','done','yes','correct')))return vcConfirm();
+  if(has('cancel')){const had=!!VC.pending;VC.pending=null;return vcSay(had?'Cancelled.':'Nothing to cancel.');}
+  if(!has('repeat','say again'))VC.pending=null;
+  if(has('what slot','which slot','what was the slot','where does it go'))return vcWhatSlot();
+  if(slotTalk)return vcSlotChange(w,has('placed','done','put','went','goes','go','its',"it's"));
+  if(has('changed to','moved to','new slot','put it in','slot changed')||(w.includes('slot')&&!has('another slot','other slot')))return vcSlotChange(w);
   if(has("doesn't fit",'does not fit','too big',"won't fit",'not fit'))return vcNoFit();
   if(has('next option','another slot','other slot'))return vcNextOpt();
   if(has('what slot','which slot','what was the slot','where does it go'))return vcWhatSlot();
@@ -3579,7 +3648,7 @@ function vcHeard(t){vcShowHeard(t);if(!$('.vcbar')||Date.now()<VC.speakingUntil)
   if(has('repeat','say again'))return vcSay(VC.lastSaid||'Nothing to repeat yet.',true);
   if(has('next box',"what's next"))return vcNextBox();
   if(has('how many left'))return vcLeft();
-  if(has('help'))return vcSay(`Say a box, like diamond drill one oh two box fourteen. Add the feature if you need to, like bravo mike alpha one.${VC.prefs.wake?' Start each one with Jasper.':''} Then say placed, what slot, doesn't fit, next option, pallet, undo, repeat, next box, or how many left.`);
+  if(has('help'))return vcSay(`Say a box, like diamond drill one oh two box fourteen. Add the feature if you need to, like bravo mike alpha one.${VC.prefs.wake?' Start each one with Jasper.':''} Then say placed, what slot, doesn't fit, next option, slot changed to, pallet, undo, repeat, next box, or how many left.`);
   if(has('placed','done'))return vcPlaced();}
 
 /* starting and stopping: the Vosk files come from <shared folder>/Voice, or are picked by hand */
@@ -3591,14 +3660,17 @@ function vcPickFiles(){return new Promise(res=>{let inp=$('#vcFiles');if(!inp){i
   /* the browser only opens a file picker straight after a click: if that moment has passed, show a button instead */
   if(navigator.userActivation&&!navigator.userActivation.isActive){VC.needPick=()=>inp.click();render();}else inp.click();});}
 function vcLoadScript(file){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=URL.createObjectURL(file);s.onload=()=>res();s.onerror=()=>rej(new Error(`Couldn’t run ${file.name}.`));document.head.appendChild(s);});}
-function vcMakeRec(){const c=vcCtx();const g=vcGrammar(c?c.B.list:[]);if(VC.rec&&VC.gram===g)return;if(VC.rec){try{VC.rec.remove();}catch(e){}}
+function vcMakeRec(){const c=vcCtx();const g=vcGrammar(c?c.B.list:[],c?c.P.racks:[]);if(VC.rec&&VC.gram===g)return;if(VC.rec){try{VC.rec.remove();}catch(e){}}
   VC.gram=g;const r=new VC.model.KaldiRecognizer(VC.ctx.sampleRate,g);
   r.on('result',m=>{const t=((m&&m.result&&m.result.text)||'').trim();if(t)vcHeard(t);});
   r.on('partialresult',m=>{const t=((m&&m.result&&m.result.partial)||'').trim();if(t)vcShowHeard(t);});VC.rec=r;}
 const vcGetMic=()=>navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});
 async function vcStartAudio(){if(!VC.stream||!VC.stream.active)VC.stream=await vcGetMic();
   VC.ctx=new AudioContext();vcMakeRec();VC.src=VC.ctx.createMediaStreamSource(VC.stream);VC.node=VC.ctx.createScriptProcessor(4096,1,1);
-  VC.node.onaudioprocess=e=>{if(!VC.on||!VC.rec||VC.speaking||!$('.vcbar'))return;try{VC.rec.acceptWaveform(e.inputBuffer);}catch(err){}};
+  VC.node.onaudioprocess=e=>{if(!VC.on||!VC.rec)return;
+    /* how loud the mic is, for the orb */
+    {const d=e.inputBuffer.getChannelData(0);let q=0;for(let i=0;i<d.length;i+=8)q+=d[i]*d[i];VC.level=Math.min(1,Math.sqrt(q/(d.length/8))*6);}
+    if(VC.speaking||!VC.inRun)return;try{VC.rec.acceptWaveform(e.inputBuffer);}catch(err){}};
   VC.src.connect(VC.node);VC.node.connect(VC.ctx.destination);}
 /* Vosk's worker normally downloads the model with fetch(), which fails when CIS is opened as a file (or from S:),
    and its createModel() never reports the failure. So CIS starts the same worker code itself with a small shim in front:
@@ -3638,21 +3710,144 @@ function vcStop(say,keep){VC.on=false;try{VC.node&&VC.node.disconnect();VC.src&&
 
 /* the bar above the box card in an online move */
 const VC_MIC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+const VC_SCREEN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>';
 const VC_GEAR='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
-function voicePanel(){const on=VC.on,busy=VC.loading;const lab=on?'Voice control on. Click to stop':busy?'Starting voice control…':'Voice control. Click to start';
-  return `<div class="vcbar"><button class="vcmic ${on?'on':''} ${busy?'busy':''}" data-vact="toggle" ${busy?'disabled':''} aria-pressed="${on}" aria-label="${lab}" title="${lab}">${VC_MIC}</button>
-    <details class="vcgear" data-sec="vcgear" ${S.open.vcgear?'open':''}><summary aria-label="Voice settings" title="Voice settings">${VC_GEAR}</summary>
+/* the mic: big in the Voice view, small in the Screen view. The gear holds the wake word. */
+function voicePanel(big){const on=VC.on,busy=VC.loading;const lab=on?'Voice control on. Click to stop':busy?'Starting voice control…':'Voice control. Click to start';
+  const gear=`<details class="vcgear" data-sec="vcgear" ${S.open.vcgear?'open':''}><summary aria-label="Voice settings" title="Voice settings">${VC_GEAR}</summary>
       <div class="vcpop"><label class="check"><input type="checkbox" data-vpref="wake" ${VC.prefs.wake?'checked':''}> Wake word: only listen after “Jasper”</label>
-        <p class="small muted" style="margin:0">e.g. “Jasper, diamond drill one oh two box three”, “Jasper, placed”</p></div></details>
-    ${VC.needPick?'<button class="small" data-vact="pick">Choose voice files…</button>':''}</div>`;}
+        <p class="small muted" style="margin:0">e.g. “Jasper, diamond drill one oh two box three”, “Jasper, placed”</p></div></details>`;
+  const mic=`<button class="vcmic ${on?'on':''} ${busy?'busy':''}" data-vact="toggle" ${busy?'disabled':''} aria-pressed="${on}" aria-label="${lab}" title="${lab}">${VC_MIC}</button>`;
+  const pick=VC.needPick?'<button class="small" data-vact="pick">Choose voice files…</button>':'';
+  if(!big)return `<div class="vcbar">${mic}${gear}${pick}</div>`;
+  const state=on?(VC.prefs.wake?'Listening · say “Jasper” first':'Listening'):busy?'Starting…':'Tap the mic to start';
+  return `<div class="vcbar big">${gear}${mic}<div class="vcstate ${on?'on':''}">${state}</div>${pick}
+    <p class="vcsaid" id="vcSaid" aria-live="polite">${esc(VC.lastSaid||'Say a box, like “diamond drill one oh two box three”.')}</p></div>`;}
+/* ---------- Jasper: a clean full-screen voice page, opened from the "Move with Jasper" button ----------
+   The page is built once and kept outside #app, so the orb keeps moving smoothly while CIS redraws.
+   After each redraw vcStageSync() shows or hides it and updates the words. */
+const VC_FS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+const VC_FSX='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+const VC_X='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const VC_MICOFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 9.3V6a3 3 0 0 0-5.7-1.3M9 9v2a3 3 0 0 0 4.9 2.3M5 11a7 7 0 0 0 11.3 5.5M19 11a7 7 0 0 1-.6 2.8M12 18v3M3 3l18 18"/></svg>';
+function vcStageEl(){let st=$('#vcStage');if(st)return st;st=document.createElement('div');st.id='vcStage';st.className='vcstage';st.hidden=true;st.setAttribute('role','dialog');st.setAttribute('aria-label','Move with Jasper');
+  st.innerHTML=`<canvas class="jorb stagecv" aria-hidden="true"></canvas><div class="vcs-top"><span class="vcs-gear"></span><span class="spacer"></span><button class="vcs-fs" data-vact="fullscreen" title="Full screen" aria-label="Full screen">${VC_FS}</button></div>
+    <div class="vcs-main"><button class="vcs-orb" data-vact="toggle" aria-label="Voice control"></button>
+      <div class="vcs-state" id="vcState"></div>
+      <div class="vcs-box" id="vcBox"></div><div class="vcs-pick"></div></div>
+    <div class="vcs-bottom"><button class="vcs-round vcs-mic" data-vact="toggle"></button><button class="vcs-round vcs-close" data-vact="close" title="Close (Esc)" aria-label="Close Jasper">${VC_X}</button></div>`;
+  document.body.appendChild(st);return st;}
+function vcOrbState(){const st=$('#vcStage');if(!st)return;const lab=VC.on?'Listening. Click to stop':VC.loading?'Starting…':'Click to start listening';
+  st.querySelector('.vcs-orb').title=lab;const mic=st.querySelector('.vcs-mic');mic.classList.toggle('on',VC.on);mic.disabled=!!VC.loading;mic.innerHTML=VC.on?VC_MIC:VC_MICOFF;mic.title=lab;mic.setAttribute('aria-label',lab);
+  const sEl=$('#vcState');if(sEl)sEl.textContent=VC.speaking?'Jasper':VC.on?(VC.prefs.wake?'Listening · say “Jasper” first':'Listening'):VC.loading?'Starting…':'Paused · tap the orb to listen';}
+/* opening: the small orb pulses, then its button grows to fill the window and the orb flies to the middle.
+   Closing runs it backwards into the button. Skipped for people who turn animations off. */
+const vcRect=r=>`inset(${Math.max(0,r.top)}px ${Math.max(0,innerWidth-r.right)}px ${Math.max(0,innerHeight-r.bottom)}px ${Math.max(0,r.left)}px round ${r.height/2}px)`;
+const VC_EASE='cubic-bezier(.2,.8,.2,1)';
+function vcFrom(btn){const sc=btn&&btn.querySelector('canvas');const r=sc&&sc.getBoundingClientRect();if(!r||!r.width)return null;
+  return{fx:r.left+r.width/2,fy:r.top+r.height/2,fr:r.width*.18,span:Math.hypot(innerWidth,innerHeight)*.6};}
+const vcFade='.vcs-top,.vcs-state,.vcs-box,.vcs-bottom';
+/* Jasper's animations are tracked here and cancelled by hand, so a fade from closing can never stay stuck on the
+   controls (browsers don't reliably list animations on a page that's already hidden) */
+function vcAnim(el,kf,opt){const a=el.animate(kf,opt);(VC.anims=VC.anims||[]).push(a);return a;}
+function vcAnimClear(){(VC.anims||[]).forEach(a=>{try{a.cancel();}catch(e){}});VC.anims=[];}
+function vcOpen(btn){if(S.vcOpen)return;btn=btn&&btn.isConnected?btn:$('.jl-btn');const still=jorbStill.matches||!document.body.animate;
+  const r=btn&&btn.getBoundingClientRect(),from=vcFrom(btn);S.vcOpen=true;render();const st=$('#vcStage');
+  if(st){vcAnimClear();
+    if(!still&&r&&from){VC.trans=Object.assign({dir:'open',t0:performance.now()},from);
+      vcAnim(st,[{clipPath:vcRect(r)},{clipPath:'inset(0px 0px 0px 0px round 0px)'}],{duration:520,easing:'cubic-bezier(.65,0,.35,1)'});
+      st.querySelectorAll(vcFade).forEach(el=>vcAnim(el,[{opacity:0},{opacity:1}],{duration:380,delay:VC_T_ALL-300,easing:'ease-out',fill:'backwards'}));}}
+  jorbStart();if(!VC.on&&!VC.loading)vcToggle();}
+function vcClose(){if(document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#vcStage'))document.activeElement.blur();const st=$('#vcStage');let btn=$('.jl-btn');const done=()=>{VC.trans=null;VC.closing=false;S.vcOpen=false;if(VC.on)vcStop(false);else render();};
+  if(!st||st.hidden||jorbStill.matches||!btn||!st.animate)return done();if(VC.closing)return;VC.closing=true;
+  vcAnimClear();if(VC.on)vcStop(false);
+  btn=$('.jl-btn');if(!btn){VC.closing=false;return done();}const r=btn.getBoundingClientRect(),from=vcFrom(btn);if(!from){VC.closing=false;return done();}VC.trans=Object.assign({dir:'close',t0:performance.now()},from);
+  st.querySelectorAll(vcFade).forEach(el=>vcAnim(el,[{opacity:1},{opacity:0}],{duration:200,fill:'forwards'}));
+  const an=vcAnim(st,[{clipPath:'inset(0px 0px 0px 0px round 0px)'},{clipPath:vcRect(r)}],{duration:520*VC_CLOSE,delay:(VC_T_ALL-560)*VC_CLOSE,easing:'cubic-bezier(.65,0,.35,1)',fill:'both'});
+  an.onfinish=()=>{st.hidden=true;vcAnimClear();VC.closing=false;VC.trans=null;S.vcOpen=false;render();};}
+function vcStageSync(){VC.inRun=!!VC._wrapped;VC._wrapped=false;if(!VC.inRun)S.vcOpen=false;const show=VC.inRun&&!!S.vcOpen&&!!VC.stage;
+  const st=show?vcStageEl():$('#vcStage');document.body.classList.toggle('vcstage-open',show);
+  if(st){st.hidden=!show;if(show){const d=VC.stage,it=d.it;vcOrbState();
+    $('#vcBox').innerHTML=`<span class="mono"><b>${esc((it.feature?vcFeat(it)+'-':'')+it.hole)}</b> box <b>${esc(it.box)}</b> → <b>${esc(d.dest||'no slot')}</b></span><span class="vcs-count">${d.done} of ${d.total}</span>`;
+    const gear=st.querySelector('.vcs-gear');if(gear.dataset.h!==String(VC.prefs.wake)){gear.dataset.h=String(VC.prefs.wake);gear.innerHTML=`<details class="vcgear" data-sec="vcgear"><summary aria-label="Voice settings" title="Voice settings">${VC_GEAR}</summary>
+      <div class="vcpop"><label class="check"><input type="checkbox" data-vpref="wake" ${VC.prefs.wake?'checked':''}> Wake word: only listen after “Jasper”</label>
+        <p class="small muted" style="margin:0">e.g. “Jasper, diamond drill one oh two box three”</p></div></details>`;}
+    st.querySelector('.vcs-pick').innerHTML=VC.needPick?'<button data-vact="pick">Choose voice files…</button>':'';}}
+  if(!show&&document.fullscreenElement&&VC.fsByStage){VC.fsByStage=false;document.exitFullscreen().catch(()=>{});}
+  jorbStart();}
+/* ---------- the orb: a sphere of dots that ripples, drawn on a canvas ----------
+   Gentle when idle, stronger with the voice level while listening, rhythmic while Jasper talks. */
+const JORB={};
+function jorbPts(n){if(JORB[n])return JORB[n];const a=[],g=Math.PI*(3-Math.sqrt(5));let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  for(let i=0;i<n;i++){const y=1-2*(i+.5)/n,r=Math.sqrt(1-y*y),t=g*i;a.push([Math.cos(t)*r,y,Math.sin(t)*r,rnd(),rnd(),rnd()]);}return JORB[n]=a;}
+/* top to bottom. Sunwater: light cyan → brand blue → teal → deep blue → navy.
+   To go back to the purple/pink/orange look, use: [[0,176,201],[64,94,232],[150,70,220],[226,64,150],[250,120,40]] */
+const JCOL=[[127,220,234],[0,176,201],[0,127,147],[12,74,110],[10,31,46]];
+function jcol(v){v=Math.max(0,Math.min(.999,v))*(JCOL.length-1);const i=Math.floor(v),f=v-i,a=JCOL[i],b=JCOL[i+1];return[a[0]+(b[0]-a[0])*f|0,a[1]+(b[1]-a[1])*f|0,a[2]+(b[2]-a[2])*f|0];}
+/* opening: as the window grows out of the button, the orb comes apart and its dots fly out across the page;
+   once the page is full, they gather in the middle and the orb forms. Closing runs it backwards. */
+const VC_T_A=560,VC_T_ALL=1350,VC_CLOSE=.8;
+const vcEaseOut=x=>1-Math.pow(1-x,3),vcEaseIO=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+function jorbDraw(cv,t){const dpr=Math.min(2,devicePixelRatio||1),w=cv.clientWidth,h=cv.clientHeight;if(!w||!h)return;
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+  if(!cv.classList.contains('stagecv'))return jorbPaint(x,jorbPts(520),w/2,h/2,Math.min(w,h)*.18,1.15,t,-1,null,1);
+  const hole=$('#vcStage .vcs-orb');if(!hole)return;const r=hole.getBoundingClientRect();
+  /* where we are in an opening or closing: ph runs 0 → VC_T_ALL for opening, backwards for closing */
+  let ph=-1;const tr=VC.trans;
+  if(tr){const e=performance.now()-tr.t0;if(tr.dir==='open'){if(e>=VC_T_ALL)VC.trans=null;else ph=e;}else ph=Math.max(0,VC_T_ALL-e/VC_CLOSE);}
+  /* at the very start Jasper shows an exact copy of the small orb in the button, which dissolves as the big orb's dots fly out of it */
+  if(ph>=0&&ph<220)jorbPaint(x,jorbPts(520),tr.fx,tr.fy,tr.fr,1.15,t,-1,null,1-ph/220);
+  jorbPaint(x,jorbPts(4200),r.left+r.width/2,r.top+r.height/2,r.width*.36,1.6,t,ph,tr,1);}
+function jorbPaint(x,pts,cx,cy,R,dot,t,ph,tr,mul){const lit=.8+.2*(VC.onS||0);
+  const spin=VC.spinA||0,tilt=.42,ct=Math.cos(tilt),stt=Math.sin(tilt),cs=Math.cos(spin),sn=Math.sin(spin);
+  const amp=VC.ampS||.035,k=t*.0011;const cl=v=>v<0?0:v>1?1:v;
+  for(let i=0;i<pts.length;i++){const p=pts[i],px=p[0],py=p[1],pz=p[2];
+    const n=(Math.sin(px*3.1+k)+Math.sin(py*4.3-k*1.3)+Math.sin(pz*5.2+k*.8))/3+(Math.sin((px+py)*9-k*2.1)+Math.sin((py-pz)*11+k*1.7))*.225;
+    const d=1+amp*n+(p[3]-.5)*(.025+amp*.5);const X=px*cs-pz*sn,Z=px*sn+pz*cs,Y=-py,Y2=Y*ct-Z*stt,Z2=Y*stt+Z*ct;
+    const rim=1-Math.abs(Z2),front=(Z2+1)/2;let a=Math.min(1,(.16+.84*Math.pow(rim,2.2))*(.45+.55*front)*lit)*mul;
+    const c=jcol((1-py)/2+n*.1);let s=dot*(.6+.8*front)*(1+.4*rim);let qx=cx+X*R*d,qy=cy+Y2*R*d;
+    if(ph>=0){/* each dot leaves the small orb at its own moment and speed, flies out on its own curve,
+         drifts while it's out, then flies into the orb at its own moment */
+      const ox=tr.fx+X*tr.fr,oy=tr.fy+Y2*tr.fr;
+      const fa=vcEaseOut(cl((ph-p[3]*150)/(380+p[4]*460))),fb=vcEaseIO(cl((ph-(640+p[5]*260))/(380+p[3]*120)));
+      const ang=Math.atan2(Y2,X)+(p[5]-.5)*3.2+ph*.0011*(p[4]-.5),dist=(.06+.94*Math.pow(p[4],.55))*tr.span*(1+.06*Math.sin(ph*.004+i));
+      const sx=ox+Math.cos(ang)*dist*fa,sy=oy+Math.sin(ang)*dist*fa;qx=sx+(qx-sx)*fb;qy=sy+(qy-sy)*fb;
+      /* bright while flying; each dot appears as it leaves the small orb */
+      const out=fa*(1-fb);a=(a+(.9-a)*out)*(fb+(1-fb)*Math.min(1,fa*3));s*=(.75+.65*out);}
+    if(a<.004)continue;x.fillStyle=`rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(3)})`;x.fillRect(qx-s/2,qy-s/2,s,s);}}
+const jorbStill=matchMedia('(prefers-reduced-motion: reduce)');
+function jorbStart(){if(!VC.raf&&document.querySelector('canvas.jorb'))VC.raf=requestAnimationFrame(jorbLoop);}
+function jorbLoop(t){const cvs=document.querySelectorAll('canvas.jorb');if(!cvs.length){VC.raf=0;VC.lastT=0;return;}
+  const tt=jorbStill.matches?0:t,dt=VC.lastT?Math.min(64,tt-VC.lastT):0;VC.lastT=tt;const ez=(v,to,f)=>v===undefined?to:v+(to-v)*f;
+  /* everything eases towards its target, so changes of state never make the orb jump */
+  const on=VC.on||VC.loading?1:0;VC.onS=ez(VC.onS,on,.06);
+  VC.rateS=ez(VC.rateS,VC.loading?.0009:VC.on?.00022:.00012,.04);VC.spinA=(VC.spinA||0)+VC.rateS*dt;
+  VC.lvl=(VC.lvl||0)*.85+(VC.on&&!VC.speaking?(VC.level||0):0)*.15;
+  /* while Jasper talks the orb pulses on each spoken word */
+  const kick=VC.talkKick?Math.exp(-(performance.now()-VC.talkKick)/220):0;VC.talkS=ez(VC.talkS,VC.talkOn?1:0,.08);
+  VC.ampS=ez(VC.ampS,.035+.035*VC.onS+VC.lvl*.16+VC.talkS*(.02+.09*kick),.18);
+  cvs.forEach(cv=>{if(cv.offsetParent!==null||cv.closest('#vcStage:not([hidden])'))jorbDraw(cv,tt);});VC.raf=requestAnimationFrame(jorbLoop);}
+/* Voice view: big mic, one line about the box showing, everything else under "Move details". Screen view: the original layout. */
+/* the move page: "Move with Jasper" at the top, the original on-screen controls in a dropdown below */
+function vcWrap(body,it,dest,picked,order,done,total){VC._wrapped=true;VC.stage={it,dest,picked,order,done,total};
+  return `<div class="jlaunch"><button class="jl-btn" data-vact="open"><canvas class="jorb small" aria-hidden="true"></canvas><span class="jl-txt"><b>Move with Jasper</b><small>Hands-free voice control</small></span></button></div>
+    <details class="mmctl" data-sec="mmctl" ${S.open.mmctl===false?'':'open'}><summary>On-screen controls</summary><div class="mmctl-body">${body}</div></details>`;}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-vact]');if(!b)return;const a=b.dataset.vact;
   if(a==='pick'){if(VC.needPick)VC.needPick();}
+  else if(a==='open')vcOpen(b);
+  else if(a==='close')vcClose();
+  else if(a==='fullscreen'){if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else{VC.fsByStage=true;document.documentElement.requestFullscreen().catch(()=>{VC.fsByStage=false;toast('This browser won’t go full screen here.');});}}
   else if(a==='toggle')vcToggle();
   });
+/* Esc closes Jasper */
+document.addEventListener('keydown',e=>{if(e.key!=='Escape'||!document.body.classList.contains('vcstage-open')||document.fullscreenElement)return;if($('#vcStage details[open]')){$('#vcStage details[open]').open=false;return;}vcClose();});
+/* the full-screen button shows whether the browser is full screen */
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement)VC.fsByStage=false;const bt=$('#vcStage .vcs-fs');if(bt){const fs=!!document.fullscreenElement;bt.innerHTML=fs?VC_FSX:VC_FS;bt.title=fs?'Exit full screen':'Full screen';bt.setAttribute('aria-label',bt.title);}});
 document.addEventListener('change',e=>{const el=e.target.closest&&e.target.closest('[data-vpref]');if(!el)return;const k=el.dataset.vpref;
   VC.prefs[k]=el.type==='checkbox'?el.checked:el.value;vcSavePrefs();if((k==='prefixes'||k==='wake')&&VC.on&&VC.model&&VC.ctx)vcMakeRec();if(k==='wake')toast(VC.prefs.wake?'Wake word on: start each command with “Jasper”':'Wake word off');if(k!=='prefixes')render();});
 /* for testing without a microphone: in the browser console, type cisVoice('diamond drill one oh two box fourteen') */
-window.cisVoice=t=>{if(!$('.vcbar'))return 'Open an online move first (Move mode → Online → Start Move).';vcHeard(String(t||''));return VC.lastSaid;};
+window.cisVoice=t=>{if(!VC.inRun)return 'Open an online move first (Move mode → Online → Start Move).';vcHeard(String(t||''));return VC.lastSaid;};
 
 load();render();fsInit();
 })();
