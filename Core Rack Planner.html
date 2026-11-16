@@ -683,6 +683,8 @@ async function projDir(){return FS.handle.getDirectoryHandle('projects',{create:
 async function fsInit(){
   if(!fsSupported()){FS.status='unsupported';return;}
   const h=await idbGet('dir');if(!h)return;FS.handle=h;FS.name=h.name;
+  /* a stored folder that's been deleted or moved can't be used: forget it so Connect starts fresh */
+  try{const perm0=await h.queryPermission({mode:'readwrite'});if(perm0==='granted'){try{for await(const x of h.keys())break;}catch(e){if(e&&e.name==='NotFoundError'){await idbDel('dir');FS.handle=null;FS.name='';FS.status='off';render();return;}}}}catch(e){}
   try{const perm=await h.queryPermission({mode:'readwrite'});if(perm==='granted')await fsAfterConnect();else{FS.status='needs-permission';render();}}catch(e){FS.status='needs-permission';render();}
 }
 async function fsConnect(){
@@ -692,11 +694,13 @@ async function fsConnect(){
      almost instantly means no window was shown: try once more without the remembered folder, and say so if that fails. */
   const pick=async opts=>{const t0=Date.now();try{return await window.showDirectoryPicker(opts);}catch(e){console.warn('[CIS] folder window:',e&&e.name,e&&e.message);if(e&&e.name==='AbortError'&&Date.now()-t0<600)e.quick=true;throw e;}};
   let h;
-  try{h=await pick({id:'core-rack-planner',mode:'readwrite'});}
+  /* the remembered-folder name was changed from 'core-rack-planner' (Nov 2026): a copy of CIS and its Data folder
+     had been deleted, and Edge kept trying to open the folder window in the deleted place */
+  try{h=await pick({id:'cis-data-folder',mode:'readwrite'});}
   catch(e){
     if(!e.quick){if(e&&e.name!=='AbortError')toast(`Couldn’t open that folder (${e.name}). Check you have permission to edit it.`);return;}
     try{h=await pick({mode:'readwrite',startIn:'documents'});}
-    catch(e2){toast(e2.quick||e2.name!=='AbortError'?'Chrome didn’t open the folder window. Close all Chrome windows, reopen CIS and try again; if it still fails, check chrome://settings/content/fileSystemWrite isn’t blocking it.':'No folder chosen.');return;}}
+    catch(e2){toast(e2.quick||e2.name!=='AbortError'?'The browser didn’t open the folder window. Close every Edge/Chrome window, reopen CIS and try again. If it still fails, check the browser’s site settings (File editing) aren’t blocking it.':'No folder chosen.');return;}}
   try{FS.handle=h;FS.name=h.name;await idbSet('dir',h);await fsAfterConnect(true);}
   catch(e){console.warn('[CIS] connecting:',e&&e.name,e&&e.message);FS.handle=null;FS.status='off';render();toast(`Couldn’t use “${h.name}” (${e&&e.name}). Check you have permission to edit it.`);}
 }
