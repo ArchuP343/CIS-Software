@@ -687,8 +687,18 @@ async function fsInit(){
 }
 async function fsConnect(){
   if(!fsSupported()){toast('Shared folders need Microsoft Edge or Google Chrome.');return;}
-  try{const h=await window.showDirectoryPicker({id:'core-rack-planner',mode:'readwrite'});FS.handle=h;FS.name=h.name;await idbSet('dir',h);await fsAfterConnect(true);}
-  catch(e){if(e&&e.name!=='AbortError')toast('Couldn’t open that folder. Check you have permission to edit it.');}
+  /* Chrome remembers the last folder used for CIS. If that place has gone (a drive that's disconnected), the folder
+     window can fail to open and Chrome reports it like a Cancel, so CIS would do nothing. A Cancel that comes back
+     almost instantly means no window was shown: try once more without the remembered folder, and say so if that fails. */
+  const pick=async opts=>{const t0=Date.now();try{return await window.showDirectoryPicker(opts);}catch(e){console.warn('[CIS] folder window:',e&&e.name,e&&e.message);if(e&&e.name==='AbortError'&&Date.now()-t0<600)e.quick=true;throw e;}};
+  let h;
+  try{h=await pick({id:'core-rack-planner',mode:'readwrite'});}
+  catch(e){
+    if(!e.quick){if(e&&e.name!=='AbortError')toast(`Couldn’t open that folder (${e.name}). Check you have permission to edit it.`);return;}
+    try{h=await pick({mode:'readwrite',startIn:'documents'});}
+    catch(e2){toast(e2.quick||e2.name!=='AbortError'?'Chrome didn’t open the folder window. Close all Chrome windows, reopen CIS and try again; if it still fails, check chrome://settings/content/fileSystemWrite isn’t blocking it.':'No folder chosen.');return;}}
+  try{FS.handle=h;FS.name=h.name;await idbSet('dir',h);await fsAfterConnect(true);}
+  catch(e){console.warn('[CIS] connecting:',e&&e.name,e&&e.message);FS.handle=null;FS.status='off';render();toast(`Couldn’t use “${h.name}” (${e&&e.name}). Check you have permission to edit it.`);}
 }
 async function fsReconnect(){try{const p=await FS.handle.requestPermission({mode:'readwrite'});if(p==='granted')await fsAfterConnect();else toast('The browser needs permission to use the shared folder.');}catch(e){toast('Couldn’t reconnect. Try “Change folder”.');}}
 async function fsAfterConnect(first){
