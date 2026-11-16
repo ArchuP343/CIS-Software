@@ -3912,7 +3912,7 @@ window.cisVoice=t=>{if(!VC.inRun)return 'Open an online move first (Move mode â†
    point two"), then "done". Jasper reads it back a little faster than normal and waits for "next" or "edit". "Edit hole
    ... done" changes one field. "Jasper finished" stops and offers the export. The table is also editable on screen.
    Rows are kept per project in this browser; the exported file is the copy to keep. Move mode's Jasper is separate. */
-const JN_FIELDS=[['feature','Feature'],['hole','Hole ID'],['box','Box'],['of','Out of'],['from','From (m)'],['to','To (m)']];
+const JN_FIELDS=[['feature','Feature'],['hole','Hole ID'],['box','Box'],['of','Out of'],['from','From (m)'],['to','Until (m)']];
 function jnKey(){const pr=projRec();return 'cis-jn-'+(pr?pr.id:'none');}
 function jn(){const k=jnKey();if(!S.jn||S.jn.key!==k){let rows=[];try{rows=JSON.parse(localStorage.getItem(k)||'[]');}catch(e){}S.jn={key:k,rows:Array.isArray(rows)?rows:[],st:'entry',buf:[],ebuf:[],editField:null,reviewId:null};}return S.jn;}
 function jnSave(){const J=jn();try{localStorage.setItem(J.key,JSON.stringify(J.rows));}catch(e){}}
@@ -3959,7 +3959,7 @@ function jnParse(w){const r={feature:'',hole:'',box:'',of:'',from:'',to:''};cons
 function jnNum(tokens){const t=tokens.filter(x=>x==='hundred'||x==='thousand'||vcParseNum([x])!==null);if(!t.length)return'';const n=vcParseNum(t);return n===null?'':String(+n);}
 const jnId=r=>[r.feature,r.hole].filter(Boolean).join(' ')||'no hole';
 function jnReadback(r){const miss=[];if(!r.feature)miss.push('feature');if(!r.hole)miss.push('hole');if(!r.box)miss.push('box');if(!r.of)miss.push('out of');
-  const id=[r.feature,r.hole].filter(Boolean).join(' ');let s=`${id?id+', box':'Box'} ${r.box||'missing'}${r.of?' out of '+r.of:''}`;s+=r.from||r.to?`, ${r.from||'?'} to ${r.to||'?'}.`:', no depth.';
+  const id=[r.feature,r.hole].filter(Boolean).join(' ');let s=`${id?id+', box':'Box'} ${r.box||'missing'}${r.of?' out of '+r.of:''}`;s+=r.from||r.to?`, from ${r.from||'missing'} to ${r.to||'missing'} metres.`:', no depth.';
   return s+(miss.length?` Missing ${miss.length>1?miss.slice(0,-1).join(', ')+' and '+miss[miss.length-1]:miss[0]}.`:'')+' Next or edit?';}
 function jnSay(t){vcSay(t,false,1.3);}
 const JN_FIELD_WORDS={feature:'feature',hole:'hole',box:'box',out:'of',of:'of',total:'of',from:'from',start:'from',top:'from',until:'to',to:'to',end:'to',bottom:'to',base:'to',depth:'depth'};
