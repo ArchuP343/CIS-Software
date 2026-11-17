@@ -3738,9 +3738,21 @@ async function vcCreateModel(files){const libText=await files.lib.text();const m
     window.Worker=function(u,o){return new RealWorker(url,o);};}
   try{model=new Vosk.Model(m?key:URL.createObjectURL(files.model));}finally{window.Worker=RealWorker;}
   if(m){const buf=await files.model.arrayBuffer();model.worker.postMessage({cisModel:buf},[buf]);}
-  return new Promise((res,rej)=>{const t=setTimeout(()=>rej(new Error('the model took more than two minutes to load. Reload the page and try again.')),120000);
-    model.on('load',msg=>{clearTimeout(t);if(msg&&msg.result)res(model);else rej(new Error('the model didn’t load. Check the model file is the .tar.gz from Vosk.'));});
-    model.on('error',msg=>{clearTimeout(t);rej(new Error('the model didn’t load ('+((msg&&msg.error)||'unknown error')+').'));});});}
+  /* if loading fails or gets stuck, shut the engine down so its memory is freed (otherwise each retry adds another
+     few hundred MB), and mark the browser's saved copy of the model to be cleared before the next try */
+  const fail=err=>{vcKill(model);VC.needReset=true;return err;};
+  return new Promise((res,rej)=>{const t=setTimeout(()=>rej(fail(new Error('the model took more than two minutes to load. Click “Reset voice model”, then start Jasper again.'))),120000);
+    model.on('load',msg=>{clearTimeout(t);if(msg&&msg.result)res(model);else rej(fail(new Error('the model didn’t load. Check the model file is the .tar.gz from Vosk, or click “Reset voice model” and try again.')));});
+    model.on('error',msg=>{clearTimeout(t);rej(fail(new Error('the model didn’t load ('+((msg&&msg.error)||'unknown error')+'). Click “Reset voice model”, then try again.')));});});}
+function vcClearCache(){return new Promise(r=>{let q;try{q=indexedDB.deleteDatabase('/vosk');}catch(e){return r(false);}
+  q.onsuccess=()=>r(true);q.onerror=()=>r(false);q.onblocked=()=>r('blocked');setTimeout(()=>r('blocked'),5000);});}
+function vcKill(model){if(!model)return;try{model.terminate();}catch(e){}try{model.worker&&model.worker.terminate();}catch(e){}}
+/* "Reset voice model": stops the engine and deletes the browser's saved, unpacked copy of the model (Vosk keeps it in
+   the browser's storage under "/vosk"). The next start unpacks it again from the .tar.gz, which takes up to a minute. */
+async function vcResetModel(){if(VC.on)vcStop(false);vcKill(VC.model);VC.model=null;VC.loading=false;
+  const ok=await vcClearCache();try{localStorage.removeItem('cis-vc-loading');}catch(e){}
+  VC.needReset=false;VC.status='off';
+  vcNote(ok===true?'Voice model reset. Start Jasper again; the first load takes up to a minute.':ok==='blocked'?'Close any other CIS tabs, then click Reset voice model again.':'Couldn’t clear the saved voice model. Close the browser fully and try again.',true);}
 function vcNote(m,long){VC.msg=m;if(m){toast(m);if(long){clearTimeout(toast._t);toast._t=setTimeout(()=>{$('#toast').hidden=true;},9000);}}render();}
 async function vcToggle(){if(VC.on)return vcStop(true);if(VC.loading)return;
   if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia))return vcNote('This browser can’t use a microphone here. Use Microsoft Edge or Google Chrome.',true);
@@ -3750,7 +3762,12 @@ async function vcToggle(){if(VC.on)return vcStop(true);if(VC.loading)return;
       if(!files){vcNote('Choose the two voice files: vosk.js and the model (.tar.gz)');files=await vcPickFiles();}
       if(!files)throw new Error('No voice files chosen.');if(!files.lib||!files.model)throw new Error('Choose both files together: vosk.js and the model (.tar.gz).');
       if(!window.Vosk)await vcLoadScript(files.lib);if(!window.Vosk)throw new Error('vosk.js didn’t load. Check it’s the file from vosk-browser.');
-      vcNote('Loading the voice model. The first time takes up to a minute');VC.model=await vcCreateModel(files);}
+      /* a load that never finished last time (stuck, page reloaded, tab closed) may have left a half-saved copy: clear it first */
+      let unfinished=null;try{unfinished=localStorage.getItem('cis-vc-loading');}catch(e){}
+      if(unfinished||VC.needReset){vcNote('Clearing the saved voice model from last time…');await vcClearCache();VC.needReset=false;}
+      try{localStorage.setItem('cis-vc-loading',String(Date.now()));}catch(e){}
+      vcNote('Loading the voice model. The first time takes up to a minute');VC.model=await vcCreateModel(files);
+      try{localStorage.removeItem('cis-vc-loading');}catch(e){}}
     await vcStartAudio();VC.on=true;VC.loading=false;VC.status='on';VC.msg='';render();(VC.inNotes?jnSay(jn().rows.length?'Ready. Read the next box.':'Ready. Read the first box.'):vcSay(VC.prefs.wake?'Voice on. Say Jasper first.':'Voice on.'));}
   catch(e){VC.loading=false;vcStop(false,true);VC.status='error';
     vcNote(e&&(e.name==='NotAllowedError'||/shutdown/i.test(e.message||''))?'The browser didn’t get the microphone. Click the mic again and choose Allow. If it still fails, allow the microphone with the icon in the address bar (on a Mac, also for Chrome in System Settings → Privacy & Security → Microphone).':e&&e.name==='NotFoundError'?'No microphone found. Connect your headset and try again.':`Voice control couldn’t start: ${(e&&e.message)||e}`,true);}}
@@ -3844,10 +3861,10 @@ function vcStageSync(){VC.inRun=!!VC._wrapped;VC._wrapped=false;if(!(S.view==='w
   const st=show?vcStageEl():$('#vcStage');document.body.classList.toggle('vcstage-open',show);
   if(st){st.hidden=!show;st.classList.toggle('notes',mode==='notes');if(show){vcOrbState();
     if(mode==='move'){const d=VC.stage,it=d.it;$('#vcBox').innerHTML=`<span class="mono"><b>${esc((it.feature?vcFeat(it)+'-':'')+it.hole)}</b> box <b>${esc(it.box)}</b> → <b>${esc(d.dest||'no slot')}</b></span><span class="vcs-count">${d.done} of ${d.total}</span>`;
-      st.querySelector('.vcs-pick').innerHTML=VC.needPick?'<button data-vact="pick">Choose voice files…</button>':'';}
+      st.querySelector('.vcs-pick').innerHTML=(VC.needPick?'<button data-vact="pick">Choose voice files…</button>':'')+(VC.needReset?'<button data-vact="vreset">Reset voice model</button>':'');}
     else{/* don't redraw the table under someone who is typing in it */
       const panel=st.querySelector('.jns-panel'),h=jnPanel();if(panel.dataset.h!==h&&!(document.activeElement&&panel.contains(document.activeElement)&&document.activeElement.tagName==='INPUT')){panel.innerHTML=h;panel.dataset.h=h;}
-      st.querySelector('.jns-modal').innerHTML=jnModal();st.querySelector('.jns-pick').innerHTML=VC.needPick?'<button data-vact="pick">Choose voice files…</button>':'';
+      st.querySelector('.jns-modal').innerHTML=jnModal();st.querySelector('.jns-pick').innerHTML=(VC.needPick?'<button data-vact="pick">Choose voice files…</button>':'')+(VC.needReset?'<button data-vact="vreset">Reset voice model</button>':'');
       const clr=st.querySelector('[data-vact="jn-clear"]');clr.classList.toggle('ask',!!S.jnClearAsk);clr.title=S.jnClearAsk?'Click again to clear the list':'Clear the list';}
     const gear=st.querySelector('.vcs-gear');if(gear.dataset.h!==String(VC.prefs.wake)){gear.dataset.h=String(VC.prefs.wake);gear.innerHTML=`<details class="vcgear" data-sec="vcgear"><summary aria-label="Voice settings" title="Voice settings">${VC_GEAR}</summary>
       <div class="vcpop"><label class="check"><input type="checkbox" data-vpref="wake" ${VC.prefs.wake?'checked':''}> Wake word: only listen after “Jasper” (Move mode)</label>
@@ -3914,6 +3931,7 @@ function vcWrap(body,it,dest,picked,order,done,total){VC._wrapped=true;VC.stage=
     <details class="mmctl" data-sec="mmctl" ${S.open.mmctl===false?'':'open'}><summary>On-screen controls</summary><div class="mmctl-body">${body}</div></details>`;}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-vact]');if(!b)return;const a=b.dataset.vact;
   if(a==='pick'){if(VC.needPick)VC.needPick();}
+  if(a==='vreset'){vcResetModel();return;}
   else if(a==='open')vcOpen(b);
   else if(a==='close')vcClose();
   else if(a==='fullscreen'){if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});else{VC.fsByStage=true;document.documentElement.requestFullscreen().catch(()=>{VC.fsByStage=false;toast('This browser won’t go full screen here.');});}}

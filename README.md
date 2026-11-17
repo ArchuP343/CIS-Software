@@ -58,6 +58,8 @@ Hole IDs are matched by their letters and number: `DD102` is said “diamond dri
 
 The small Jasper orb at the end of the tabs opens a pallet list you can dictate. Jasper fills the window, with the orb at the top and the table below. Press the orb (or your headphones’ play button) to start and stop listening, and read each box (“bravo mike alpha one, diamond drill one oh two, box three out of eight, from twelve point five until fifteen point two”, then “done”). Field names can be said in any order, “until” marks the end depth and “out of” the number of boxes. Jasper reads it back, then say “next” or “edit”. The table is editable on screen too, with a typed Notes column and a + to add rows. The icons at the top right export (Excel or CSV, with an option to reverse the order), clear and close; the ? at the top left has the dictation help and the phonetic alphabet. The columns match CIS’s pallet sheet, so the file can be uploaded in Move mode. Lists are kept per project in the browser until cleared.
 
+If the voice model gets stuck on loading, click **Reset voice model** (shown after a failed load) or reload and start Jasper again; CIS clears a half-loaded copy by itself. Loading uses a few hundred MB, up to about 1 GB, so keep one CIS tab open while it loads.
+
 ## Backups
 
 On the home page, open a project's **Manage** menu and choose **Backup**. This saves a dated copy, such as `tinaroo-dam__backup_2026-10-12_1842.json`, into `Data\Backups\`.
