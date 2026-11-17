@@ -673,10 +673,14 @@ function exampleProject(){
    The browser's own storage keeps working as before when no folder is connected. */
 const FS={status:'off',handle:null,name:'',files:{},mtime:{},written:{},timer:null,saving:false,lastSync:0,localOnly:[],conflicts:{},poll:null};
 const fsSupported=()=>typeof window.showDirectoryPicker==='function';
-function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('core-rack-planner',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
-async function idbDo(mode,fn){const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction('kv',mode);const st=tx.objectStore('kv');const rq=fn(st);tx.oncomplete=()=>res(rq&&rq.result);tx.onerror=()=>rej(tx.error);});}
-const idbGet=k=>idbDo('readonly',st=>st.get(k)).catch(()=>null);
-const idbSet=(k,v)=>idbDo('readwrite',st=>st.put(v,k)).catch(()=>null);
+/* the browser's store that remembers the connected folder. If it's stuck or broken it must never hold up connecting,
+   so every use gives up after 3 seconds and CIS carries on without it (the folder just isn't remembered next time). */
+const idbTimeout=(pr,what)=>Promise.race([pr,new Promise((_,rej)=>setTimeout(()=>rej(new Error(what+' timed out')),3000))]);
+function idbOpen(){return new Promise((res,rej)=>{let r;try{r=indexedDB.open('core-rack-planner',1);}catch(e){return rej(e);}
+  r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);r.onblocked=()=>console.warn('[CIS] browser storage is blocked by another CIS tab');});}
+async function idbDo(mode,fn){const db=await idbTimeout(idbOpen(),'Opening browser storage');return idbTimeout(new Promise((res,rej)=>{const tx=db.transaction('kv',mode);const st=tx.objectStore('kv');const rq=fn(st);tx.oncomplete=()=>res(rq&&rq.result);tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error);}),'Browser storage');}
+const idbGet=k=>idbDo('readonly',st=>st.get(k)).catch(e=>{console.warn('[CIS] browser storage:',e&&e.message);return null;});
+const idbSet=(k,v)=>idbDo('readwrite',st=>st.put(v,k)).then(()=>true).catch(e=>{console.warn('[CIS] browser storage:',e&&e.message);return false;});
 const idbDel=k=>idbDo('readwrite',st=>st.delete(k)).catch(()=>null);
 const fileNameFor=pr=>(String((pr.name||'project')+(pr.site?' '+pr.site:'')).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,70)||'project')+'__'+pr.id+'.json';
 async function projDir(){return FS.handle.getDirectoryHandle('projects',{create:true});}
@@ -698,10 +702,12 @@ async function fsConnect(){
      had been deleted, and Edge kept trying to open the folder window in the deleted place */
   try{h=await pick({id:'cis-data-folder',mode:'readwrite'});}
   catch(e){
-    if(!e.quick){if(e&&e.name!=='AbortError')toast(`Couldn’t open that folder (${e.name}). Check you have permission to edit it.`);return;}
+    if(!e.quick){toast(e&&e.name!=='AbortError'?`Couldn’t open that folder (${e.name}). Check you have permission to edit it.`:'No folder connected. If you chose a folder and nothing happened, the browser refused to let CIS edit it. In Edge: Settings → Cookies and site permissions → File editing, remove file:/// from Block (or set it to Ask), then try again. Folders inside Program Files can’t be used either.');return;}
     try{h=await pick({mode:'readwrite',startIn:'documents'});}
     catch(e2){toast(e2.quick||e2.name!=='AbortError'?'The browser didn’t open the folder window. Close every Edge/Chrome window, reopen CIS and try again. If it still fails, check the browser’s site settings (File editing) aren’t blocking it.':'No folder chosen.');return;}}
-  try{FS.handle=h;FS.name=h.name;await idbSet('dir',h);await fsAfterConnect(true);}
+  console.info('[CIS] folder chosen:',h.name);
+  try{FS.handle=h;FS.name=h.name;const kept=await idbSet('dir',h);console.info('[CIS] remembered:',kept);await fsAfterConnect(true);console.info('[CIS] connected');
+    if(!kept)toast(`Connected to “${h.name}”, but the browser couldn’t remember it, so you’ll need to connect again next time.`);}
   catch(e){console.warn('[CIS] connecting:',e&&e.name,e&&e.message);FS.handle=null;FS.status='off';render();toast(`Couldn’t use “${h.name}” (${e&&e.name}). Check you have permission to edit it.`);}
 }
 async function fsReconnect(){try{const p=await FS.handle.requestPermission({mode:'readwrite'});if(p==='granted')await fsAfterConnect();else toast('The browser needs permission to use the shared folder.');}catch(e){toast('Couldn’t reconnect. Try “Change folder”.');}}
