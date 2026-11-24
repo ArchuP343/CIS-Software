@@ -238,6 +238,20 @@ footer.foot{padding-block:28px;color:var(--muted);font-size:.8rem}
 .toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
 .toolbar .field{width:120px}
 .modal{position:fixed;inset:0;background:rgba(10,15,18,.55);display:grid;place-items:center;z-index:60;padding:16px}
+.istiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.istile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:170px;padding:20px 16px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);text-align:center;font:inherit;font-size:1rem;color:var(--ink)}
+.istile .isico svg{width:64px;height:64px}.istile b{font-size:1.15rem}
+.istile.ok{color:var(--muted)}.istile.ok .isico{color:var(--accent)}.istile.bad{border-color:var(--warn);background:var(--warn-soft);cursor:pointer}.istile.bad .isico{color:var(--warn)}.istile.bad:hover{filter:brightness(.98);box-shadow:0 2px 10px rgba(10,31,46,.08)}
+.isico{display:grid;place-items:center;flex:none}.iswin{width:auto!important;max-width:min(1100px,100%);max-height:85vh}.iswinhead{display:flex;align-items:center;gap:10px}.iswinhead h2{margin:0}.iswinhead .isico{color:var(--warn)}
+.issplit{min-height:0;display:flex;gap:14px;align-items:flex-start}.issplit>.islist{width:240px;flex:none;max-height:70vh}
+.islist{display:flex;flex-direction:column;gap:4px;overflow:auto;padding-right:4px}.islist button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:8px 10px;border-radius:8px;border:1px solid transparent;background:none;color:var(--ink);font:inherit;cursor:pointer}
+.islist button small{color:var(--muted)}.islist button:hover{background:var(--surface-2)}.islist button.on{background:var(--accent-soft);border-color:var(--accent)}
+.isdetail{display:flex;flex-direction:column;gap:12px;overflow:auto;min-width:0;max-height:70vh}.iscards{display:flex;flex-wrap:wrap;gap:12px;max-width:820px}.iscard{width:260px}
+.iscardfoot{display:flex;justify-content:flex-end}.iscard.dirty{border-color:var(--accent)}.istrash{padding:4px}
+.iscard{border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}.iscardhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.isfields{display:grid;grid-template-columns:1fr 1fr;gap:8px}.isfields .mini{display:flex;flex-direction:column;gap:3px;align-items:stretch}.isfields .mini input{width:100%}
+.isfields .need input{border-color:var(--warn);box-shadow:0 0 0 2px var(--warn-soft)}.isfields .need{color:var(--warn)}.isdone{display:flex;align-items:center;gap:8px;color:var(--accent);font-weight:700;margin:auto}
+@media (max-width:700px){.issplit{flex-direction:column}.issplit>.islist{width:100%}}
 .modal .box{background:var(--surface);color:var(--ink);border-radius:var(--r);padding:18px;width:min(980px,100%);max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
 .modal img{max-width:100%;height:auto;border:1px solid var(--line);background:#fff;align-self:flex-start}
 details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85rem;color:var(--muted);margin-left:10px}
@@ -285,6 +299,16 @@ details.sec>summary .cap{font-family:var(--f-body);font-weight:400;font-size:.85
 .isrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 12px;border:1px solid var(--line);border-radius:10px}
 .iscopies{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}.iscopy{display:inline-flex;align-items:center;gap:4px;padding:2px 4px 2px 10px;border-radius:99px;background:var(--surface-2)}
 tr.flashrow td{background:var(--accent-soft)!important;transition:background .4s}
+.addholes{border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}.addholes>summary{list-style:none;display:flex;justify-content:center;align-items:center;gap:10px;padding:10px;cursor:pointer;color:var(--muted);font-weight:600}
+.addholes>summary::-webkit-details-marker{display:none}.addholes>summary:hover{color:var(--ink)}.addplus{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;border:2px solid currentColor;font-size:1.4rem;line-height:1;transition:transform .2s}
+.addholes[open]>summary .addplus{transform:rotate(45deg)}.addholes[open]>summary{border-bottom:1px solid var(--line)}.addholes>.grid2{padding:14px}
+.gridwrap{position:relative;max-height:min(70vh,760px);overflow:auto}.gridkeys{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;resize:none;border:0;padding:0}
+table.grid{border-collapse:separate;border-spacing:0}table.grid thead th{position:sticky;top:0;z-index:2;background:var(--surface-2)}
+table.grid td{height:32px;padding:0 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;border-bottom:1px solid var(--line);border-right:1px solid color-mix(in srgb,var(--line) 60%,transparent);cursor:cell;user-select:none}
+table.grid td.lead{cursor:default;white-space:nowrap}table.grid td.num{text-align:right}table.grid td.w-s{min-width:72px}table.grid td.w-m{min-width:110px}
+table.grid td.gsel{background:color-mix(in srgb,var(--accent) 14%,var(--surface))}table.grid td.gact{box-shadow:inset 0 0 0 2px var(--accent)}
+.grided{position:absolute;z-index:3;margin:0;padding:0 7px;border:2px solid var(--accent);border-radius:0;background:var(--surface);font:inherit;box-sizing:border-box;outline:none}
+.gspace td{padding:0!important;border:0!important}
 .edfloat{position:absolute;top:14px;right:14px;z-index:6;width:min(320px,calc(100% - 28px));max-height:calc(100% - 28px);overflow:auto;padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 34px rgba(10,31,46,.18);animation:edIn .16s ease-out}
 .edfloat h2{font-size:1.1rem;margin:0}.edfloat .edclose{position:absolute;top:8px;right:8px}
 .edhead{display:flex;flex-direction:column;gap:2px;padding-right:30px}.edname{display:flex;align-items:center;gap:6px}.edpencil{width:28px;height:28px;padding:0;min-width:0;color:var(--ink);opacity:.75}.edpencil svg{width:16px;height:16px;flex:none}.edfloat button.small svg{width:15px;height:15px;flex:none;vertical-align:-3px}
@@ -420,15 +444,27 @@ table.palt td.dest{font-weight:700;font-size:1rem}
 .lk-chip.on{background:var(--ink);color:var(--surface)}.lk-chip.part{background:repeating-linear-gradient(-45deg,var(--accent-soft) 0 4px,var(--surface) 4px 8px)}
 button.lk-chip:hover{outline:2px solid var(--accent);outline-offset:1px}
 .baytable tr.rowhead td{background:var(--surface-2);border-top:2px solid var(--line)}
-.rowbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:6px 4px}.rowbar .rl{font-family:var(--f-display);font-size:1rem}
+.rowbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:6px 4px}
+.baygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,400px),1fr));gap:12px;align-items:start}
+.baycard{border-radius:var(--r);background:var(--surface-2);overflow:hidden}
+.bayhead{display:flex;align-items:center;gap:4px;padding:6px 8px 6px 4px}.bayexp{flex:1;display:flex;align-items:center;gap:8px;min-width:0;background:none;border:0;padding:6px;text-align:left;cursor:pointer;color:inherit}
+.bayexp b{font-family:var(--f-display);font-size:1rem}.bayexp .chev{display:inline-block;transition:transform .15s;color:var(--muted)}.baycard.open .bayexp .chev{transform:rotate(90deg)}
+.baylock,.baygear{color:var(--muted)}.baylock.on{color:var(--accent)}.baylock.some{color:var(--warn)}.baygear.on{color:var(--ink);background:var(--surface-2)}
+.baycfg{display:flex;flex-direction:column;gap:10px;padding:4px 12px 12px}
+.cfggrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.baycfg .mini{display:flex;flex-direction:column;gap:3px;align-items:stretch}.baycfg .mini input{width:100%}
+.cfgsize{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.cfgsize input{text-align:right}
+.baytable.compact{width:100%;background:var(--surface)}.baytable.compact th{font-size:.66rem;padding:6px 4px}.baytable.compact td{padding:2px 3px}.baytable.compact th svg{width:13px;height:13px;vertical-align:-2px}
+.baycard.open{overflow-x:auto}.baytable.compact input{padding:3px 4px;min-width:0}.baytable.compact td.w-s input{width:46px;min-width:36px}.baytable.compact td.w-m input{width:64px;min-width:50px}.baytable.compact td:last-child{width:28px}.baytable.compact td:first-child{padding-left:12px}
+.bayfoot{padding:6px 12px 10px}.baybottom{margin-top:4px}.shedset summary svg{width:15px;height:15px;vertical-align:-3px;margin-right:4px}.rowbar .rl{font-family:var(--f-display);font-size:1rem}
 label.mini{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted);font-weight:600}label.mini input{padding:4px 6px;height:30px;border:1px solid var(--line);background:var(--surface);border-radius:6px}
 .mini-seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.mini-seg button{border:0;border-radius:0;padding:4px 10px;font-size:.8rem;background:var(--surface)}
 .mini-seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
 td.locin input{font-family:var(--f-mono);width:84px}
 .hsbar{position:sticky;bottom:0;z-index:6;display:flex;align-items:center;gap:6px;padding:6px 8px;margin-top:-1px;background:var(--surface);border:1px solid var(--line);border-radius:0 0 var(--r) var(--r);box-shadow:0 -4px 12px rgba(10,31,46,.08)}
 .hsbar[hidden]{display:none}
-.hstrack{flex:1;overflow-x:auto;overflow-y:hidden;height:18px;scrollbar-width:auto}
-.hsinner{height:1px}
+.hstrack{flex:1;position:relative;height:14px;border-radius:7px;background:var(--surface-2);cursor:pointer;touch-action:none}
+.hsthumb{position:absolute;left:0;top:2px;bottom:2px;border-radius:5px;background:color-mix(in srgb,var(--ink) 35%,transparent);cursor:grab}.hsthumb:hover,.hsthumb.drag{background:color-mix(in srgb,var(--ink) 55%,transparent)}.hsthumb.drag{cursor:grabbing}
+.gridwrap::-webkit-scrollbar:horizontal{height:0}
 table.edit td.lead,table.edit th.lead{width:64px;white-space:nowrap;padding-left:4px;position:sticky;left:0;background:var(--surface);z-index:1}
 .draghandle{display:inline-block;cursor:grab;padding:4px 6px;color:var(--muted);font-size:1rem;user-select:none;vertical-align:middle}
 .draghandle:hover{color:var(--accent)}
@@ -1265,13 +1301,13 @@ function render(){
   const app=$('#app');
   if(S.view==='work'&&!cur()&&!(projRec()&&!S.ctx.mid))S.view='home';
   const p=cur();
-  const mc=$('#mapcanvas');const keep=mc?{l:mc.scrollLeft,t:mc.scrollTop}:null;
+  const mc=$('#mapcanvas');const keep=mc?{l:mc.scrollLeft,t:mc.scrollTop}:null;{const cw=$('#coreWrap');if(cw)S.gridScroll=cw.scrollTop;}
   let html;S.match=null;
   if(S.view==='home'||!projRec())html=homeView();
   else if(isReadOnly())html=projectReadView(projRec());
   else html=p.stage==='holes'?holesStep(p):p.stage==='racks'?racksStep(p):moveView();
   app.innerHTML=html+modalView()+exportModal()+leaveModal();
-  const mc2=$('#mapcanvas');if(mc2&&keep){mc2.scrollLeft=keep.l;mc2.scrollTop=keep.t;}
+  const mc2=$('#mapcanvas');if(mc2&&keep){mc2.scrollLeft=keep.l;mc2.scrollTop=keep.t;}{const cw=$('#coreWrap');if(cw&&S.gridScroll){cw.scrollTop=S.gridScroll;}}
   if(S.focusAfter){const el=document.getElementById(S.focusAfter);S.focusAfter=null;if(el){el.focus();if(el.select)el.select();}}
   S.dirty=false;syncHS();fitReview();vcStageSync();
   if(S.mapFitNext&&$('#mapcanvas')){S.mapFitNext=false;requestAnimationFrame(()=>mapFit());}
@@ -2038,7 +2074,7 @@ function multiPanel(p,ro){const keys=S.multi;const{labels,bays}=selItems(p,keys)
   return `<div class="edhead"><span class="label">Selection</span><div class="edname"><h2>${plural(keys.length,'item')}</h2>${ro?'':`<button class="icon ghost edpencil ${lk?'on':''}" data-act="item-lock" title="${lk?'Unlock':'Lock in place'}" aria-label="${lk?'Unlock':'Lock in place'}" aria-pressed="${lk}">${edIcon(lk?'lock':'unlock')}</button>`}</div></div>
     <p class="muted small" style="margin:0">${[labels.length?plural(labels.length,'shape'):'',rowsN?plural(rowsN,'row')+' of bays':''].filter(Boolean).join(' · ')}${lk?' · locked in place':''}</p>
     ${ro||!labels.length?'':`<div class="row"><button data-act="shape-front">Bring to front</button><button data-act="shape-back">Send to back</button><button data-act="shape-dup">Duplicate</button><button class="ghost danger" data-act="shape-del">Delete</button></div>`}`;}
-const ED_ICONS={dim:'<path d="M4 8v8M20 8v8M4 12h16M7 9.5L4 12l3 2.5M17 9.5l3 2.5-3 2.5"/>',door:'<path d="M5 20V4"/><path d="M5 4a15 16 0 0 1 15 16" stroke-dasharray="3 2.5"/><path d="M5 20h15"/>',rdoor:'<rect x="3" y="9" width="3" height="6" fill="currentColor"/><rect x="18" y="9" width="3" height="6" fill="currentColor"/><path d="M7 12h10" stroke-dasharray="3 2"/>',window:'<rect x="3" y="8" width="18" height="8"/><path d="M3 12h18"/>',wall:'<path d="M4 18L20 6" stroke-width="4.5" stroke-linecap="square"/>',column:'<rect x="7" y="7" width="10" height="10" fill="currentColor"/>',north:'<circle cx="12" cy="12" r="9"/><path d="M12 6l-3 10 3-2 3 2z" fill="currentColor"/>',lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',unlock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/>',display:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',legend:'<rect x="4" y="5" width="4" height="4" rx="1"/><rect x="4" y="15" width="4" height="4" rx="1"/><path d="M11 7h9M11 17h9"/>',select:'<path d="M5 3l14 8-6 2-2 6z"/>',text:'<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',label:'<rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 12h10"/>',rect:'<rect x="4" y="6" width="16" height="12" rx="1"/>',ellipse:'<ellipse cx="12" cy="12" rx="9" ry="6"/>',line:'<path d="M4 20L20 4"/>',arrow:'<path d="M4 20L20 4M11 4h9v9"/>',pallet:'<rect x="3" y="5" width="18" height="10" rx="1"/><path d="M3 19h18M6 15v4M12 15v4M18 15v4"/>',
+const ED_ICONS={gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',dim:'<path d="M4 8v8M20 8v8M4 12h16M7 9.5L4 12l3 2.5M17 9.5l3 2.5-3 2.5"/>',door:'<path d="M5 20V4"/><path d="M5 4a15 16 0 0 1 15 16" stroke-dasharray="3 2.5"/><path d="M5 20h15"/>',rdoor:'<rect x="3" y="9" width="3" height="6" fill="currentColor"/><rect x="18" y="9" width="3" height="6" fill="currentColor"/><path d="M7 12h10" stroke-dasharray="3 2"/>',window:'<rect x="3" y="8" width="18" height="8"/><path d="M3 12h18"/>',wall:'<path d="M4 18L20 6" stroke-width="4.5" stroke-linecap="square"/>',column:'<rect x="7" y="7" width="10" height="10" fill="currentColor"/>',north:'<circle cx="12" cy="12" r="9"/><path d="M12 6l-3 10 3-2 3 2z" fill="currentColor"/>',lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',unlock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/>',display:'<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',legend:'<rect x="4" y="5" width="4" height="4" rx="1"/><rect x="4" y="15" width="4" height="4" rx="1"/><path d="M11 7h9M11 17h9"/>',select:'<path d="M5 3l14 8-6 2-2 6z"/>',text:'<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',label:'<rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 12h10"/>',rect:'<rect x="4" y="6" width="16" height="12" rx="1"/>',ellipse:'<ellipse cx="12" cy="12" rx="9" ry="6"/>',line:'<path d="M4 20L20 4"/>',arrow:'<path d="M4 20L20 4M11 4h9v9"/>',pallet:'<rect x="3" y="5" width="18" height="10" rx="1"/><path d="M3 19h18M6 15v4M12 15v4M18 15v4"/>',
   undo:'<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',redo:'<path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>',dup:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/>',del:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',front:'<rect x="9" y="9" width="11" height="11" rx="1" fill="currentColor"/><rect x="4" y="4" width="11" height="11" rx="1"/>',back:'<rect x="4" y="4" width="11" height="11" rx="1" fill="currentColor"/><rect x="9" y="9" width="11" height="11" rx="1"/>',row:'<rect x="5" y="3" width="6" height="8"/><rect x="5" y="13" width="6" height="8"/><path d="M17 9v6M14 12h6"/>'};
 const edIcon=k=>`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ED_ICONS[k]}</svg>`;
 function mapToolbar(p,disp,savePng){const tool=S.mapTool||'select';const ks=selSet();const shp=selItems(p,ks).labels.length>0;const sel=shp?{id:S.sel&&S.sel.type==='label'?S.sel.id:''}:null;const lk=ks.size>0&&selLocked(p,ks);
@@ -2117,22 +2153,51 @@ function issuesBody(p,P){const list=issuesList(p);if(!list.length)return '<p cla
     ${miss.length?`<div class="isgroup"><div class="row" style="justify-content:space-between;align-items:center"><h3>Missing information <span class="muted small">${miss.length}</span></h3><button class="ghost small" data-act="issue-ignoreall" data-v="miss">Ignore all</button></div>
       ${miss.slice(0,200).map(m=>`<div class="isrow"><div><b class="mono">${nm(m.it)}</b> <span class="muted small">has no ${m.label} · ${esc(where(m.it))}</span></div><span class="row"><button class="small" data-act="issue-fix" data-id="${m.it.id}" data-f="${m.f}">Fix</button><button class="ghost small" data-act="issue-ignore" data-key="${m.key}">Ignore</button></span></div>`).join('')}
       ${miss.length>200?`<p class="muted small">and ${miss.length-200} more</p>`:''}</div>`:''}`;}
+/* ---------- issues: one tile per kind of problem; a tile opens a window where each problem shows its boxes side by side to fix ---------- */
+const ISSUE_KINDS=[{t:'dup',one:'duplicate box',many:'duplicate boxes',none:'No duplicate boxes',title:'Duplicate boxes'},
+  {t:'feature',one:'box missing a feature ID',many:'boxes missing a feature ID',none:'Every box has a feature ID',title:'Missing feature ID'},
+  {t:'hole',one:'box missing a hole ID',many:'boxes missing a hole ID',none:'Every box has a hole ID',title:'Missing hole ID'},
+  {t:'box',one:'box missing a box number',many:'boxes missing a box number',none:'Every box has a box number',title:'Missing box number'}];
+const issueKind=x=>x.type==='dup'?'dup':x.f;
+function issueTiles(p,P){const list=issuesList(p);
+  return `<div class="istiles">${ISSUE_KINDS.map(k=>{const n=list.filter(x=>issueKind(x)===k.t).length;
+    return n?`<button class="istile bad" data-act="issue-open" data-v="${k.t}"><span class="isico" aria-hidden="true">${ISS_WARN}</span><span><b>${n}</b> ${n===1?k.one:k.many}</span></button>`
+      :`<div class="istile ok"><span class="isico" aria-hidden="true">${ISS_OK}</span><span>${k.none}</span></div>`;}).join('')}</div>`;}
+const ISS_WARN='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>';
+const ISS_TRASH='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>';
+const ISS_OK='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5" stroke-width="2"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>';
+function issueWindow(p,P,all){const k=ISSUE_KINDS.find(x=>x.t===S.issueOpen);const list=all.filter(x=>issueKind(x)===S.issueOpen);
+  const nm=it=>esc([it.feature,it.hole].filter(Boolean).join(' · ')||'(no hole)')+' · box '+esc(it.box||'?');
+  let pick=list.find(x=>x.key===S.issuePick)||list[0];if(pick)S.issuePick=pick.key;
+  const fields=[['feature','Feature'],['hole','Hole ID'],['box','Box'],['of','Of'],['from','From (m)'],['to','To (m)']];
+  /* edits here are only kept when Save is pressed */
+  const card=(it,need)=>`<div class="iscard" data-iscard="${it.id}"><div class="iscardhead"><span class="mono">${esc(locText(p,P,it))}</span><button class="icon ghost danger istrash" data-act="item-del" data-id="${it.id}" title="Delete this box" aria-label="Delete this box">${ISS_TRASH}</button></div>
+    <div class="isfields">${fields.map(([f,l])=>`<label class="mini ${f===need?'need':''}">${l}<input id="is_${f}_${it.id}" data-isf="${f}" value="${esc(it[f]??'')}" ${f===need?'placeholder="Needed"':''}></label>`).join('')}</div>
+    <div class="iscardfoot"><button class="primary small" data-act="issue-save" data-id="${it.id}" disabled>Save</button></div></div>`;
+  return `<div class="modal ismodal" data-act="issue-close" role="dialog" aria-modal="true" aria-label="${esc(k.title)}"><div class="box iswin">
+    <div class="iswinhead"><span class="isico warn" aria-hidden="true">${list.length?ISS_WARN:ISS_OK}</span><h2>${esc(k.title)}</h2><span class="muted">${list.length}</span><span class="spacer"></span><button class="icon ghost" data-act="issue-close" aria-label="Close">✕</button></div>
+    ${list.length?`<div class="issplit"><div class="islist">${list.map(x=>{const it=x.type==='dup'?x.items[0]:x.it;return `<button class="${x.key===pick.key?'on':''}" data-act="issue-pick" data-key="${esc(x.key)}"><b class="mono">${nm(it)}</b><small>${x.type==='dup'?`${x.items.length} copies`:esc(locText(p,P,it))}</small></button>`;}).join('')}</div>
+      <div class="isdetail"><div class="iscards">${pick.type==='dup'?pick.items.map(it=>card(it)).join(''):card(pick.it,pick.f)}</div>
+        <div class="row"><span class="muted small">${pick.type==='dup'?'Delete the extra copy, or change one so they’re different boxes.':'Fill in the missing field.'}</span><span class="spacer"></span><button class="ghost small" data-act="issue-ignore" data-key="${esc(pick.key)}">Ignore this one</button></div></div></div>`
+      :`<p class="isdone">${ISS_OK} All fixed.</p>`}
+  </div></div>`;}
 function editTab(p,P){
   const sec=(key,title,cap,body)=>`<details class="manual sec" data-sec="${key}" ${S.open[key]?'open':''}><summary><span>${title}<span class="cap">${cap}</span></span></summary><div class="body stack">${body}</div></details>`;
   const holes=new Set(p.items.map(i=>(i.feature||'')+'|'+(i.hole||''))).size;
   const nIss=issuesList(p).length;
-  return sec('issues',`Issues${nIss?` <span class="isbadge">${nIss}</span>`:''}`,nIss?plural(nIss,'issue'):'None',issuesBody(p,P))+sec('holes','Holes &amp; boxes',`${plural(holes,'hole')} · ${plural(p.items.length,'box','boxes')}`,holesBody(p,P))
+  const nIs=issuesList(p).length;
+  return sec('issues',`Issues${nIs?` <span class="isbadge">${nIs}</span>`:''}`,nIs?plural(nIs,'issue'):'None',issueTiles(p,P))+(S.issueOpen?issueWindow(p,P,issuesList(p)):'')+sec('holes','Holes &amp; boxes',`${plural(holes,'hole')} · ${plural(p.items.length,'box','boxes')}`,holesBody(p,P))
     +sec('racks','Edit Bay Settings',`${plural(p.racks.length,'bay')} in ${plural(p._rows.length,'row')}`,rackSettings(p,P))
     +sec('adv','Advanced','Feature order, spacing and custom columns',advancedTab(p,P))
 ;
 }
 function holesBody(p,P){
   const cols=p.customCols;
-  return `<div class="grid2">
+  return `<details class="addholes" id="addHoles" ${S.addOpen||S.imp?'open':''}><summary title="Add or import holes"><span class="addplus" aria-hidden="true">+</span><span class="addlab">Add or import holes</span></summary><div class="grid2">
     <section class="panel"><header><h3>${S.imp&&S.imp.kind==='layout'?'Import a shed layout':'Import holes from Excel or CSV'}</h3></header>${importPanel(p)}</section>
     ${S.imp?'':`<section class="panel"><header><h3>Import a shed layout</h3><span class="muted small">Replaces the bays and boxes in this move</span></header>${layoutDrop()}</section>`}
     <section class="panel"><header><h3>Add holes manually</h3><span class="muted small">Add a whole hole, or one box you missed</span></header>${addBoxForm(p,P)}</section>
-  </div>
+  </div></details>
   <div class="row" style="justify-content:space-between;align-items:center">
     <h3>All boxes <span class="muted mono small">${p.items.length}</span></h3>
     <div class="row" style="align-items:center">
@@ -2140,83 +2205,61 @@ function holesBody(p,P){
       ${p.items.length?(S.confirm==='clear'?`<span class="small">Remove all ${p.items.length} boxes?</span><button class="danger solid" data-act="clear-yes">Remove all</button><button data-act="cancel">Cancel</button>`:`<button class="ghost danger" data-act="clear">Remove all</button>`):''}
     </div>
   </div>
-  <p class="muted small">Listed in fill order. Edit any cell; locations update when you leave the table. Drag <span class="mono">⠿</span> to put a box in a different place in the order, or type a slot like A1-5 to put it exactly there (boxes below it move down).${S.match?` <b>Showing ${S.match.list.length} of ${p.items.length} boxes that match the search and filters.</b>`:' Use the search bar and Filters above to narrow the list.'}</p>
-  ${p.items.length?`<div class="tablewrap" data-live data-hs id="coreWrap"><table class="edit">
-    <thead><tr><th class="lead"></th><th>Planned slot</th><th>Feature</th><th>Hole ID</th><th class="num">Box</th><th class="num">Of</th><th class="num">From (m)</th><th class="num">To (m)</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}</tr></thead>
+  <p class="muted small">Works like Excel: select cells, type over them, copy and paste (Ctrl+C / Ctrl+V), Ctrl+D fills down, Ctrl+Z undoes. Type a slot like A1-5 in Planned slot to move a box there. Drag <span class="mono">⠿</span> to change the order.${S.match?` <b>Showing ${S.match.list.length} of ${p.items.length} boxes that match the search and filters.</b>`:''}</p>
+  ${p.items.length?`<div class="tablewrap gridwrap" data-live data-hs id="coreWrap"><textarea id="gridKeys" class="gridkeys" aria-label="Boxes table" spellcheck="false"></textarea><table class="edit grid">
+    <thead><tr><th class="lead"></th>${gridCols(p).map(c=>`<th class="${c.num?'num':''}">${esc(c.label)}</th>`).join('')}</tr></thead>
     <tbody id="coreBody">${coreRows(p,P)}</tbody></table></div>${hsBar('coreWrap')}`:`<div class="empty">No boxes yet. Import a spreadsheet or add a hole above.</div>`}`;
 }
 function rackSettings(p,P){
-  const s=p.setup;const need=racksNeeded(p);
+  const s=p.setup;const need=racksNeeded(p);S.bayOpen=S.bayOpen||{};S.rowCfg=S.rowCfg||{};
   const rowsIn=G=>{const v=[...new Set(G.racks.map(R=>R.rack.rows))];return v.length===1?v[0]:'';};
   const blkIn=G=>{const v=[...new Set(G.racks.map(R=>fmtRows(R.rack.blocked)))];return v.length===1?v[0]:'';};
-  return `<div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr))">
-      <div class="field"><label class="label" for="st_letter">First row letter</label><input id="st_letter" maxlength="3" data-k="setup" data-f="letter" value="${esc(s.letter)}"></div>
-      <div class="field"><label class="label" for="st_start">First bay number</label><input id="st_start" type="number" min="0" data-k="setup" data-f="startNum" value="${esc(s.startNum)}"></div>
-      <div class="field" style="grid-column:span 2"><label class="label" for="st_num">Bay numbering in back-to-back rows</label><select id="st_num" data-k="setup" data-f="numbering">
-          <option value="down" ${s.numbering!=='across'?'selected':''}>Sequential: down one side, then the next</option>
-          <option value="across" ${s.numbering==='across'?'selected':''}>Alternating: across, then down</option></select></div>
-    </div>
-    <div class="row" style="align-items:flex-end;gap:12px">
-      <span class="label" style="align-self:center">Every bay</span>
-      <div class="field" style="width:120px"><label class="label" for="st_rows">Slots</label><input id="st_rows" type="number" min="1" max="200" data-k="setup" data-f="defaultRows" value="" placeholder="e.g. 21"></div>
-      <div class="field" style="width:150px"><label class="label" for="st_block">Blocked slots</label><input id="st_block" data-k="setup" data-f="defaultBlocked" value="" placeholder="e.g. 1-2"></div>
-      <span class="muted small" style="align-self:center">Type a value to apply it to every bay. Use a row’s own line below to change just that row.</span>
-    </div>
-    <div class="tablewrap" data-live>
-      <table class="edit baytable">
-        <thead><tr><th>Bay</th><th class="num">Slots</th><th>Blocked slots</th><th class="num" title="Bay length in mm">Length</th><th class="num" title="Bay width in mm">Width</th><th class="num" title="Slot height in mm">Height</th><th class="num">Usable</th><th class="num">Planned</th><th>Locked</th><th></th></tr></thead>
-        <tbody>${P.rowList.map(G=>{const g=G.row;const all=G.racks.every(R=>R.locked);return `
-          <tr class="rowhead"><td colspan="10"><div class="rowbar">
-            <b class="rl">Row ${esc(g.letter)}</b><span class="muted small">${plural(G.racks.length,'bay')}</span>
-            <label class="mini">Letter<input id="rh_l_${g.key}" data-k="rowcfg" data-id="${g.key}" data-f="letter" value="${esc(g.ov||'')}" placeholder="${esc(g.letter)}" maxlength="3" style="text-transform:uppercase;width:52px"></label>
-            <label class="mini">Slots<input id="rh_r_${g.key}" data-k="rowset" data-id="${g.key}" data-f="rows" inputmode="numeric" value="${rowsIn(G)}" placeholder="mixed" style="width:64px;text-align:right"></label>
-            <label class="mini">Blocked<input id="rh_b_${g.key}" data-k="rowset" data-id="${g.key}" data-f="blocked" value="${esc(blkIn(G))}" placeholder="${blkIn(G)===''&&G.racks.some(R=>R.rack.blocked.length)?'mixed':'none'}" style="width:80px"></label>
-            <label class="mini" title="Bay size in mm: length × width × height. Applies to every bay in the row.">Size mm${['l','w','h'].map(x=>`<input id="rh_d${x}_${g.key}" data-k="rowset" data-id="${g.key}" data-f="d${x}" inputmode="numeric" value="${(()=>{const v=[...new Set(G.racks.map(R=>(R.rack.dim||{})[x]||''))];return v.length===1?v[0]:'';})()}" placeholder="${x==='l'?'L':x==='w'?'W':'H'}" style="width:62px;text-align:right">`).join('')}</label>
-            <span class="seg mini-seg" role="group" aria-label="Direction of row ${esc(g.letter)}"><button data-act="${g.horiz?'row-shape':'noop'}" data-id="${g.key}" data-dir="v" aria-pressed="${!g.horiz}" title="The row runs top to bottom">↕ Down</button><button data-act="${g.horiz?'noop':'row-shape'}" data-id="${g.key}" data-dir="h" aria-pressed="${!!g.horiz}" title="The row runs left to right">↔ Across</button></span>
-            <span class="seg mini-seg" role="group" aria-label="Bays in row ${esc(g.letter)}"><button data-act="${isH(g.bays[0])?'row-shape':'noop'}" data-id="${g.key}" data-side="v" aria-pressed="${!isH(g.bays[0])}" title="Bays stand upright: boxes go in end on">▯ Upright bays</button><button data-act="${isH(g.bays[0])?'noop':'row-shape'}" data-id="${g.key}" data-side="h" aria-pressed="${isH(g.bays[0])}" title="Bays turned sideways: boxes go in side on">▭ Sideways bays</button></span>
-            ${lockBtn('lock-row',g.key,all,'Lock row',false)}
-            <span class="spacer"></span>
-            <button class="icon ghost" data-act="row-del-rack" data-id="${g.key}" ${p.racks.length<=1?'disabled':''} aria-label="Remove last bay from row ${esc(g.letter)}" title="Remove the last bay">−</button>
-            <button data-act="row-add-rack" data-id="${g.key}" title="Add a bay to the end of this row">+ Bay</button>
-          </div></td></tr>
-          ${G.racks.map(R=>{const r=R.rack;const usable=R.cells.filter(c=>!c.blocked).length;return `
-          <tr>
-            <td class="mono" style="padding-left:18px"><b>${esc(r.name)}</b>${S.updated[r.id]!==undefined?` <span class="pill upd">was ${esc(S.updated[r.id])}</span>`:''}</td>
-            <td class="w-s"><input id="rk_r_${r.id}" data-k="rack" data-id="${r.id}" data-f="rows" inputmode="numeric" value="${r.rows}" aria-label="Slots in ${esc(r.name)}" style="text-align:right"></td>
-            <td class="w-m"><input id="rk_b_${r.id}" data-k="rack" data-id="${r.id}" data-f="blocked" value="${esc(fmtRows(r.blocked))}" placeholder="none" aria-label="Blocked slots in ${esc(r.name)}"></td>
-            ${['l','w','h'].map(x=>`<td class="w-s"><input id="rk_d${x}_${r.id}" data-k="rack" data-id="${r.id}" data-f="d${x}" inputmode="numeric" value="${(r.dim||{})[x]||''}" placeholder="–" style="text-align:right" aria-label="Bay ${x==='l'?'length':x==='w'?'width':'height'} in mm"></td>`).join('')}
-            <td class="num mono">${usable}</td>
-            <td class="num mono">${R.used}</td>
-            <td style="padding-left:10px"><input type="checkbox" id="rk_l_${r.id}" data-k="rack" data-id="${r.id}" data-f="locked" ${R.locked?'checked':''} aria-label="Lock bay ${esc(r.name)}"></td>
-            <td style="text-align:right"><button class="icon ghost danger" data-act="rack-del" data-id="${r.id}" ${p.racks.length<=1?'disabled':''} aria-label="Remove bay ${esc(r.name)}" title="Remove this bay">✕</button></td>
-          </tr>`;}).join('')}`;}).join('')}
-          <tr class="rowhead"><td colspan="10"><div class="rowbar"><button data-act="map-add-row">+ Add a row</button><button data-act="fit-racks" title="${need?`${need} bays are needed for all boxes`:''}">Fit number of bays to the boxes${need?` (${need})`:''}</button><span class="muted small">New rows go to the right of the others on the Shed map.</span></div></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="muted small">Bay IDs come from the Shed map: rows are lettered left to right and bays numbered along the row. To move bays or rows around, use the Shed map tab.</p>
-    <details class="manual" data-sec="relayout" ${S.open.relayout?'open':''}><summary>Start the shed map again</summary><div class="body stack">
-      <p class="muted small">Puts every bay back into evenly split rows, side by side. Boxes, slots and locks stay with their bays, but bays may get new IDs and any positions you set on the Shed map are lost.</p>
-      <div class="formgrid" style="grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))">
-        <div class="field"><label class="label" for="st_rowsct">Number of rows</label><input id="st_rowsct" type="number" min="1" max="50" value="${p._rows.length||1}"></div>
-        <div class="field"><label class="label" for="st_orient">Row direction</label><select id="st_orient"><option value="" ${s.orient!=='h'?'selected':''}>Upright: bays run top to bottom</option><option value="h" ${s.orient==='h'?'selected':''}>Sideways: bays run left to right</option></select></div>
-      </div>
-      <label class="check"><input type="checkbox" id="st_b2b" ${s.backToBack?'checked':''}> Bays in each row are back to back (rows are 2 bays wide)</label>
-      <div class="row"><button data-act="rebuild-rows">Reset the shed map to these rows</button></div>
-    </div></details>`;
+  const sizeIn=(G,x)=>{const v=[...new Set(G.racks.map(R=>(R.rack.dim||{})[x]||''))];return v.length===1?v[0]:'';};
+  return `<div class="baygrid" data-live>${P.rowList.map(G=>{const g=G.row;const all=G.racks.every(R=>R.locked),some=!all&&G.racks.some(R=>R.locked);
+      const open=!!S.bayOpen[g.key],cfg=!!S.rowCfg[g.key];const usable=G.racks.reduce((n,R)=>n+R.cells.filter(c=>!c.blocked).length,0),used=G.racks.reduce((n,R)=>n+R.used,0);
+      return `<div class="baycard ${open?'open':''}">
+      <div class="bayhead"><button class="bayexp" data-act="bay-toggle" data-id="${g.key}" aria-expanded="${open}" title="${open?'Hide':'Show'} the bays"><span class="chev" aria-hidden="true">▸</span><b>Row ${esc(g.letter)}</b><span class="muted small">${plural(G.racks.length,'bay')} · ${used}/${usable} slots</span></button>
+        <button class="icon ghost baylock ${all?'on':some?'some':''}" data-act="lock-row" data-id="${g.key}" aria-pressed="${all}" title="${all?'Row locked. Click to unlock':some?'Some bays locked. Click to lock the whole row':'Lock this row'}" aria-label="${all?'Unlock':'Lock'} row ${esc(g.letter)}">${edIcon(all||some?'lock':'unlock')}</button>
+        <button class="icon ghost baygear ${cfg?'on':''}" data-act="rowcfg-toggle" data-id="${g.key}" aria-expanded="${cfg}" title="Row settings" aria-label="Settings for row ${esc(g.letter)}">${edIcon('gear')}</button></div>
+      ${cfg?`<div class="baycfg">
+        <div class="cfggrid">
+          <label class="mini">Letter<input id="rh_l_${g.key}" data-k="rowcfg" data-id="${g.key}" data-f="letter" value="${esc(g.ov||'')}" placeholder="${esc(g.letter)}" maxlength="3" style="text-transform:uppercase"></label>
+          <label class="mini">Slots<input id="rh_r_${g.key}" data-k="rowset" data-id="${g.key}" data-f="rows" inputmode="numeric" value="${rowsIn(G)}" placeholder="mixed"></label>
+          <label class="mini">Blocked<input id="rh_b_${g.key}" data-k="rowset" data-id="${g.key}" data-f="blocked" value="${esc(blkIn(G))}" placeholder="${blkIn(G)===''&&G.racks.some(R=>R.rack.blocked.length)?'mixed':'none'}"></label>
+        </div>
+        <label class="mini" title="Bay size in mm: length × width × height. Applies to every bay in the row.">Bay size (mm)<span class="cfgsize">${['l','w','h'].map(x=>`<input id="rh_d${x}_${g.key}" data-k="rowset" data-id="${g.key}" data-f="d${x}" inputmode="numeric" value="${sizeIn(G,x)}" placeholder="${x==='l'?'Length':x==='w'?'Width':'Height'}">`).join('')}</span></label>
+</div>`:''}
+      ${open?`<table class="edit baytable compact">
+        <thead><tr><th>Bay</th><th class="num">Slots</th><th>Blocked</th><th class="num" title="Bay length in mm">L</th><th class="num" title="Bay width in mm">W</th><th class="num" title="Slot height in mm">H</th><th class="num" title="Boxes planned / usable slots">Boxes</th><th title="Locked">${edIcon('lock')}</th><th></th></tr></thead>
+        <tbody>${G.racks.map(R=>{const r=R.rack;const us=R.cells.filter(c=>!c.blocked).length;return `<tr>
+          <td class="mono"><b>${esc(r.name)}</b>${S.updated[r.id]!==undefined?` <span class="pill upd">was ${esc(S.updated[r.id])}</span>`:''}</td>
+          <td class="w-s"><input id="rk_r_${r.id}" data-k="rack" data-id="${r.id}" data-f="rows" inputmode="numeric" value="${r.rows}" aria-label="Slots in ${esc(r.name)}" style="text-align:right"></td>
+          <td class="w-m"><input id="rk_b_${r.id}" data-k="rack" data-id="${r.id}" data-f="blocked" value="${esc(fmtRows(r.blocked))}" placeholder="none" aria-label="Blocked slots in ${esc(r.name)}"></td>
+          ${['l','w','h'].map(x=>`<td class="w-s"><input id="rk_d${x}_${r.id}" data-k="rack" data-id="${r.id}" data-f="d${x}" inputmode="numeric" value="${(r.dim||{})[x]||''}" placeholder="–" style="text-align:right" aria-label="Bay ${x==='l'?'length':x==='w'?'width':'height'} in mm"></td>`).join('')}
+          <td class="num mono">${R.used}/${us}</td>
+          <td><input type="checkbox" id="rk_l_${r.id}" data-k="rack" data-id="${r.id}" data-f="locked" ${R.locked?'checked':''} aria-label="Lock bay ${esc(r.name)}"></td>
+          <td style="text-align:right"><button class="icon ghost danger" data-act="rack-del" data-id="${r.id}" ${p.racks.length<=1?'disabled':''} aria-label="Remove bay ${esc(r.name)}" title="Remove this bay">✕</button></td>
+        </tr>`;}).join('')}</tbody></table>
+        <div class="bayfoot"><button class="small" data-act="row-add-rack" data-id="${g.key}" title="Add a bay to the end of row ${esc(g.letter)}">+ Bay</button></div>`:''}
+    </div>`;}).join('')}</div>
+    <div class="row baybottom"><button data-act="map-add-row">+ Add a row</button><button class="ghost" data-act="fit-racks" title="${need?`${need} bays are needed for all boxes`:''}">Fit number of bays to the boxes${need?` (${need})`:''}</button><span class="spacer"></span><button class="ghost" data-act="bay-all" data-v="${P.rowList.every(G=>S.bayOpen[G.row.key])?'0':'1'}">${P.rowList.every(G=>S.bayOpen[G.row.key])?'Close all':'Open all'}</button></div>
+`;
 }
 
 /* import, manual entry and wizard step 1 (shared) */
-function hsBar(id){return `<div class="hsbar" data-hsfor="${id}" hidden><button class="icon ghost" data-act="hs-step" data-for="${id}" data-d="-1" aria-label="Scroll table left">◀</button><div class="hstrack"><div class="hsinner"></div></div><button class="icon ghost" data-act="hs-step" data-for="${id}" data-d="1" aria-label="Scroll table right">▶</button></div>`;}
+/* a floating horizontal scrollbar under wide tables. Its thumb is drawn by the page (not the system), so it is always visible and can be dragged with a mouse. */
+function hsBar(id){return `<div class="hsbar" data-hsfor="${id}" hidden><button class="icon ghost" data-act="hs-step" data-for="${id}" data-d="-1" aria-label="Scroll table left">◀</button><div class="hstrack"><div class="hsthumb"></div></div><button class="icon ghost" data-act="hs-step" data-for="${id}" data-d="1" aria-label="Scroll table right">▶</button></div>`;}
 function syncHS(){document.querySelectorAll('.hsbar[data-hsfor]').forEach(bar=>{const w=document.getElementById(bar.dataset.hsfor);if(!w)return;
-  const need=w.scrollWidth>w.clientWidth+2;bar.hidden=!need;if(!need)return;const tr=bar.querySelector('.hstrack');tr.querySelector('.hsinner').style.width=(w.scrollWidth/w.clientWidth*tr.clientWidth)+'px';
-  tr.scrollLeft=w.scrollLeft/(w.scrollWidth-w.clientWidth||1)*(tr.scrollWidth-tr.clientWidth);});}
-let HSLOCK=false;
-document.addEventListener('scroll',e=>{const t=e.target;if(!t||!t.classList||HSLOCK)return;HSLOCK=true;
-  if(t.classList.contains('hstrack')){const bar=t.closest('.hsbar'),w=document.getElementById(bar.dataset.hsfor);if(w)w.scrollLeft=t.scrollLeft/(t.scrollWidth-t.clientWidth||1)*(w.scrollWidth-w.clientWidth);}
-  else if(t.dataset&&t.dataset.hs!==undefined){const bar=document.querySelector(`.hsbar[data-hsfor="${t.id}"] .hstrack`);if(bar)bar.scrollLeft=t.scrollLeft/(t.scrollWidth-t.clientWidth||1)*(bar.scrollWidth-bar.clientWidth);}
-  requestAnimationFrame(()=>{HSLOCK=false;});},true);
-addEventListener('resize',()=>syncHS());document.addEventListener('toggle',()=>setTimeout(syncHS,0),true);
+  const need=w.scrollWidth>w.clientWidth+2;if(bar.hidden===need)bar.hidden=!need;if(!need)return;const tr=bar.querySelector('.hstrack'),th=bar.querySelector('.hsthumb');const tw=tr.clientWidth;
+  const thw=Math.max(40,tw*w.clientWidth/w.scrollWidth);th.style.width=thw+'px';th.style.transform=`translateX(${(tw-thw)*w.scrollLeft/Math.max(1,w.scrollWidth-w.clientWidth)}px)`;});}
+document.addEventListener('scroll',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.hs!==undefined)syncHS();},true);
+document.addEventListener('pointerdown',e=>{const tr=e.target.closest&&e.target.closest('.hstrack');if(!tr||e.button!==0)return;const bar=tr.closest('.hsbar');const w=document.getElementById(bar.dataset.hsfor);if(!w)return;e.preventDefault();
+  const th=tr.querySelector('.hsthumb');const tw=tr.clientWidth,thw=th.offsetWidth,range=Math.max(1,w.scrollWidth-w.clientWidth),per=range/Math.max(1,tw-thw);
+  if(e.target!==th){const x=e.clientX-tr.getBoundingClientRect().left-thw/2;w.scrollLeft=x*per;}
+  const x0=e.clientX,sl0=w.scrollLeft;th.classList.add('drag');try{tr.setPointerCapture(e.pointerId);}catch(_){}
+  const mv=ev=>{w.scrollLeft=sl0+(ev.clientX-x0)*per;};const up=()=>{th.classList.remove('drag');tr.removeEventListener('pointermove',mv);tr.removeEventListener('pointerup',up);tr.removeEventListener('pointercancel',up);};
+  tr.addEventListener('pointermove',mv);tr.addEventListener('pointerup',up);tr.addEventListener('pointercancel',up);});
+addEventListener('resize',()=>syncHS());if(window.ResizeObserver){const ro=new ResizeObserver(()=>syncHS());new MutationObserver(()=>{const w=$('#coreWrap');if(w&&!w._ro){w._ro=1;ro.observe(w);const t=w.querySelector('table');if(t)ro.observe(t);}}).observe(document.getElementById('app')||document.body,{childList:true,subtree:false});}document.addEventListener('toggle',()=>setTimeout(syncHS,0),true);
 /* drag to reorder boxes in the edit table */
 let DRAG=null;
 document.addEventListener('dragstart',e=>{const h=e.target.closest&&e.target.closest('[data-drag]');if(!h)return;DRAG={id:h.dataset.drag};
@@ -2236,18 +2279,111 @@ function reorderItem(p,id,targetId,after){const P=computePlan(p);const it=p.item
   const ids=P.sorted.map(x=>x.id).filter(x=>x!==id);let k=ids.indexOf(targetId);if(k<0)return;if(after)k++;ids.splice(k,0,id);
   const was=P.pos[id];p.manualOrder=ids;touch(p);render();const now=computePlan(p).pos[id];
   toast(now?`Box ${it.hole} ${it.box} is now in ${now.rackName}-${now.slot}${was?` (was ${was.rackName}-${was.slot})`:''}.`:'Box moved in the order.');}
+/* ---------- the boxes table: a spreadsheet-like grid ----------
+   Only the rows in view are drawn (fast with thousands of boxes). Cells are plain text; one editor box floats over the cell being edited.
+   Selection is a rectangle of row and column numbers in the current (filtered) list. */
+const GRH=32;
+function gridCols(p){return [{k:'loc',label:'Planned slot',cls:'w-s mono'},{k:'feature',label:'Feature',cls:'w-m'},{k:'hole',label:'Hole ID',cls:'w-m'},{k:'box',label:'Box',cls:'w-s',num:1},{k:'of',label:'Of',cls:'w-s',num:1},{k:'from',label:'From (m)',cls:'w-s',num:1},{k:'to',label:'To (m)',cls:'w-s',num:1}]
+  .concat(p.customCols.map(c=>({k:'c:'+c.id,label:c.name,cls:'w-m'})));}
+function gridVal(p,P,it,k){if(k==='loc'){const ps=P.pos[it.id];return ps?ps.rackName+'-'+ps.slot:it.temp?((pallets(p).find(x=>x.id===it.pallet)||{}).text||'pallet'):'';}
+  if(k.startsWith('c:'))return String((it.custom||{})[k.slice(2)]??'');return String(it[k]??'');}
 function coreRows(p,P){
-  const rows=P.sorted.filter(it=>!S.match||S.match.ids.has(it.id));
-  if(!rows.length)return `<tr><td colspan="${9+p.customCols.length}" class="muted" style="padding:14px">No boxes match the search and filters.</td></tr>`;
-  const inp=(it,f,cls,num)=>`<td class="${cls||''}"><input id="it_${f}_${it.id}" data-k="item" data-id="${it.id}" data-f="${f}" value="${esc(it[f])}" ${num?'inputmode="decimal" style="text-align:right"':''} aria-label="${f}"></td>`;
-  return rows.map(it=>{const ps=P.pos[it.id];return `<tr data-row="${it.id}">
-    <td class="lead"><span class="draghandle" draggable="true" data-drag="${it.id}" title="Drag to reorder" aria-label="Drag to reorder">⠿</span><button class="icon ghost danger" data-act="item-del" data-id="${it.id}" aria-label="Remove box" title="Remove box">✕</button></td>
-    <td class="w-s locin"><input id="it_loc_${it.id}" data-k="itemloc" data-id="${it.id}" value="${ps?esc(ps.rackName+'-'+ps.slot):it.temp?esc((pallets(p).find(x=>x.id===it.pallet)||{}).text||'pallet'):''}" placeholder="No space" title="Type a slot like A1-5 to put this box there" aria-label="Slot for box ${esc(it.hole)} ${esc(it.box)}" class="mono">${it.missing?' <span class="pill missing">missing</span>':''}</td>
-    ${inp(it,'feature','w-m')}${inp(it,'hole','w-m')}${inp(it,'box','w-s',1)}${inp(it,'of','w-s',1)}${inp(it,'from','w-s',1)}${inp(it,'to','w-s',1)}
-    ${p.customCols.map(c=>`<td class="w-m"><input id="it_c_${c.id}_${it.id}" data-k="item" data-id="${it.id}" data-c="${c.id}" value="${esc((it.custom||{})[c.id])}" aria-label="${esc(c.name)}"></td>`).join('')}
-    </tr>`;}).join('');
-}
-
+  const rows=P.sorted.filter(it=>!S.match||S.match.ids.has(it.id));S.gridIds=rows.map(it=>it.id);S.gridP=P;
+  const cols=gridCols(p);
+  if(!rows.length)return `<tr><td colspan="${1+cols.length}" class="muted" style="padding:14px">No boxes match the search and filters.</td></tr>`;
+  const wrap=$('#coreWrap');const viewH=wrap?wrap.clientHeight:640;const top=S.gridScroll||0;
+  const start=Math.max(0,Math.floor(top/GRH)-20),end=Math.min(rows.length,Math.ceil((top+viewH)/GRH)+20);S.gridWin=[start,end];
+  const g=gsel();const r0=g?Math.min(g.a[0],g.f[0]):-1,r1=g?Math.max(g.a[0],g.f[0]):-1,c0=g?Math.min(g.a[1],g.f[1]):-1,c1=g?Math.max(g.a[1],g.f[1]):-1;
+  let h=start?`<tr class="gspace" aria-hidden="true"><td colspan="${1+cols.length}" style="height:${start*GRH}px"></td></tr>`:'';
+  for(let i=start;i<end;i++){const it=rows[i];
+    h+=`<tr data-row="${it.id}"><td class="lead"><span class="draghandle" draggable="true" data-drag="${it.id}" title="Drag to reorder" aria-label="Drag to reorder">⠿</span><button class="icon ghost danger" data-act="item-del" data-id="${it.id}" aria-label="Remove box" title="Remove box">✕</button></td>`
+      +cols.map((c,j)=>{const v=gridVal(p,P,it,c.k);const on=i>=r0&&i<=r1&&j>=c0&&j<=c1;const act=g&&g.f[0]===i&&g.f[1]===j;
+        return `<td class="gc ${c.cls}${c.num?' num':''}${on?' gsel':''}${act?' gact':''}" data-gi="${i}" data-gj="${j}">${c.k==='loc'&&!v?'<span class="muted">No space</span>':esc(v)}${c.k==='loc'&&it.missing?' <span class="pill missing">missing</span>':''}</td>`;}).join('')+'</tr>';}
+  if(end<rows.length)h+=`<tr class="gspace" aria-hidden="true"><td colspan="${1+cols.length}" style="height:${(rows.length-end)*GRH}px"></td></tr>`;
+  return h;}
+const gsel=()=>S.gsel&&S.gridIds&&S.gridIds.length?S.gsel:null;
+function gRect(){const g=gsel();if(!g)return null;return{r0:Math.min(g.a[0],g.f[0]),r1:Math.max(g.a[0],g.f[0]),c0:Math.min(g.a[1],g.f[1]),c1:Math.max(g.a[1],g.f[1])};}
+/* repaint just the selection classes */
+function gPaint(){const R=gRect();document.querySelectorAll('#coreBody td.gc').forEach(td=>{const i=+td.dataset.gi,j=+td.dataset.gj;const on=!!R&&i>=R.r0&&i<=R.r1&&j>=R.c0&&j<=R.c1;td.classList.toggle('gsel',on);td.classList.toggle('gact',!!S.gsel&&S.gsel.f[0]===i&&S.gsel.f[1]===j);});}
+function gRedraw(){const tb=$('#coreBody');const p=cur();if(!tb||!p||!S.gridP)return;tb.innerHTML=coreRows(p,S.gridP);syncHS();}
+function gFocus(){const k=$('#gridKeys');if(k){k.value=' ';k.select();k.focus({preventScroll:true});}}
+function gScrollTo(i){const w=$('#coreWrap');if(!w)return;const th=(w.querySelector('thead')||{}).offsetHeight||34;const y=i*GRH;
+  if(y<w.scrollTop)w.scrollTop=y;else if(y+GRH>w.scrollTop+w.clientHeight-th)w.scrollTop=y+GRH-w.clientHeight+th;S.gridScroll=w.scrollTop;gRedraw();}
+function gSet(i,j,extend){const n=(S.gridIds||[]).length,m=gridCols(cur()).length;if(!n)return;i=Math.max(0,Math.min(n-1,i));j=Math.max(0,Math.min(m-1,j));
+  if(extend&&S.gsel)S.gsel={a:S.gsel.a,f:[i,j]};else S.gsel={a:[i,j],f:[i,j]};gScrollTo(i);}
+/* write values; one undo step per call */
+function gApply(changes,note){const p=cur();if(!p||!changes.length)return;const P=S.gridP||computePlan(p);const undo=[];let loc=false;const byId=new Map(p.items.map(i=>[i.id,i]));
+  changes.forEach(ch=>{const it=byId.get(ch.id);if(!it)return;const old=gridVal(p,P,it,ch.k);if(old===ch.v)return;
+    if(ch.k==='loc'){if(!String(ch.v).trim())return;loc=true;undo.push({id:ch.id,k:'loc',v:old});const pl0=palletByName(p,ch.v);if(pl0){putOnPallet(p,it,pl0.id);return;}if(it.temp){delete it.temp;delete it.pallet;}moveItemTo(p,ch.id,ch.v);return;}
+    undo.push({id:ch.id,k:ch.k,v:old});const v=String(ch.v).trim();
+    if(ch.k.startsWith('c:')){it.custom=it.custom||{};it.custom[ch.k.slice(2)]=v;}
+    else{it[ch.k]=v;if(ch.k==='from'||ch.k==='to'){const was=it.missing;it.missing=false;cleanItem(it);if(!it.missing&&was&&!(it.from||it.to))it.missing=was;}}});
+  if(!undo.length)return;S.gundo=(S.gundo||[]).concat([undo]).slice(-50);touch(p);
+  if(loc){const y=$('#coreWrap')?$('#coreWrap').scrollTop:0;S.gridScroll=y;render();gFocus();}
+  else{S.dirty=true;gRedraw();clearTimeout(S.gSumT);S.gSumT=setTimeout(refreshSummary,400);}
+  if(note)toast(note);}
+function gUndo(){const st=(S.gundo||[]).pop();if(!st)return toast('Nothing to undo in the table.');const p=cur();const keep=S.gundo;gApply(st.slice().reverse().map(u=>({id:u.id,k:u.k,v:u.v})));(S.gundo||[]).pop();S.gundo=keep;toast('Undone');}
+function gTSV(){const R=gRect();const p=cur();if(!R||!p)return'';const P=S.gridP;const cols=gridCols(p);const byId=new Map(p.items.map(i=>[i.id,i]));const q=v=>/[\t\n"]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;
+  const out=[];for(let i=R.r0;i<=R.r1;i++){const it=byId.get(S.gridIds[i]);const row=[];for(let j=R.c0;j<=R.c1;j++)row.push(q(it?gridVal(p,P,it,cols[j].k):''));out.push(row.join('\t'));}return out.join('\n');}
+function parseTSV(t){t=String(t).replace(/\r\n?/g,'\n');const rows=[];let row=[],cell='',q=false;
+  for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){cell+='"';i++;}else q=false;}else cell+=ch;}
+    else if(ch==='"'&&cell==='')q=true;else if(ch==='\t'){row.push(cell);cell='';}else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell='';}else cell+=ch;}
+  if(cell!==''||row.length){row.push(cell);rows.push(row);}return rows;}
+function gPaste(text){const R=gRect();const p=cur();if(!R||!p)return;const data=parseTSV(text);if(!data.length)return;const cols=gridCols(p);const n=S.gridIds.length;
+  const h=data.length,w=Math.max(...data.map(r=>r.length));const changes=[];
+  /* one value fills the whole selection; a block that fits the selection a whole number of times is repeated; otherwise it pastes from the top-left cell */
+  const selH=R.r1-R.r0+1,selW=R.c1-R.c0+1;const tile=(selH>1||selW>1)&&selH%h===0&&selW%w===0;
+  const H=tile?selH:h,W=tile?selW:w;let cut=0;
+  for(let a=0;a<H;a++){const i=R.r0+a;if(i>=n){cut++;continue;}for(let b=0;b<W;b++){const j=R.c0+b;if(j>=cols.length)continue;const v=(data[a%h]||[])[b%w];if(v===undefined)continue;changes.push({id:S.gridIds[i],k:cols[j].k,v});}}
+  S.gsel={a:[R.r0,R.c0],f:[Math.min(n-1,R.r0+H-1),Math.min(cols.length-1,R.c0+W-1)]};
+  gApply(changes,`Pasted ${plural(changes.length,'cell')}${cut?` · ${plural(cut,'row')} didn’t fit below the last box`:''}`);gPaint();}
+function gClear(){const R=gRect();const p=cur();if(!R||!p)return;const cols=gridCols(p);const ch=[];for(let i=R.r0;i<=R.r1;i++)for(let j=R.c0;j<=R.c1;j++)if(cols[j].k!=='loc')ch.push({id:S.gridIds[i],k:cols[j].k,v:''});gApply(ch);gPaint();}
+function gFillDown(){const R=gRect();const p=cur();if(!R||!p||R.r1===R.r0)return;const P=S.gridP;const cols=gridCols(p);const byId=new Map(p.items.map(i=>[i.id,i]));const top=byId.get(S.gridIds[R.r0]);const ch=[];
+  for(let j=R.c0;j<=R.c1;j++){if(cols[j].k==='loc')continue;const v=gridVal(p,P,top,cols[j].k);for(let i=R.r0+1;i<=R.r1;i++)ch.push({id:S.gridIds[i],k:cols[j].k,v});}gApply(ch);gPaint();}
+/* the floating editor */
+function gEdit(initial){const g=gsel();const p=cur();if(!g||!p)return;const [i,j]=g.f;gScrollTo(i);const td=document.querySelector(`#coreBody td[data-gi="${i}"][data-gj="${j}"]`);const w=$('#coreWrap');if(!td||!w)return;
+  let ed=$('#gridEd');if(!ed){ed=document.createElement('input');ed.id='gridEd';ed.className='grided';ed.spellcheck=false;ed.setAttribute('autocomplete','off');w.appendChild(ed);}
+  const it=p.items.find(x=>x.id===S.gridIds[i]);const k=gridCols(p)[j].k;
+  ed.style.left=td.offsetLeft+'px';ed.style.top=td.offsetTop+'px';ed.style.width=Math.max(td.offsetWidth,90)+'px';ed.style.height=td.offsetHeight+'px';
+  ed.value=initial!==undefined?initial:gridVal(p,S.gridP,it,k);ed.dataset.i=i;ed.dataset.j=j;ed.dataset.typed=initial!==undefined?'1':'';ed.hidden=false;ed.focus({preventScroll:true});
+  if(initial===undefined)ed.select();else ed.setSelectionRange(ed.value.length,ed.value.length);S.gEditing=true;}
+function gEditDone(save,move){const ed=$('#gridEd');if(!ed||ed.hidden)return;const i=+ed.dataset.i,j=+ed.dataset.j;const v=ed.value;ed.hidden=true;S.gEditing=false;const p=cur();
+  if(save&&p){const k=gridCols(p)[j].k;gApply([{id:S.gridIds[i],k,v}]);}
+  if(move)gSet(i+move[0],j+move[1]);gFocus();gPaint();}
+document.addEventListener('input',e=>{const c=e.target.closest&&e.target.closest('.iscard');if(!c||!e.target.dataset.isf)return;c.classList.add('dirty');const bt=c.querySelector('[data-act=issue-save]');if(bt)bt.disabled=false;});
+/* grid events */
+document.addEventListener('scroll',e=>{if(e.target&&e.target.id==='coreWrap'){S.gridScroll=e.target.scrollTop;const w=S.gridWin||[0,0];const n=(S.gridIds||[]).length;const top=Math.floor(e.target.scrollTop/GRH),bot=Math.ceil((e.target.scrollTop+e.target.clientHeight)/GRH);
+  if((top-8<w[0]&&w[0]>0)||(bot+8>w[1]&&w[1]<n)){cancelAnimationFrame(S.gRaf);S.gRaf=requestAnimationFrame(()=>{if(!S.gEditing)gRedraw();});}}},true);
+document.addEventListener('mousedown',e=>{const td=e.target.closest&&e.target.closest('#coreBody td.gc');if(!td){if(S.gEditing&&!(e.target.closest&&e.target.closest('#gridEd')))gEditDone(true);return;}
+  if(e.button!==0)return;e.preventDefault();if(S.gEditing)gEditDone(true);const i=+td.dataset.gi,j=+td.dataset.gj;
+  if(e.shiftKey&&S.gsel)S.gsel={a:S.gsel.a,f:[i,j]};else S.gsel={a:[i,j],f:[i,j]};S.gDrag=true;gPaint();gFocus();});
+document.addEventListener('mouseover',e=>{if(!S.gDrag)return;const td=e.target.closest&&e.target.closest('#coreBody td.gc');if(!td||!S.gsel)return;const f=[+td.dataset.gi,+td.dataset.gj];if(f[0]!==S.gsel.f[0]||f[1]!==S.gsel.f[1]){S.gsel={a:S.gsel.a,f};gPaint();}});
+document.addEventListener('mouseup',()=>{S.gDrag=false;});
+document.addEventListener('dblclick',e=>{const td=e.target.closest&&e.target.closest('#coreBody td.gc');if(!td)return;S.gsel={a:[+td.dataset.gi,+td.dataset.gj],f:[+td.dataset.gi,+td.dataset.gj]};gPaint();gEdit();});
+document.addEventListener('copy',e=>{if(document.activeElement&&document.activeElement.id==='gridKeys'&&gsel()){e.preventDefault();e.clipboardData.setData('text/plain',gTSV());const R=gRect();toast(`Copied ${plural((R.r1-R.r0+1)*(R.c1-R.c0+1),'cell')}`);}});
+document.addEventListener('cut',e=>{if(document.activeElement&&document.activeElement.id==='gridKeys'&&gsel()){e.preventDefault();e.clipboardData.setData('text/plain',gTSV());gClear();}});
+document.addEventListener('paste',e=>{if(document.activeElement&&document.activeElement.id==='gridKeys'&&gsel()){e.preventDefault();gPaste(e.clipboardData.getData('text/plain'));}});
+document.addEventListener('keydown',e=>{const t=e.target;if(!t||(t.id!=='gridKeys'&&t.id!=='gridEd'))return;const ctrl=e.ctrlKey||e.metaKey;
+  if(t.id==='gridEd'){
+    if(e.key==='Enter'){e.preventDefault();e.stopPropagation();gEditDone(true,[e.shiftKey?-1:1,0]);}
+    else if(e.key==='Tab'){e.preventDefault();e.stopPropagation();gEditDone(true,[0,e.shiftKey?-1:1]);}
+    else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();gEditDone(false);}
+    else if(t.dataset.typed&&(e.key==='ArrowUp'||e.key==='ArrowDown')){e.preventDefault();e.stopPropagation();gEditDone(true,[e.key==='ArrowUp'?-1:1,0]);}
+    else if(ctrl&&e.key.toLowerCase()==='s'){gEditDone(true);}
+    return;}
+  if(ctrl&&e.key.toLowerCase()==='s')return;
+  const g=S.gsel;if(!g)return;const mv={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]}[e.key];
+  if(mv){e.preventDefault();e.stopPropagation();const step=ctrl?1e6:1;gSet(g.f[0]+mv[0]*step,g.f[1]+mv[1]*step,e.shiftKey);return;}
+  if(e.key==='Tab'){e.preventDefault();e.stopPropagation();gSet(g.f[0],g.f[1]+(e.shiftKey?-1:1));return;}
+  if(e.key==='Enter'||e.key==='F2'){e.preventDefault();e.stopPropagation();if(e.key==='Enter'&&e.shiftKey)gSet(g.f[0]-1,g.f[1]);else gEdit();return;}
+  if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();e.stopPropagation();gClear();return;}
+  if(e.key==='Escape'){e.preventDefault();e.stopPropagation();S.gsel=null;gPaint();t.blur();return;}
+  if(ctrl&&e.key.toLowerCase()==='z'){e.preventDefault();e.stopPropagation();gUndo();return;}
+  if(ctrl&&e.key.toLowerCase()==='d'){e.preventDefault();e.stopPropagation();gFillDown();return;}
+  if(ctrl&&e.key.toLowerCase()==='a'){e.preventDefault();e.stopPropagation();S.gsel={a:[0,0],f:[S.gridIds.length-1,gridCols(cur()).length-1]};gPaint();return;}
+  if(ctrl&&['c','v','x'].includes(e.key.toLowerCase())){e.stopPropagation();return;}
+  if(!ctrl&&!e.altKey&&e.key.length===1){e.preventDefault();e.stopPropagation();gEdit(e.key);}},true);
+document.addEventListener('focusout',e=>{if(e.target&&e.target.id==='gridEd'&&S.gEditing&&!(e.relatedTarget&&e.relatedTarget.id==='gridKeys'))gEditDone(true);},true);
 
 /* shared add-box form */
 function addBoxForm(p,P){
@@ -3061,9 +3197,18 @@ document.addEventListener('click',e=>{
     case 'palconf-all':{const c=S.palConf;if(c){c.rows.forEach(r=>c.choice[r.row]=b.dataset.v);render();}break;}
     case 'palconf-cancel':S.palConf=null;S.imp=null;render();break;
     case 'palconf-go':{const c=S.palConf;if(!c||c.rows.some(r=>!c.choice[r.row])){toast('Choose what to do with each box first.');break;}const imp=S.imp;if(!imp){S.palConf=null;render();break;}imp.resolved=Object.assign({},c.choice);S.palConf=null;runImport(p);break;}
+    case 'issue-open':S.issueOpen=b.dataset.v;S.issuePick=null;render();break;
+    case 'issue-close':if(e.target.closest('.iswin')&&!e.target.closest('[data-act=issue-close]')||(e.target!==b&&b.classList.contains('modal')))break;S.issueOpen=null;render();break;
+    case 'issue-save':{const card=b.closest('.iscard');const it=p.items.find(x=>x.id===id);if(!card||!it)break;
+      card.querySelectorAll('[data-isf]').forEach(inp=>{const f=inp.dataset.isf;const v=inp.value.trim();if(String(it[f]??'')===v)return;it[f]=v;if(f==='from'||f==='to'){const was=it.missing;it.missing=false;cleanItem(it);if(!it.missing&&was&&!(it.from||it.to))it.missing=was;}});
+      touch(p);render();toast('Saved');break;}
+    case 'issue-pick':S.issuePick=b.dataset.key;render();break;
     case 'issue-ignore':p.ignoredIssues=(p.ignoredIssues||[]).concat(b.dataset.key);touch(p);render();break;
-    case 'issue-ignoreall':p.ignoredIssues=(p.ignoredIssues||[]).concat(issuesList(p).filter(x=>x.type===b.dataset.v).map(x=>x.key));touch(p);render();toast('Ignored');break;
-    case 'issue-fix':{S.open.holes=true;S.filter.q='';S.filter.conds=[];render();const f=b.dataset.f||'hole';const el=document.getElementById(`it_${f}_${id}`)||document.getElementById(`it_hole_${id}`);
+    case 'issue-ignoreall':p.ignoredIssues=(p.ignoredIssues||[]).concat(issuesList(p).filter(x=>x.type===b.dataset.v&&(!b.dataset.f||x.f===b.dataset.f)).map(x=>x.key));touch(p);render();toast('Ignored');break;
+    case 'issue-fix':{S.open.holes=true;S.filter.q='';S.filter.conds=[];render();const f=b.dataset.f||'hole';
+      {const i=(S.gridIds||[]).indexOf(id);const j=gridCols(cur()).findIndex(c=>c.k===f);if(i>=0){const w=$('#coreWrap');if(w){w.scrollIntoView({block:'start',behavior:'auto'});w.scrollTop=Math.max(0,i*GRH-w.clientHeight/2);S.gridScroll=w.scrollTop;}S.gsel={a:[i,Math.max(0,j)],f:[i,Math.max(0,j)]};gRedraw();gFocus();
+        const tr=document.querySelector(`#coreBody tr[data-row="${id}"]`);if(tr){tr.classList.add('flashrow');setTimeout(()=>tr.classList.remove('flashrow'),2200);}break;}}
+      const el=document.getElementById(`it_${f}_${id}`)||document.getElementById(`it_hole_${id}`);
       if(el){const tr=el.closest('tr');el.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});setTimeout(()=>el.focus({preventScroll:true}),300);if(tr){tr.classList.add('flashrow');setTimeout(()=>tr.classList.remove('flashrow'),2200);}}break;}
     case 'mm-reset':{S.mmReturn=null;S.mmPick=null;S.mmPicker=false;S.palConf=null;((p.mm&&p.mm.extra)||[]).forEach(x=>unpickForMove(p,x));delete p.mm;delete p.pallet;S.mmFix=null;S.mmAlt=null;S.mmJust=false;S.mmZoom=false;S.mmDir='out';touch(p);render();window.scrollTo(0,0);toast('Move mode started over');break;}
     case 'mm-save-move':{mmCloseOut(p);touch(p);commitDraft(true);render();window.scrollTo(0,0);toast('Saved to this core move. Ready for the next move.');break;}
@@ -3100,6 +3245,9 @@ document.addEventListener('click',e=>{
     case 'fit-racks':{const before=p.racks.length;fitRacks(p);touch(p);render();toast(p.racks.length===before?`${plural(before,'bay')} already fits every box`:`Now ${plural(p.racks.length,'bay')} (was ${before})`);break;}
     case 'hole-del':{const f=b.dataset.feat,h=b.dataset.hole;p.items=p.items.filter(it=>!((it.feature||'')===f&&(it.hole||'')===h));touch(p);render();break;}
     case 'lock-rack':{const r=p.racks.find(x=>x.id===id);if(r){const was=r.locked;lockBays(p,[id],!was);touch(p);render();toast(was?`Bay ${r.name} unlocked. Its boxes stay put until you update to best positions.`:`Bay ${r.name} locked`);}break;}
+    case 'bay-toggle':S.bayOpen=S.bayOpen||{};S.bayOpen[id]=!S.bayOpen[id];render();break;
+    case 'rowcfg-toggle':S.rowCfg=S.rowCfg||{};S.rowCfg[id]=!S.rowCfg[id];render();break;
+    case 'bay-all':{S.bayOpen={};if(b.dataset.v==='1')(p._rows||[]).forEach(g=>S.bayOpen[g.key]=true);render();break;}
     case 'lock-row':{const g=groupOfBay(p,id);if(g){const all=g.bays.every(x=>x.locked);lockBays(p,g.bays.map(x=>x.id),!all);touch(p);render();toast(all?`Row ${g.letter} unlocked. Its boxes stay put until you update to best positions.`:`Row ${g.letter} locked`);}break;}
     case 'lock-slot':{const r=p.racks.find(x=>x.id===id);const sl=+b.dataset.slot;const on=lockSlot(p,id,sl);touch(p);render();toast(on?`Slot ${r.name}-${sl} locked`:`Slot ${r.name}-${sl} unlocked. Its box stays put until you update to best positions.`);break;}
     case 'reoptimise':{const n=heldCount(p);reoptimise(p);touch(p);render();toast(`${plural(n,'held box','held boxes')} moved into the best order`);break;}
@@ -3267,7 +3415,7 @@ document.addEventListener('focusout',e=>{
   if(e.relatedTarget&&box.contains(e.relatedTarget))return;
   setTimeout(()=>{if(!S.dirty)return;const a=document.activeElement;if(a&&a.closest&&a.closest('[data-live]'))return;const y=window.scrollY;render();window.scrollTo(0,y);},0);
 });
-document.addEventListener('toggle',e=>{const t=e.target;if(t.id==='dispMenu')S.dispOpen=t.open;if(t.id==='manualDetails')S.manualOpen=t.open;if(t.dataset&&t.dataset.sec)S.open[t.dataset.sec]=t.open;if(t.dataset&&t.dataset.pid)S.homeOpen[t.dataset.pid]=t.open;},true);
+document.addEventListener('toggle',e=>{const t=e.target;if(t.id==='addHoles')S.addOpen=t.open;if(t.id==='dispMenu')S.dispOpen=t.open;if(t.id==='manualDetails')S.manualOpen=t.open;if(t.dataset&&t.dataset.sec)S.open[t.dataset.sec]=t.open;if(t.dataset&&t.dataset.pid)S.homeOpen[t.dataset.pid]=t.open;},true);
 
 /* shed map zoom */
 function mapScale(){return clamp(+S.mapScale||1,0.15,3);}
