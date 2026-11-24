@@ -494,6 +494,10 @@ tr.locked-empty td{color:var(--muted);font-style:italic}
 .moverow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface-2)}
 @media (max-width:640px){.moverow{grid-template-columns:1fr}}
 .moverow .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.mvtabs{display:inline-flex;gap:4px;align-items:center}.mvtab{padding:3px 10px;border-radius:999px;color:var(--muted)}.mvtab.on{background:var(--surface-2);color:var(--ink);font-weight:700}.mvtab[data-act]{cursor:pointer}.mvtab[data-act]:hover{color:var(--ink);text-decoration:underline}
+.archbox{width:min(560px,100%)!important}.archsum{padding:10px 14px;border-radius:var(--r);background:var(--surface-2)}.archsum ul{margin:6px 0 0;padding-left:20px}
+.archopts{display:flex;flex-direction:column;gap:8px}.archopt{width:100%;box-sizing:border-box;white-space:normal;height:auto;display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--r);background:var(--surface);font:inherit;color:var(--ink);cursor:pointer}
+.archopt span{color:var(--muted);font-size:.9rem}.archopt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}.archopt.warn:hover{border-color:var(--warn);background:var(--warn-soft)}.archopt:disabled{opacity:.45;cursor:not-allowed}
 .moves{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .crumb .sub{font-family:var(--f-body);font-size:.85rem;color:var(--muted);font-weight:500}
 .readonly-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
@@ -1309,7 +1313,7 @@ function render(){
   if(S.view==='home'||!projRec())html=homeView();
   else if(isReadOnly())html=projectReadView(projRec());
   else html=p.stage==='holes'?holesStep(p):p.stage==='racks'?racksStep(p):moveView();
-  app.innerHTML=html+modalView()+exportModal()+leaveModal();
+  app.innerHTML=html+modalView()+exportModal()+leaveModal()+archSaveModal();
   const mc2=$('#mapcanvas');if(mc2&&keep){mc2.scrollLeft=keep.l;mc2.scrollTop=keep.t;}{const cw=$('#coreWrap');if(cw&&S.gridScroll){cw.scrollTop=S.gridScroll;}}
   if(S.focusAfter){const el=document.getElementById(S.focusAfter);S.focusAfter=null;if(el){el.focus();if(el.select)el.select();}}
   S.dirty=false;syncHS();fitReview();vcStageSync();
@@ -1328,8 +1332,8 @@ function modalView(){if(!S.modal)return'';return `<div class="modal" role="dialo
 function moveStatus(m,pr){
   if(m.plan.stage!=='done')return '<span class="pill draft">Setup not finished</span>';
   if(!m.savedAt)return '<span class="pill draft">Draft</span>';
-  if(m.updated>m.savedAt+50)return `<span class="pill upd">Edited since saved</span>`;
-  return `<span class="pill saved">Saved to project ${esc(fmtDate(m.savedAt))}</span>`;}
+  if(m.updated>m.savedAt+50)return `<span class="pill upd">Edited since saved to the shed</span>`;
+  return `<span class="pill saved">Saved to the shed ${esc(fmtDate(m.savedAt))}</span>`;}
 const gkey=n=>String(n||'').trim().toLowerCase().replace(/\s+/g,' ');
 const shedName=(pr,i)=>pr.site||('Shed '+((i||0)+1));
 function projectGroups(){const m=new Map();S.projects.forEach(pr=>{const k=gkey(pr.name);if(!m.has(k))m.set(k,{key:k,name:pr.name,sheds:[]});m.get(k).sheds.push(pr);});
@@ -1401,7 +1405,8 @@ function groupCard(g,terms){
 }
 function shedPanel(pr,idx){
   const ready=!!pr.plan;
-  const moves=[...pr.moves].sort((a,b)=>b.updated-a.updated);const open=S.homeOpen[pr.id]===true;
+  const arch=!!(S.archView&&S.archView[pr.id]);const nArch=pr.moves.filter(isArchived).length;
+  const moves=[...pr.moves].filter(m=>arch?isArchived(m):!isArchived(m)).sort((a,b)=>arch?(b.savedAt||0)-(a.savedAt||0):b.updated-a.updated);const open=S.homeOpen[pr.id]===true;
   return `<div class="stack" style="gap:12px">
     <div class="projhead">
       <div class="stack" style="gap:4px;min-width:0">
@@ -1416,14 +1421,14 @@ function shedPanel(pr,idx){
           <button role="menuitem" class="danger" data-act="del" data-id="${pr.id}">Delete shed</button></div></details>`}</div>
     </div>
     ${S.newMoveFor===pr.id?`<form id="newMoveForm" class="row" data-id="${pr.id}" style="align-items:flex-end"><div class="field grow"><label class="label" for="nm_name">Core move name</label><input id="nm_name" value="${esc('Core move '+(pr.moves.length+1))}"></div><button class="primary" type="submit">Create move</button><button type="button" data-act="cancel">Cancel</button></form>`:''}
-    <details class="movelist" data-pid="${pr.id}" ${open?'open':''}><summary>Core moves <span class="muted mono small">${pr.moves.length}</span></summary>
+    <details class="movelist" data-pid="${pr.id}" ${open?'open':''}><summary><span class="mvtabs"><span class="mvtab ${arch?'':'on'}" ${arch?`data-act="arch-view" data-pid="${pr.id}"`:''}>Core moves <span class="muted mono small">${pr.moves.length-nArch}</span></span><span class="mvtab ${arch?'on':''}" ${arch?'':`data-act="arch-view" data-pid="${pr.id}"`} role="button" title="Core moves already saved to the shed">Archived <span class="muted mono small">${nArch}</span></span></span></summary>
       <div class="moves">${moves.length?moves.map(m=>`<div class="moverow">
         <div class="stack" style="gap:3px;min-width:0">${S.renaming==='m:'+m.id?`<form id="renameForm" class="row" data-kind="m" data-pid="${pr.id}" data-id="${m.id}" style="align-items:center"><input id="rn_name" value="${esc(m.name)}" aria-label="Move name"><button class="primary" type="submit">Save</button><button type="button" data-act="cancel">Cancel</button></form>`:`<b>${esc(m.name)}</b>`}
           <div class="row small muted" style="gap:4px 12px;align-items:center">${moveStatus(m,pr)}<span>Updated ${esc(fmtDate(m.updated))}</span></div></div>
         <div class="acts">${S.confirm==='save:'+m.id?`<span class="small">Replace the ${esc(shedName(pr,idx))} layout with this move?</span><button class="primary" data-act="save-move-yes" data-pid="${pr.id}" data-id="${m.id}">Save to ${esc(shedName(pr,idx))}</button><button data-act="cancel">Cancel</button>`:
           S.confirm==='delm:'+m.id?`<span class="small">Delete this move?</span><button class="danger solid" data-act="del-move-yes" data-pid="${pr.id}" data-id="${m.id}">Delete</button><button data-act="cancel">Keep</button>`:
-          `<button data-act="open-move" data-pid="${pr.id}" data-id="${m.id}">Open</button><button class="primary" data-act="save-move" data-id="${m.id}" ${m.plan.stage==='done'?'':'disabled'}>Save move to ${esc(shedName(pr,idx))}</button><button class="ghost" data-act="rename" data-id="m:${m.id}">Rename</button><button class="ghost danger" data-act="del-move" data-id="${m.id}">Delete</button>`}</div>
-      </div>`).join(''):`<p class="muted small">No core moves yet. Use “+ New core move” to plan the next change to this shed.</p>`}</div>
+          `<button data-act="open-move" data-pid="${pr.id}" data-id="${m.id}">Open</button>${isArchived(m)?`<button class="primary" data-act="save-move" data-id="${m.id}" ${m.updated>(m.savedAt||0)+50?'':'disabled'} title="Save your edits to this archived move into the shed">Save edits to ${esc(shedName(pr,idx))}</button>`:`<button class="primary" data-act="save-move" data-id="${m.id}" ${m.plan.stage==='done'?'':'disabled'}>Save move to ${esc(shedName(pr,idx))}</button>`}<button class="ghost" data-act="rename" data-id="m:${m.id}">Rename</button><button class="ghost danger" data-act="del-move" data-id="${m.id}">Delete</button>`}</div>
+      </div>`).join(''):arch?`<p class="muted small">No archived core moves yet. A core move is archived here when it’s saved to the shed.</p>`:`<p class="muted small">No core moves in progress. Use “+ New core move” to plan the next change to this shed${nArch?', or open one under Archived to edit box details':''}.</p>`}</div>
     </details>
   </div>`;
 }
@@ -3060,7 +3065,7 @@ function exportModal(){const E=S.expPrompt;if(!E)return'';return `<div class="mo
 
 /* ---------- actions ---------- */
 function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>{t.hidden=true;},3200);}
-function openCtx(pid,mid){S.mmZoom=undefined;if(!S.ctx||S.ctx.pid!==pid){S.filter={q:'',conds:[],onlyMatches:true};S.filterOpen=false;}S.ctx={pid,mid:mid||null};S.view='work';S.tab='plan';S.q='';S.imp=null;S.confirm=null;S.sel=null;S.updated={};S.renaming=null;S.newMoveFor=null;S.mmZoom=undefined;
+function openCtx(pid,mid){if(mid){const pr0=S.projects.find(x=>x.id===pid);const m0=pr0&&pr0.moves.find(x=>x.id===mid);if(m0&&isArchived(m0)&&!m0.base&&m0.plan&&m0.plan.stage==='done'){m0.archived=true;m0.base=itemSnap(m0.plan);persist();}}S.mmZoom=undefined;if(!S.ctx||S.ctx.pid!==pid){S.filter={q:'',conds:[],onlyMatches:true};S.filterOpen=false;}S.ctx={pid,mid:mid||null};S.view='work';S.tab='plan';S.q='';S.imp=null;S.confirm=null;S.sel=null;S.updated={};S.renaming=null;S.newMoveFor=null;S.mmZoom=undefined;
   if(mid)startDraft();else S.draft=null;
   const p=cur();if(p){const pr=projRec();p.name=mid?pr.name+' – '+moveRec().name:pr.name;}render();window.scrollTo(0,0);}
 /* scroll so the bay's table header sits just below the sticky top bar */
@@ -3068,7 +3073,53 @@ function gotoRack(id){S.tab='plan';render();const el=document.getElementById('ra
   const bar=document.querySelector('.appbar');const off=(bar?bar.getBoundingClientRect().height:0)+12;
   const top=el.getBoundingClientRect().top+window.scrollY-off;
   window.scrollTo({top:Math.max(0,top),behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
-function saveMoveToProject(pr,m,quiet){if(draftOn()&&S.draft.mid===m.id)commitDraft(true);pr.plan=clone(m.plan);pr.plan.name=pr.name;pr.plan.stage='done';deriveNames(pr.plan);const now=Date.now();m.savedAt=now;m.updated=Math.min(m.updated,now);pr.updated=now;persist();if(!quiet)toast(`Saved “${m.name}” to ${[pr.name,pr.site].filter(Boolean).join(' – ')}`);}
+/* ---------- archived core moves ----------
+   Saving a move to the shed archives it and records a snapshot of its boxes (m.base). Editing an archived move later can then be saved
+   either by replacing the shed with that version, or by applying only what changed since the snapshot to the shed as it is now. */
+const ITEM_F=['feature','hole','box','of','from','to'];
+const isArchived=m=>!!(m.archived||m.savedAt);
+function itemSnap(plan){const P=computePlan(plan);return{at:Date.now(),cols:clone(plan.customCols||[]),
+  items:plan.items.map(it=>({id:it.id,f:Object.fromEntries(ITEM_F.map(f=>[f,String(it[f]??'')])),c:Object.assign({},it.custom||{}),loc:P.pos[it.id]?P.pos[it.id].rackName+'-'+P.pos[it.id].slot:''}))};}
+/* what changed in a move since its snapshot: box details, boxes added, boxes removed (and boxes that only moved, which aren't carried over) */
+function moveEdits(m){const b=m.base;if(!b)return null;const bm=new Map(b.items.map(x=>[x.id,x]));const P=computePlan(m.plan);const out={changed:[],added:[],removed:[],moved:[]};
+  m.plan.items.forEach(it=>{const o=bm.get(it.id);if(!o){out.added.push(it);return;}const ch={},cc={};
+    ITEM_F.forEach(f=>{const v=String(it[f]??'');if(v!==o.f[f])ch[f]=v;});
+    new Set([...Object.keys(it.custom||{}),...Object.keys(o.c)]).forEach(k=>{const v=String((it.custom||{})[k]??'');if(v!==String(o.c[k]??''))cc[k]=v;});
+    if(Object.keys(ch).length||Object.keys(cc).length)out.changed.push({id:it.id,ch,cc,it});
+    const loc=P.pos[it.id]?P.pos[it.id].rackName+'-'+P.pos[it.id].slot:'';if(loc!==o.loc)out.moved.push(it);});
+  const ids=new Set(m.plan.items.map(i=>i.id));b.items.forEach(o=>{if(!ids.has(o.id))out.removed.push(o);});
+  out.n=out.changed.length+out.added.length+out.removed.length;return out;}
+function applyMoveEdits(pr,m,E){const sp=pr.plan;const byId=new Map(sp.items.map(i=>[i.id,i]));let done=0,gone=0;
+  const have=new Set((sp.customCols||[]).map(c=>c.id));(m.plan.customCols||[]).forEach(c=>{if(!have.has(c.id)){sp.customCols.push(clone(c));have.add(c.id);}});
+  E.changed.forEach(x=>{const t=byId.get(x.id);if(!t){gone++;return;}Object.assign(t,x.ch);if(Object.keys(x.cc).length)t.custom=Object.assign({},t.custom||{},x.cc);if('from' in x.ch||'to' in x.ch){t.missing=false;cleanItem(t);}done++;});
+  const rm=new Set(E.removed.map(o=>o.id));if(rm.size){sp.items=sp.items.filter(i=>!rm.has(i.id));done+=E.removed.length;}
+  /* added boxes go in the same slot if it's free in the shed, otherwise the plan finds them a place */
+  const P=computePlan(sp);const free=new Set();P.racks.forEach(R=>R.cells.forEach(c=>{if(!c.blocked&&!c.item)free.add(R.rack.name+'-'+c.slot);}));const Pm=computePlan(m.plan);
+  E.added.forEach(it=>{if(byId.has(it.id))return;const c=clone(it);delete c.temp;delete c.pallet;sp.items.push(c);done++;const ps=Pm.pos[it.id];const loc=ps?ps.rackName+'-'+ps.slot:'';if(loc&&free.has(loc)){free.delete(loc);moveItemTo(sp,c.id,loc);}});
+  deriveNames(sp);return{done,gone};}
+function markSaved(pr,m){const now=Date.now();m.savedAt=now;m.archived=true;m.archivedAt=m.archivedAt||now;m.updated=Math.min(m.updated,now);m.base=itemSnap(m.plan);pr.updated=now;pr.lastFrom=m.id;pr.lastAt=now;}
+/* an archived move needs the choice only if the shed has moved on since this move last went into it */
+const needsArchChoice=(pr,m)=>isArchived(m)&&!!pr.plan&&!(pr.lastFrom===m.id&&pr.updated<=(m.savedAt||0)+50);
+function archSaveModal(){const A=S.archSave;if(!A)return'';const pr=S.projects.find(x=>x.id===A.pid);const m=pr&&pr.moves.find(x=>x.id===A.mid);if(!m)return'';
+  if(draftOn()&&S.draft.mid===m.id)commitDraft(true);const E=moveEdits(m);const later=pr.moves.filter(x=>x!==m&&(x.savedAt||0)>(m.savedAt||0)).length;const shed=esc(pr.site||pr.name);
+  return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="arTitle"><div class="box archbox">
+    <h2 id="arTitle">Save “${esc(m.name)}” to ${shed}</h2>
+    <p class="muted" style="margin:0">This is an archived core move. ${later?`${plural(later,'later core move has','later core moves have')} been saved to the shed since.`:'The shed has changed since it was saved.'}</p>
+    ${E?`<div class="archsum"><b>Your edits</b><ul>${E.changed.length?`<li>${plural(E.changed.length,'box','boxes')} with changed details</li>`:''}${E.added.length?`<li>${plural(E.added.length,'box','boxes')} added</li>`:''}${E.removed.length?`<li>${plural(E.removed.length,'box','boxes')} removed</li>`:''}${!E.n?'<li>No changes to box details</li>':''}</ul>
+      ${E.moved.length?`<p class="muted small" style="margin:6px 0 0">${plural(E.moved.length,'box','boxes')} also changed slot in this version. Slot changes are only kept if you replace the shed.</p>`:''}</div>`
+      :`<p class="msg info" style="margin:0">This move was archived before edit tracking was added, so only replacing is possible this time.</p>`}
+    <div class="archopts">
+      <button class="archopt" data-act="arch-apply" ${E&&E.n?'':'disabled'}><b>Apply my edits to the current shed</b><span>Keeps the shed exactly as it is now and only changes the boxes you edited.</span></button>
+      <button class="archopt warn" data-act="arch-replace"><b>Replace the shed with this version</b><span>The shed goes back to this move’s layout, with your edits. Changes made to the shed since this move are lost.</span></button>
+    </div>
+    <div class="row" style="justify-content:flex-end"><button data-act="arch-cancel">Cancel</button></div></div></div>`;}
+function doArchSave(mode){const A=S.archSave;S.archSave=null;if(!A)return;const pr=S.projects.find(x=>x.id===A.pid);const m=pr&&pr.moves.find(x=>x.id===A.mid);if(!m)return;
+  if(A.fromMM){const p=cur();if(p){mmCloseOut(p);touch(p);}commitDraft(true);}else if(draftOn()&&S.draft.mid===m.id)commitDraft(true);
+  const shed=[pr.name,pr.site].filter(Boolean).join(' – ');
+  if(mode==='replace'){saveMoveToProject(pr,m,true);toast(`${shed} replaced with “${m.name}”`);}
+  else{const E=moveEdits(m);const r=applyMoveEdits(pr,m,E);markSaved(pr,m);persist();toast(`Applied ${plural(r.done,'change')} to ${shed}${r.gone?` · ${plural(r.gone,'box was','boxes were')} no longer in the shed`:''}`);}
+  render();if(A.fromMM)window.scrollTo(0,0);}
+function saveMoveToProject(pr,m,quiet){if(draftOn()&&S.draft.mid===m.id)commitDraft(true);pr.plan=clone(m.plan);pr.plan.name=pr.name;pr.plan.stage='done';deriveNames(pr.plan);markSaved(pr,m);const now=Date.now();m.savedAt=now;m.updated=Math.min(m.updated,now);pr.updated=now;persist();if(!quiet)toast(`Saved “${m.name}” to ${[pr.name,pr.site].filter(Boolean).join(' – ')}`);}
 
 document.addEventListener('click',e=>{
   document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menu-pop button'))d.open=false;});
@@ -3097,7 +3148,11 @@ document.addEventListener('click',e=>{
     case 'del-yes':S.projects=S.projects.filter(x=>x.id!==id);S.confirm=null;persist();render();toast('Shed deleted');break;
     case 'del-move':S.confirm='delm:'+id;render();break;
     case 'del-move-yes':{const pr=S.projects.find(x=>x.id===b.dataset.pid);pr.moves=pr.moves.filter(m=>m.id!==id);S.confirm=null;persist();render();toast('Core move deleted');break;}
-    case 'save-move':S.confirm='save:'+id;render();break;
+    case 'save-move':{const pr=S.projects.find(x=>x.moves.some(m=>m.id===id));const m=pr&&pr.moves.find(x=>x.id===id);if(pr&&m&&needsArchChoice(pr,m)){S.archSave={pid:pr.id,mid:id};render();break;}S.confirm='save:'+id;render();break;}
+    case 'arch-apply':doArchSave('apply');break;
+    case 'arch-replace':doArchSave('replace');break;
+    case 'arch-cancel':S.archSave=null;render();break;
+    case 'arch-view':e.preventDefault();S.archView=S.archView||{};S.archView[b.dataset.pid]=!S.archView[b.dataset.pid];S.homeOpen[b.dataset.pid]=true;render();break;
     case 'save-move-yes':{const pr=S.projects.find(x=>x.id===b.dataset.pid);const m=pr.moves.find(x=>x.id===id);S.confirm=null;saveMoveToProject(pr,m);render();break;}
     case 'cancel':S.confirm=null;S.renaming=null;S.newMoveFor=null;render();break;
     case 'open-file':$('#fileProject').value='';$('#fileProject').click();break;
@@ -3251,7 +3306,7 @@ document.addEventListener('click',e=>{
     case 'mm-save-move':{mmCloseOut(p);touch(p);commitDraft(true);render();window.scrollTo(0,0);toast('Saved to this core move. Ready for the next move.');break;}
     case 'mm-save-ask':S.mmSaveAsk=true;render();break;
     case 'mm-save-cancel':S.mmSaveAsk=false;render();break;
-    case 'mm-save-shed':{const pr=projRec(),m=moveRec();mmCloseOut(p);touch(p);commitDraft(true);saveMoveToProject(pr,m,true);render();window.scrollTo(0,0);toast(`Saved to ${[pr.name,pr.site].filter(Boolean).join(' – ')}. Ready for the next move.`);break;}
+    case 'mm-save-shed':{const pr=projRec(),m=moveRec();if(pr&&m&&needsArchChoice(pr,m)){S.mmSaveAsk=false;S.archSave={pid:pr.id,mid:m.id,fromMM:true};render();break;}mmCloseOut(p);touch(p);commitDraft(true);saveMoveToProject(pr,m,true);render();window.scrollTo(0,0);toast(`Saved to ${[pr.name,pr.site].filter(Boolean).join(' – ')}. Ready for the next move.`);break;}
     case 'mm-export':{const P=computePlan(p);const mm=mmState(p);const B=mmBoxes(p,P,computeMoves(p,P));const ord=mm.order==='pallet'&&B.src==='pallet'?'pallet':'slot';const rows=mmSheetRows(p,P,B,ord);const hasPal=rows.some(r=>r.pal);
       const head=[ord==='pallet'?'Off pallet':'Step',...(hasPal?['Pallet']:[]),'Feature','Hole ID','Box','Of','From (m)','To (m)','Goes to (row-bay-slot)','Done','Notes'];
       const aoa=[head,...rows.map(r=>[r.n,...(hasPal?[r.pal]:[]),r.it.feature||'',outVal(r.it,'hole'),numOr(outVal(r.it,'box')),numOr(outVal(r.it,'of')),numOr(outVal(r.it,'from')),numOr(outVal(r.it,'to')),r.dest||'No slot','',''])];
