@@ -329,6 +329,7 @@ table.grid td.gsel{background:color-mix(in srgb,var(--accent) 14%,var(--surface)
 .mapeditor .mapcanvas.rp{transform:translateZ(0.01px)}
 .mapinner{display:flex;min-width:100%;min-height:100%;width:max-content;height:max-content;padding:20px;box-sizing:border-box;background-image:radial-gradient(circle,var(--line) 1px,transparent 1.2px);background-size:22px 22px}
 .mapeditor #shedmap{margin:auto;flex:none}
+.mapeditor .mapinner{padding:max(240px,55vh) max(240px,55vw)}
 .edside{border-left:1px solid var(--line);padding:16px;overflow:auto;display:flex;flex-direction:column;gap:12px;background:var(--surface)}
 .edside h2{font-size:1.15rem;margin:0}
 .edempty{display:flex;flex-direction:column;gap:10px}
@@ -3458,10 +3459,10 @@ function mapScale(){return clamp(+S.mapScale||1,0.15,3);}
 function repaintMap(mc){if(!mc)return;mc.classList.toggle('rp');}
 function setMapScale(v,cx,cy){const mc=$('#mapcanvas'),svg=$('#shedmap');const old=mapScale();const nv=clamp(v,0.15,3);S.mapScale=nv;if(!mc||!svg)return;
   const r=mc.getBoundingClientRect();const mx=cx===undefined?mc.clientWidth/2:cx-r.left,my=cy===undefined?mc.clientHeight/2:cy-r.top;
-  const px=(mc.scrollLeft+mx)/old,py=(mc.scrollTop+my)/old;
+  const off=()=>{const a=svg.getBoundingClientRect(),c=mc.getBoundingClientRect();return[a.left-c.left-mc.clientLeft+mc.scrollLeft,a.top-c.top-mc.clientTop+mc.scrollTop];};const [ox,oy]=off();const px=(mc.scrollLeft+mx-ox)/old,py=(mc.scrollTop+my-oy)/old;
   svg.setAttribute('width',Math.round(+svg.dataset.w*nv));svg.setAttribute('height',Math.round(+svg.dataset.h*nv));{const z=$('#mp_zpct');if(z)z.textContent=Math.round(nv*100)+'%';}
-  mc.scrollLeft=px*nv-mx;mc.scrollTop=py*nv-my;repaintMap(mc);}
-function mapFit(){const mc=$('#mapcanvas'),svg=$('#shedmap');if(!mc||!svg)return;const v=Math.min((mc.clientWidth-40)/+svg.dataset.w,(mc.clientHeight-40)/+svg.dataset.h);setMapScale(v);mc.scrollLeft=0;mc.scrollTop=0;}
+  const [nx,ny]=off();mc.scrollLeft=px*nv-mx+nx;mc.scrollTop=py*nv-my+ny;repaintMap(mc);}
+function mapFit(){const mc=$('#mapcanvas'),svg=$('#shedmap');if(!mc||!svg)return;const v=Math.min((mc.clientWidth-40)/+svg.dataset.w,(mc.clientHeight-40)/+svg.dataset.h);setMapScale(v);const a=svg.getBoundingClientRect(),c=mc.getBoundingClientRect();mc.scrollLeft+=(a.left+a.width/2)-(c.left+mc.clientLeft+mc.clientWidth/2);mc.scrollTop+=(a.top+a.height/2)-(c.top+mc.clientTop+mc.clientHeight/2);}
 document.addEventListener('wheel',e=>{const mc=e.target.closest&&e.target.closest('#mapcanvas');if(!mc||MD)return;e.preventDefault();
   const d=e.deltaMode===1?e.deltaY*16:e.deltaMode===2?e.deltaY*400:e.deltaY;setMapScale(mapScale()*Math.exp(-clamp(d,-200,200)*0.0016),e.clientX,e.clientY);},{passive:false});
 
