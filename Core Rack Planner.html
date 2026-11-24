@@ -3652,10 +3652,14 @@ function runImport(p){
    Then say "placed", "doesn't fit", "next option", "pallet", "undo"… Everything runs on this computer:
    vosk.js and the model are read from a folder called Voice inside the shared Data folder (or picked by hand),
    so no internet is needed. Speech goes through the same buttons as the screen, so the move records the same way. */
+/* common hole prefixes and how they're said. Letters always work too ("d d", "delta delta", "double d"). */
+const VC_PREFIX_DEFAULT='DD = diamond drill\nTP = test pit\nBH = bore hole, borehole';
 const VC={on:false,status:'off',msg:'',heard:'',model:null,rec:null,ctx:null,stream:null,node:null,src:null,
   alt:null,last:null,lastSaid:'',speaking:false,speakingUntil:0,gram:'',loading:false,
-  prefs:Object.assign({prefixes:'DD = diamond drill\nRC = reverse circulation',announceNext:false,wake:false,rate:'1'},
+  prefs:Object.assign({prefixes:VC_PREFIX_DEFAULT,announceNext:false,wake:false,rate:'1'},
     (()=>{try{return JSON.parse(localStorage.getItem('cis-voice')||'{}');}catch(e){return{};}})())};
+/* the old default list (DD and RC) is replaced by the new one; a list someone wrote themselves is kept */
+if(!VC.prefs.prefixes||VC.prefs.prefixes==='DD = diamond drill\nRC = reverse circulation')VC.prefs.prefixes=VC_PREFIX_DEFAULT;
 function vcSavePrefs(){try{localStorage.setItem('cis-voice',JSON.stringify(VC.prefs));}catch(e){}}
 
 /* numbers, both ways */
@@ -3683,7 +3687,14 @@ function vcParseNum(toks){const val=t=>{const i=VC_ONES.indexOf(t);if(i>=0)retur
 function vcHoleParts(h){const seg=String(h||'').trim().split(/[-_\s\/]/).filter(Boolean).pop()||'';const m=/^([A-Za-z]*)(\d+)([A-Za-z]*)$/.exec(seg);
   return m?{letters:m[1].toUpperCase(),num:String(+m[2]),raw:m[2],suffix:m[3].toUpperCase()}:null;}
 function vcPrefixes(){const m={};String(VC.prefs.prefixes||'').split(/\n|;/).forEach(l=>{const x=/^\s*([A-Za-z]+)\s*[=:]\s*(.+?)\s*$/.exec(l);
-  if(x){const w=x[2].toLowerCase().replace(/[^a-z' ]/g,' ').replace(/\s+/g,' ').trim();if(w)m[x[1].toUpperCase()]=w;}});return m;}
+  if(x){const w=x[2].split(',')[0].toLowerCase().replace(/[^a-z' ]/g,' ').replace(/\s+/g,' ').trim();if(w)m[x[1].toUpperCase()]=w;}});return m;}
+/* every name for every prefix, longest first: [['BH',['bore','hole']],['BH',['borehole']],…] */
+function vcPrefixList(){const out=[];String(VC.prefs.prefixes||'').split(/\n|;/).forEach(l=>{const x=/^\s*([A-Za-z]+)\s*[=:]\s*(.+?)\s*$/.exec(l);if(!x)return;
+  x[2].split(',').forEach(n=>{const w=n.toLowerCase().replace(/[^a-z' ]/g,' ').replace(/\s+/g,' ').trim();if(w)out.push([x[1].toUpperCase(),w.split(' ')]);});});
+  return out.sort((a,b)=>b[1].length-a[1].length);}
+/* IDs as Jasper compares them: capitals and digits only (spaces, dashes, underscores and apostrophes dropped), and no
+   leading zeros on a number, so "SW_BH001", "SW BH 1" and "sierra whiskey bravo hotel zero zero one" all agree */
+const vcNorm=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'').replace(/\d+/g,d=>d.replace(/^0+(?=\d)/,''));
 const vcLetters=s=>String(s).toLowerCase().split('').join(' ');
 const vcSpell=s=>String(s).toUpperCase().replace(/[^A-Z0-9]+/g,'').split('').join(' ');
 
@@ -3693,50 +3704,91 @@ const VC_NATO={alpha:'A',alfa:'A',bravo:'B',charlie:'C',delta:'D',echo:'E',foxtr
   november:'N',oscar:'O',papa:'P',quebec:'Q',romeo:'R',sierra:'S',tango:'T',uniform:'U',victor:'V',whiskey:'W',whisky:'W',xray:'X',yankee:'Y',zulu:'Z',zed:'Z',zee:'Z',bee:'B',dee:'D',em:'M',en:'N',ex:'X'};
 const vcLetterOf=t=>/^[a-z]$/.test(t)&&t!=='a'?t.toUpperCase():VC_NATO[t]||null;
 const vcFeat=it=>{const f=String(it.feature||'').trim()||String(it.hole||'').split(/[-_\s\/]/).filter(Boolean).slice(0,-1).join('');return f.toUpperCase().replace(/[^A-Z0-9]/g,'');};
-/* what was said → which box. Everything before the last run of numbers is read as letters and numbers ("BMA1DD"),
-   so "bravo mike alpha one diamond drill one oh two box three" gives BMA1DD / 102 / 3. If the feature's number runs
-   straight into the hole number ("b m a one one oh two"), every split is tried. */
+/* spoken words → the pieces of an ID. L: letters ("b m a", "bravo mike alpha", "double d", or a hole prefix said as
+   words: "diamond drill", "test pit", "bore hole"); N: a number ("one oh two", "one hundred and two", "zero zero one",
+   "one two two four four eight zero"); W: a word from a name ("hell's", "gates", "pump", "station"). "dash" only
+   separates; "underscore" is ignored. A letter straight after a number stays with it, so "five a" is 5A. */
+const VC_SKIP=new Set(['the','uh','um','er','ah','underscore','hyphen']);
+function vcPieces(tokens){const names=vcPrefixList();const isNum=t=>t==='and'||t==='hundred'||t==='thousand'||vcParseNum([t])!==null;const P=[];
+  for(let i=0;i<tokens.length;){const t=tokens[i],nx=tokens[i+1]||'';
+    if(t[0]==='#'){P.push({t:'L',s:t.slice(1),pre:true});i++;continue;}   /* a prefix already picked out (pallet list) */
+    const nm=names.find(([L,nw])=>nw.every((x,k)=>tokens[i+k]===x));if(nm){P.push({t:'L',s:nm[0],pre:true});i+=nm[1].length;continue;}
+    if(t==='dash'){if(P.length)P[P.length-1].sep=true;i++;continue;}
+    if(VC_SKIP.has(t)){i++;continue;}
+    if(t==='double'&&(nx==='a'||vcLetterOf(nx))){const l=nx==='a'?'A':vcLetterOf(nx);P.push({t:'L',s:l+l,pre:true});i+=2;continue;}
+    const l=t==='a'?(nx==='hundred'||nx==='thousand'?null:'A'):vcLetterOf(t);
+    if(l&&!(t==='o'&&isNum(nx))){const last=P[P.length-1];if(last&&last.t==='L'&&!last.pre&&!last.sep)last.s+=l;else P.push({t:'L',s:l});i++;continue;}
+    if(isNum(t)){const run=[];while(i<tokens.length&&isNum(tokens[i])&&!names.some(([L,nw])=>nw[0]===tokens[i]))run.push(tokens[i++]);
+      const n=vcParseNum(run.filter(x=>x!=='and'));if(n!==null)P.push({t:'N',s:n});continue;}
+    if(/^[a-z][a-z']*$/.test(t)){P.push({t:'W',s:t});i++;continue;}
+    i++;}
+  return P;}
+/* pieces → text: letters and numbers run together, name words are capitalised and spaced: "Hell's Gates DD102" */
+function vcJoin(P){let out='';P.forEach((p,i)=>{const prev=P[i-1];if(p.t==='W')out+=(out?' ':'')+p.s.charAt(0).toUpperCase()+p.s.slice(1);else out+=(prev&&prev.t==='W'?' ':'')+p.s;});return out;}
+/* the same pieces, as Jasper says them back ("five A D D one oh two") */
+const vcSaidOf=P=>P.map(p=>p.t==='W'?p.s:p.t==='L'?p.s.split('').join(' '):vcDigitWords(p.s)).join(' ');
+/* what was said → {code, box}: everything before the last "box" is the ID (feature and hole together, or just the hole) */
 function vcParseBox(w){w=w.join(' ').replace(/\bx ray\b/g,'xray').split(' ');const bi=w.lastIndexOf('box');if(bi<1)return null;
   let right=w.slice(bi+1);const oi=right.indexOf('of');if(oi>=0)right=right.slice(0,oi);const box=vcParseNum(right);if(box===null)return null;
-  const pm=vcPrefixes();const names=Object.entries(pm).map(([L,n])=>[L,n.split(' ')]).sort((a,b)=>b[1].length-a[1].length);
-  const left=w.slice(0,bi);const parts=[];const isNum=t=>t==='and'||t==='hundred'||t==='thousand'||vcParseNum([t])!==null;
-  for(let i=0;i<left.length;){const t=left[i];
-    const nm=names.find(([L,nw])=>nw.every((x,k)=>left[i+k]===x));if(nm){parts.push({L:nm[0]});i+=nm[1].length;continue;}
-    if(t==='double'&&(left[i+1]==='a'||vcLetterOf(left[i+1]||''))){const l=left[i+1]==='a'?'A':vcLetterOf(left[i+1]);parts.push({L:l+l});i+=2;continue;}
-    const nx=left[i+1]||'';const l=t==='a'?(nx==='hundred'||nx==='thousand'?null:'A'):vcLetterOf(t);if(l&&!(t==='o'&&isNum(nx))){parts.push({L:l});i++;continue;}
-    if(isNum(t)){const run=[];while(i<left.length&&isNum(left[i])&&!names.some(([L,nw])=>nw[0]===left[i]))run.push(left[i++]);parts.push({N:run});continue;}
-    i++;}
-  if(!parts.length||!parts[parts.length-1].N)return null;const last=parts.pop().N.filter(x=>x!=='and');
-  const pre=parts.map(p=>p.L||vcParseNum(p.N)||'').join('');const out=[];
-  for(let k=0;k<last.length;k++){const a=k?vcParseNum(last.slice(0,k)):'',b=vcParseNum(last.slice(k));if(b===null||(k&&a===null))continue;out.push({P:pre+a,hole:String(+b),box:String(+box)});}
-  return out.length?out:null;}
-function vcMatch(items,q){return items.filter(it=>{const h=vcHoleParts(it.hole);if(!h||h.num!==q.hole||String(+it.box)!==q.box)return false;const F=vcFeat(it);
-  return q.P===''||q.P===h.letters||q.P===F||q.P===F+h.letters;});}
+  const P=vcPieces(w.slice(0,bi));const code=vcNorm(vcJoin(P));if(!code)return null;
+  return{code,box:String(+box),word:P.some(p=>p.t==='W'),said:vcSaidOf(P)};}
+/* a box's feature and hole, as written. The feature is left out when the hole already starts with it (BMA1-DD102). */
+function vcIdParts(it){const F=String(it.feature||'').trim(),H=String(it.hole||'').trim();return{F:F&&!vcNorm(H).startsWith(vcNorm(F))?F:'',H};}
+/* every way a box's ID can be said: feature + hole, the hole on its own, or just the last part of the hole
+   ("DD102" for "BFA1-DD102", "BH001" for "SW_BH001") */
+function vcItemCodes(it){const F=String(it.feature||'').trim(),H=String(it.hole||'').trim();const fn=vcNorm(F),hn=vcNorm(H);const out=new Set();
+  if(hn)out.add(hn);if(fn&&hn&&!hn.startsWith(fn))out.add(fn+hn);if(fn&&!hn)out.add(fn);
+  [H.split(/[-\s\/]+/),H.split(/[-_\s\/]+/)].forEach(a=>{const ls=vcNorm(a.filter(Boolean).pop()||'');if(ls){out.add(ls);if(fn)out.add(fn+ls);}});
+  return [...out];}
+/* one ID is the other with one extra letter: "5A" and "5", "BMA1DD102" and "BMA1D102" */
+const vcOneMore=(c,q)=>c.length===q.length+1&&[...c].some((ch,i)=>/[A-Z]/.test(ch)&&c.slice(0,i)+c.slice(i+1)===q);
+function vcFind(items,q){const same=items.filter(it=>String(+it.box)===q.box||String(it.box).trim()===q.box);
+  const exact=same.filter(it=>vcItemCodes(it).includes(q.code));
+  /* a name Jasper only partly caught ("pump station" for "Haughton Pump Station") */
+  const loose=exact.length||!q.word||q.code.length<4?[]:same.filter(it=>vcItemCodes(it).some(c=>c.includes(q.code)));
+  /* a short letter Jasper may have missed ("5" said, "5A" also in the move), or a stray "a" it added */
+  const near=same.filter(it=>!exact.includes(it)&&vcItemCodes(it).some(c=>vcOneMore(c,q.code)));
+  const less=exact.length||loose.length?[]:same.filter(it=>vcItemCodes(it).some(c=>vcOneMore(q.code,c)));
+  return{exact,loose,near,less};}
 /* the words Vosk listens for: commands plus every box in this move, said both common ways */
 /* wake word: “Jasper” (a rock, and a name the speech model knows) */
 const VC_WAKE=new Set(['jasper']);
 const VC_CMDS=['yes','correct','placed in','placed at','put it in','went in','goes in','it went in','slot changed to','changed to','moved to','new slot','put it in','confirmed','confirm','cancel','dash','placed','done','box placed',"doesn't fit",'does not fit','too big',"won't fit",'next option','another slot','pallet','on the pallet','temporary pallet',
   'repeat','say again','undo','next box',"what's next",'how many left','stop listening','help','what slot','which slot','zero oh one two three four five six seven eight nine ten',
-  'b c d e f g h i j k l m n o p q r s t u v w x y z double',Object.keys(VC_NATO).join(' ')];
-function vcGrammar(list,racks){const ph=new Set(VC_CMDS);const pm=vcPrefixes();Object.values(pm).forEach(w=>ph.add(w));
-  const natoOf={};Object.entries(VC_NATO).forEach(([w,L])=>{if(!natoOf[L]&&w.length>3)natoOf[L]=w;});
-  const say=(code,nato)=>code.split('').map(ch=>/\d/.test(ch)?VC_ONES[+ch]:nato?natoOf[ch]||ch.toLowerCase():ch.toLowerCase()).join(' ');
-  (list||[]).forEach(it=>{const h=vcHoleParts(it.hole);if(!h)return;const bx=+it.box;const bw=isNaN(bx)?String(it.box).toLowerCase():vcNumWords(bx);
-    const holes=[`${pm[h.letters]||vcLetters(h.letters)} ${vcDigitWords(h.raw)}`,`${pm[h.letters]||vcLetters(h.letters)} ${vcNumWords(+h.num)}`,`${say(h.letters,true)} ${vcDigitWords(h.raw)}`];
-    const F=vcFeat(it);holes.forEach(x=>ph.add(`${x} box ${bw}`));if(F)[say(F,false),say(F,true)].forEach(f=>ph.add(`${f} ${holes[0]} box ${bw}`));});
+  'a b c d e f g h i j k l m n o p q r s t u v w x y z double','hundred','thousand','and','first','second','third',Object.keys(VC_NATO).join(' ')];
+/* an ID the ways people say it: [prefix names, plain letters, numbers digit by digit with "oh"],
+   [phonetic letters, digits with "zero"], [prefix names, short numbers as words: "one hundred and two"].
+   Short capitals (DD, SW, BMA) are spelled out; real words in a name (Hell's Gates, Pump Station) are said as words.
+   Underscores and dashes just separate the parts, so SW_BH001 is "s w b h oh oh one". */
+const VC_NATO_OF=(()=>{const o={};Object.entries(VC_NATO).forEach(([w,L])=>{if(!o[L]&&w.length>3)o[L]=w;});return o;})();
+const vcIsWord=x=>/'/.test(x)||/[a-z]/.test(x.slice(1))||(x.length>=4&&/[AEIOUY]/i.test(x));
+function vcSayVariants(text){const pm=vcPrefixes();const parts=String(text||'').match(/[A-Za-z']+|\d+/g)||[];if(!parts.length)return[];
+  const v=(nato,natural)=>parts.map(x=>{if(/^\d+$/.test(x))return natural&&x.length<=4?vcNumWords(+x):x.split('').map(d=>d==='0'?(nato?'zero':'oh'):VC_ONES[+d]).join(' ');
+    const up=x.toUpperCase().replace(/'/g,'');if(!nato&&pm[up])return pm[up];if(vcIsWord(x))return x.toLowerCase();
+    return up.split('').map(ch=>nato?VC_NATO_OF[ch]||ch.toLowerCase():ch.toLowerCase()).join(' ');}).join(' ');
+  return [...new Set([v(false,false),v(true,false),v(false,true)])];}
+function vcGrammar(list,racks){const ph=new Set(VC_CMDS);vcPrefixList().forEach(([L,nw])=>ph.add(nw.join(' ')));
+  (list||[]).forEach(it=>{const bx=+it.box;const bw=isNaN(bx)?String(it.box).toLowerCase():vcNumWords(bx);const{F,H}=vcIdParts(it);
+    const hv=vcSayVariants(H),fv=F?vcSayVariants(F):[];const segs=H.split(/[-\s\/]+/).filter(Boolean);const lv=segs.length>1?vcSayVariants(segs.pop()):[];
+    hv.concat(lv).forEach(x=>ph.add(`${x} box ${bw}`));if(hv.length)fv.forEach(x=>ph.add(`${x} ${hv[0]} box ${bw}`));
+    hv.concat(fv).join(' ').split(' ').forEach(x=>{if(x)ph.add(x);});});
   /* every bay and slot, so "slot changed to a two dash one" is heard well */
   (racks||[]).forEach(R=>{const m=/^([A-Za-z]+)(\d+)$/.exec(String(R.rack.name||''));if(!m)return;const L=vcLetters(m[1]),b=vcNumWords(+m[2]);
     R.cells.forEach(c0=>{if(!c0.blocked&&ph.size<8000){const sw=`${L} ${b} dash ${vcNumWords(+c0.slot)}`;ph.add(`slot changed to ${sw}`);ph.add(`placed in ${sw}`);}});});
   let arr=[...ph];if(VC.prefs.wake)arr=arr.map(x=>'jasper '+x).concat(['jasper']);arr.push('[unk]');return JSON.stringify(arr);}
 /* what gets read out */
 /* replies are short codes, like "DD101 box 3 into slot A1-2" */
-function vcBoxCode(it){const h=vcHoleParts(it.hole);const F=vcFeat(it);
-  return `${F?F+' ':''}${h?h.letters+h.raw+h.suffix:String(it.hole||'')} box ${it.box}`;}
+function vcBoxCode(it){const{F,H}=vcIdParts(it);const sp=x=>x.replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim();
+  return `${[F,H].filter(Boolean).map(sp).join(' ')} box ${it.box}`;}
 /* the same words, written the way people say them: "D D one oh one, box 3 into slot A 1 dash 2" */
-function vcSpeakable(t){return String(t)
+function vcSpeakable(t){return String(t).replace(/_/g,' ')
+  .replace(/\b(\d+[A-Z]{0,2}) (?=[A-Z]{1,4}\d)/g,'$1, ')    /* "5A DD102", "5 DD102": a pause there too */
   .replace(/\b([A-Z]{1,4}\d+[A-Z]?) (?=[A-Z]{1,4}\d)/g,'$1, ')  /* a short pause between the feature and the hole */
   .replace(/\b([A-Z]{1,3})(\d+)-(\d+)\b/g,(m,a,b,c)=>`${a.split('').join(' ')} ${b} dash ${c}`)
   .replace(/\b([A-Z]{1,4})(\d+)([A-Z]?)\b/g,(m,a,b,c)=>`${a.split('').join(' ')} ${vcDigitWords(b)}${c?' '+c:''}`)
+  .replace(/\b(\d+)([A-Z]{1,2})\b/g,(m,b,c)=>`${vcDigitWords(b)} ${c.split('').join(' ')}`)   /* 5A → "five A" */
+  .replace(/\b[A-Z]{2,5}\b/g,m=>m.length<=3||!/[AEIOU]/.test(m)?m.split('').join(' '):m)        /* SW, BH, BMA spelled out */
+  .replace(/\b\d{5,}\b/g,d=>d.split('').map(x=>VC_ONES[+x]).join(' '))                          /* 1224480: "one two two four four eight zero" */
   .replace(/ box (\d+)/g,', box $1');}
 
 
@@ -3777,12 +3829,20 @@ function vcSelect(c,it){const id=it.id;VC.active=id;
   let pre='';if(it.temp){vcAct('mm-temp-back',{id});pre='Off the pallet. ';}
   if(id!==S.mmShown||S.mmPick)vcAct('mm-pick',{id:id===S.mmShown?'':id});
   VC.alt=null;const c2=vcCtx()||c;vcSay(pre+vcDescText(c2,id));}
-function vcBoxCmd(w){const qs=vcParseBox(w);if(!qs)return false;const c=vcCtx();if(!c)return true;const inMove=new Set(c.B.list.map(x=>x.id));
-  let q=qs[0],all=[],hits=[];for(const q0 of qs){const a=vcMatch(c.p.items,q0);if(!a.length)continue;if(!all.length){all=a;q=q0;}const h=a.filter(x=>inMove.has(x.id));if(h.length){q=q0;all=a;hits=h;break;}}
-  const said=`${q.P}${q.P&&/\d$/.test(q.P)?' ':''}${q.hole} box ${q.box}`;
-  if(!hits.length){vcSay(all.length?`${said} isn't in this move.`:`No ${said} in this shed.`);return true;}
+function vcBoxCmd(w){const q=vcParseBox(w);if(!q)return false;const c=vcCtx();if(!c)return true;VC.choose=null;const inMove=new Set(c.B.list.map(x=>x.id));
+  const f=vcFind(c.p.items,q),live=a=>a.filter(x=>inMove.has(x.id)),said=`${q.said} box ${q.box}`;
+  const near=live(f.near).filter(x=>!c.mm.done[x.id]);let hits=live(f.exact);if(!hits.length)hits=live(f.loose);
+  if(!hits.length){const alt=near.length?near:live(f.less);
+    if(alt.length===1){vcSelect(c,alt[0]);return true;}   /* Jasper reads the full ID back, so you hear which box it took */
+    if(alt.length>1){vcChoose(alt);return true;}
+    vcSay(f.exact.length||f.loose.length?`${said} isn't in this move.`:`No ${said} in this shed.`);return true;}
   if(hits.length>1){const left=hits.filter(x=>!c.mm.done[x.id]);if(left.length===1)hits=left;else{vcSay(`${hits.length} boxes match ${said}. Say the feature too.`);return true;}}
+  /* "5" heard, but a "5A" with the same hole and box is also waiting: ask rather than guess */
+  if(near.length&&!c.mm.done[hits[0].id]){vcChoose([hits[0],...near]);return true;}
   vcSelect(c,hits[0]);return true;}
+/* two or three boxes that differ by a letter: Jasper reads them out and you say "first", "second" or "third" */
+function vcChoose(list){VC.choose=list.slice(0,3);const ord=['first','second','third'];
+  vcSay(VC.choose.map(vcBoxCode).join(', or ')+'? Say '+VC.choose.map((x,i)=>ord[i]).join(' or ')+'.');}
 function vcPlaced(){const c=vcCtx();if(!c)return;const it=vcTarget(c);if(!it)return;const id=it.id;
   if(VC.alt&&VC.alt.id===id&&VC.alt.list[VC.alt.i])vcAct('mm-altslot',{id,loc:VC.alt.list[VC.alt.i]});
   else{const ps=c.P.pos[id];const R=ps&&c.P.racks.find(x=>x.rack.id===ps.rackId);if(!ps||!R||fitIssue(c.p,it,R.rack,c.P.DC))return vcSay("No slot fits yet. Say doesn't fit.");vcAct('mm-placed',{id});}
@@ -3826,6 +3886,7 @@ function vcHeard(t){vcShowHeard(t);if(Date.now()<VC.speakingUntil)return;if(VC.i
   let w=t.toLowerCase().replace(/\[unk\]/g,' ').replace(/[^a-z' ]/g,' ').split(/\s+/).filter(Boolean);if(!w.length)return;
   if(VC.prefs.wake){const i=w.findIndex(x=>VC_WAKE.has(x));if(i<0)return;w=w.slice(i+1);if(!w.length)return;}
   const s=' '+w.join(' ')+' ';const has=(...xs)=>xs.some(x=>s.includes(' '+x+' '));
+  if(VC.choose){const k=has('first')?0:has('second')?1:has('third')?2:-1;if(k>=0&&VC.choose[k]){const it=VC.choose[k];VC.choose=null;const c=vcCtx();if(c)vcSelect(c,it);return;}}
   if(w.includes('box')&&w.length>2&&vcBoxCmd(w))return;
   if(has('stop listening'))return vcStop(true);
   /* "placed in A two dash five", "put it in…", "went in…", "goes at…": a slot is being named */
@@ -3955,6 +4016,8 @@ function jnHelpHtml(){const nato=['Alpha','Bravo','Charlie','Delta','Echo','Foxt
       <li>Read a box: <b>“bravo mike alpha one, diamond drill one oh two, box three out of eight, from twelve point five until fifteen point two”</b>, then <b>“done”</b>.</li>
       <li>Or say field names in any order: <b>“depth ten until twelve, hole diamond drill one hundred, box one out of four”</b>. Use <b>“until”</b> for the end depth, not “to”, and <b>“out of”</b> for the number of boxes.</li>
       <li>For a feature with no number, say <b>“dash”</b> or <b>“hole”</b> before the hole: <b>“B M A dash D D one oh two”</b>.</li>
+      <li>Names and plain numbers work: <b>“Hell’s gates test pit twelve”</b>, <b>“Haughton pump station one two two four four eight zero”</b>. Hole prefixes said as words: <b>diamond drill</b> (DD), <b>test pit</b> (TP), <b>bore hole</b> (BH).</li>
+      <li>For a letter after a number use the phonetic alphabet: <b>“five alpha”</b> for 5A. IDs CIS already has are written its way, e.g. SW_BH001.</li>
       <li>After the read-back say <b>“next”</b>, or <b>“edit”</b>, a field (feature, hole, box, out of, from, until, depth), the new value and <b>“done”</b>: <b>“edit out of eight done”</b>.</li>
       <li><b>“Scratch that”</b> clears the box you’re reading. <b>“Delete”</b> or <b>“delete last box”</b> removes one. <b>“Jasper finished”</b> stops and opens the export.</li></ul></details>
     <details><summary>Phonetic alphabet</summary><div class="jns-nato">${nato.map(w=>`<span><b>${w[0]}</b>${w}</span>`).join('')}</div>
@@ -4008,7 +4071,7 @@ function vcStageSync(){VC.inRun=!!VC._wrapped;VC._wrapped=false;if(!(S.view==='w
   const mode=S.jnOpen?'notes':VC.inRun&&S.vcOpen&&VC.stage?'move':null,show=!!mode;
   const st=show?vcStageEl():$('#vcStage');document.body.classList.toggle('vcstage-open',show);
   if(st){st.hidden=!show;st.classList.toggle('notes',mode==='notes');if(show){vcOrbState();
-    if(mode==='move'){const d=VC.stage,it=d.it;$('#vcBox').innerHTML=`<span class="mono"><b>${esc((it.feature?vcFeat(it)+'-':'')+it.hole)}</b> box <b>${esc(it.box)}</b> → <b>${esc(d.dest||'no slot')}</b></span><span class="vcs-count">${d.done} of ${d.total}</span>`;
+    if(mode==='move'){const d=VC.stage,it=d.it;$('#vcBox').innerHTML=`<span class="mono"><b>${esc((x=>(x.F?x.F+'-':'')+x.H)(vcIdParts(it)))}</b> box <b>${esc(it.box)}</b> → <b>${esc(d.dest||'no slot')}</b></span><span class="vcs-count">${d.done} of ${d.total}</span>`;
       st.querySelector('.vcs-pick').innerHTML=(VC.needPick?'<button data-vact="pick">Choose voice files…</button>':'')+(VC.needReset?'<button data-vact="vreset">Reset voice model</button>':'');}
     else{/* don't redraw the table under someone who is typing in it */
       const panel=st.querySelector('.jns-panel'),h=jnPanel();if(panel.dataset.h!==h&&!(document.activeElement&&panel.contains(document.activeElement)&&document.activeElement.tagName==='INPUT')){panel.innerHTML=h;panel.dataset.h=h;}
@@ -4102,18 +4165,46 @@ const JN_FIELDS=[['feature','Feature'],['hole','Hole ID'],['box','Box'],['of','O
 function jnKey(){const pr=projRec();return 'cis-jn-'+(pr?pr.id:'none');}
 function jn(){const k=jnKey();if(!S.jn||S.jn.key!==k){let rows=[];try{rows=JSON.parse(localStorage.getItem(k)||'[]');}catch(e){}S.jn={key:k,rows:Array.isArray(rows)?rows:[],st:'entry',buf:[],ebuf:[],editField:null,reviewId:null};}return S.jn;}
 function jnSave(){const J=jn();try{localStorage.setItem(J.key,JSON.stringify(J.rows));}catch(e){}}
-/* letters and numbers said one after another → a code: "b m a one" → BMA1, "diamond drill one oh two" → DD102 */
-function jnGroups(tokens){const pm=vcPrefixes();const names=Object.entries(pm).map(([L,n])=>[L,n.split(' ')]).sort((a,b)=>b[1].length-a[1].length);
-  const isNum=t=>t==='and'||t==='hundred'||t==='thousand'||vcParseNum([t])!==null;const g=[];
-  for(let i=0;i<tokens.length;){const t=tokens[i],nx=tokens[i+1]||'';
-    const nm=names.find(([L,nw])=>nw.every((x,k)=>tokens[i+k]===x));if(nm){g.push({L:nm[0],word:true});i+=nm[1].length;continue;}
-    if(t==='double'&&(nx==='a'||vcLetterOf(nx))){const l=nx==='a'?'A':vcLetterOf(nx);g.push({L:l+l});i+=2;continue;}
-    const l=t==='a'?(nx==='hundred'||nx==='thousand'?null:'A'):vcLetterOf(t);if(l&&!(t==='o'&&isNum(nx))){const last=g[g.length-1];if(last&&last.L&&!last.word&&!last.N)last.L+=l;else g.push({L:l});i++;continue;}
-    if(isNum(t)){const run=[];while(i<tokens.length&&isNum(tokens[i])&&!names.some(([L,nw])=>nw[0]===tokens[i]))run.push(tokens[i++]);const n=vcParseNum(run.filter(x=>x!=='and'));
-      const last=g[g.length-1];if(last&&last.L&&last.N===undefined)last.N=n||'';else g.push({L:'',N:n||''});continue;}
-    i++;}
-  return g.map(x=>({L:x.L||'',N:x.N||''}));}
-const jnCode=tokens=>jnGroups(tokens).map(x=>x.L+x.N).join('');
+/* a hole prefix said as words ("bore hole", "test pit") becomes one token first, so its "hole" isn't taken for the
+   field name "hole" */
+function jnPre(w){const names=vcPrefixList();const out=[];for(let i=0;i<w.length;){const nm=names.find(([L,nw])=>nw.every((x,k)=>w[i+k]===x));if(nm){out.push('#'+nm[0]);i+=nm[1].length;}else out.push(w[i++]);}return out;}
+/* features and holes CIS already knows: every project and move, plus rows already read out. Used to spell an ID the
+   way it's written (SW_BH001, Hell's Gates) and to tell where the feature ends and the hole starts. */
+/* every box CIS has: the open plan (including unsaved changes), then every project and move */
+function jnAllItems(){const out=[];const add=pl=>{if(pl&&pl.items)out.push(...pl.items);};try{add(cur());}catch(e){}if(S.draft)add(S.draft.plan);
+  (S.projects||[]).forEach(pr=>{add(pr.plan);(pr.moves||[]).forEach(m=>add(m&&m.plan));});return out;}
+function jnKnown(){const feat=new Map(),hole=new Map(),pair=new Set();
+  const add=(F,H)=>{F=String(F||'').trim();H=String(H||'').trim();const fn=vcNorm(F),hn=vcNorm(H);
+    if(fn&&!feat.has(fn))feat.set(fn,F);if(hn&&!hole.has(hn))hole.set(hn,H);if(fn&&hn)pair.add(fn+'|'+hn);
+    const segs=H.split(/[-\s\/]+/).filter(Boolean);if(segs.length>1){const l=segs.pop(),ln=vcNorm(l);if(ln&&!hole.has(ln))hole.set(ln,l);if(fn&&ln)pair.add(fn+'|'+ln);}};
+  jnAllItems().forEach(it=>add(it.feature,it.hole));
+  try{jn().rows.forEach(r=>add(r.feature,r.hole));}catch(e){}
+  return{feat,hole,pair};}
+/* written the way CIS already has it; a name Jasper only partly caught is matched if only one known name contains it */
+function jnCanon(text,map,word){const n=vcNorm(text);if(!n)return'';if(map.has(n))return map.get(n);
+  if(word&&n.length>=4){const m=[...map.entries()].filter(([k])=>k.includes(n));if(m.length===1)return m[0][1];}
+  return text;}
+/* one field's words → its text: "b m a one" → BMA1, "five alpha" → 5A, "hell's gates" → Hell's Gates,
+   "one two two four four eight zero" → 1224480 */
+function jnCode(tokens,kind){const P=vcPieces(jnPre(tokens));const t=vcJoin(P);if(!t)return'';const K=jnKnown();
+  return jnCanon(t,kind==='feature'?K.feat:K.hole,P.some(p=>p.t==='W'));}
+/* feature and hole said together without labels: where does the feature end?
+   1. IDs CIS already knows decide; 2. else a hole prefix ("diamond drill", "test pit", "bore hole", "double d") starts
+   the hole; 3. else the last group is the hole: letters then a number (BMA1 | DD102), a bare number after a name
+   (Haughton Pump Station | 1224480), or name words after a code. "dash" or "hole" between them always works. */
+function jnSplit(tokens){const P=vcPieces(jnPre(tokens));if(!P.length)return{feature:'',hole:''};const K=jnKnown();const hasW=a=>a.some(p=>p.t==='W');
+  let best=null;for(let k=0;k<=P.length;k++){const fn=vcNorm(vcJoin(P.slice(0,k))),hn=vcNorm(vcJoin(P.slice(k)));
+    const sc=(fn&&hn&&K.pair.has(fn+'|'+hn)?5:0)+(hn?(K.hole.has(hn)?2:-1):0)+(fn?(K.feat.has(fn)?2:-1):0);if(sc>=2&&(!best||sc>best.sc))best={sc,k};}
+  /* letters that ran together ("five a d d one oh two" → 5ADD102): try every split of the whole ID against known pairs */
+  if(!best){const all=vcNorm(vcJoin(P));for(let i=1;i<all.length;i++){const fn=all.slice(0,i),hn=all.slice(i);
+    if(K.feat.has(fn)&&K.hole.has(hn)&&(K.pair.has(fn+'|'+hn)||!best)){best={fn,hn};if(K.pair.has(fn+'|'+hn))break;}}
+    if(best)return{feature:K.feat.get(best.fn),hole:K.hole.get(best.hn)};}
+  let k;if(best)k=best.k;
+  else{const pre=P.map((p,i)=>p.pre&&i>0?i:-1).filter(i=>i>0);
+    if(pre.length)k=pre[pre.length-1];
+    else{k=0;for(let i=1;i<P.length;i++){const a=P[i-1],b=P[i];if(a.sep||(a.t==='N'&&b.t!=='N')||(a.t==='W'&&b.t!=='W')||(a.t==='L'&&b.t==='W'))k=i;}}}
+  const f=P.slice(0,k),h=P.slice(k);
+  return{feature:f.length?jnCanon(vcJoin(f),K.feat,hasW(f)):'',hole:h.length?jnCanon(vcJoin(h),K.hole,hasW(h)):''};}
 function jnDec(tokens){const t=tokens.filter(x=>!['metres','meters','metre','meter','m','depth'].includes(x));if(!t.length)return'';const pi=t.indexOf('point');
   if(pi<0){const n=vcParseNum(t);return n===null?'':String(+n);}const a=pi?vcParseNum(t.slice(0,pi)):'0',b=vcParseNum(t.slice(pi+1));if(a===null)return'';return b===null?String(+a):`${+a}.${b}`;}
 /* one box's words → its fields. Field names work as labels, in any order: "depth ten metres, hole diamond drill one
@@ -4122,7 +4213,7 @@ function jnDec(tokens){const t=tokens.filter(x=>!['metres','meters','metre','met
 /* "until" marks the end depth: "to" sounds the same as "two". "out of" marks the number of boxes: a lone "of" is
    easy to miss. "to" and "of" still work if Jasper hears them. */
 const JN_HEAD={feature:'feature',hole:'hole',box:'box',of:'of',total:'of',from:'from',until:'to',to:'to',end:'to',depth:'depth'};
-function jnParse(w){const r={feature:'',hole:'',box:'',of:'',from:'',to:''};const lead=[],segs=[];let cur=null;
+function jnParse(w){w=jnPre(w);const r={feature:'',hole:'',box:'',of:'',from:'',to:''};const lead=[],segs=[];let cur=null;
   for(let i=0;i<w.length;i++){const t=w[i];
     if(t==='out'){cur={k:'of',v:[]};segs.push(cur);if(w[i+1]==='of')i++;continue;}   /* "out of eight" */
     if(t==='box'&&(w[i+1]==='out'||w[i+1]==='of')&&!(w[i+2]&&w[i+2]!=='of'&&vcParseNum([w[i+2]])===null)){cur={k:'of',v:[]};segs.push(cur);i+=w[i+1]==='out'&&w[i+2]==='of'?2:1;continue;}
@@ -4130,13 +4221,13 @@ function jnParse(w){const r={feature:'',hole:'',box:'',of:'',from:'',to:''};cons
     (cur?cur.v:lead).push(t);}
   const holeSaid=segs.some(x=>x.k==='hole'),featSaid=segs.some(x=>x.k==='feature');
   if(lead.length){const di=lead.indexOf('dash');
-    if(di>=0){r.feature=jnCode(lead.slice(0,di));r.hole=jnCode(lead.slice(di+1));}
-    else if(holeSaid&&!featSaid)r.feature=jnCode(lead);          /* "b m a hole d d one oh two" */
-    else if(featSaid&&!holeSaid)r.hole=jnCode(lead);
-    else{const g=jnGroups(lead).filter(x=>x.L||x.N);if(g.length>=2){r.hole=g[g.length-1].L+g[g.length-1].N;r.feature=g.slice(0,-1).map(x=>x.L+x.N).join('');}else if(g.length===1)r.hole=g[0].L+g[0].N;}}
+    if(di>=0){r.feature=jnCode(lead.slice(0,di),'feature');r.hole=jnCode(lead.slice(di+1),'hole');}
+    else if(holeSaid&&!featSaid)r.feature=jnCode(lead,'feature');          /* "b m a hole d d one oh two" */
+    else if(featSaid&&!holeSaid)r.hole=jnCode(lead,'hole');
+    else{const x=jnSplit(lead);r.feature=x.feature;r.hole=x.hole;}}
   for(const x of segs){const v=x.v;
-    if(x.k==='feature'){const di=v.indexOf('dash');if(di>=0){r.feature=jnCode(v.slice(0,di));r.hole=jnCode(v.slice(di+1));}else r.feature=jnCode(v);}
-    else if(x.k==='hole')r.hole=jnCode(v.filter(t=>t!=='dash'));
+    if(x.k==='feature'){const di=v.indexOf('dash');if(di>=0){r.feature=jnCode(v.slice(0,di),'feature');r.hole=jnCode(v.slice(di+1),'hole');}else r.feature=jnCode(v,'feature');}
+    else if(x.k==='hole')r.hole=jnCode(v.filter(t=>t!=='dash'),'hole');
     else if(x.k==='box'||x.k==='of'){const n=jnNum(v);if(n!=='')r[x.k]=n;}
     else if(x.k==='from'||x.k==='to'){const d=jnDec(v);if(d!=='')r[x.k]=d;}
     else if(x.k==='depth'){const ti=v.findIndex(t=>t==='until'||t==='to'||t==='end');if(ti>=0){r.from=jnDec(v.slice(0,ti));r.to=jnDec(v.slice(ti+1));}else{const d=jnDec(v);if(d!=='')r.from=d;}}}
@@ -4169,7 +4260,7 @@ function jnHeard(t){try{console.info('[Jasper notes] heard:',t);}catch(e){}const
     const v=J.ebuf,f=J.editField;
     /* work out the new value first; if nothing usable was heard, keep the old value and ask again (never blank it) */
     let nv=null;
-    if(f==='feature'||f==='hole'){const c=jnCode(v);if(c)nv={[f]:c};}
+    if(f==='feature'||f==='hole'){const c=jnCode(v,f);if(c)nv={[f]:c};}
     else if(f==='box'||f==='of'){const n=jnNum(v);if(n!=='')nv={[f]:n};}
     else if(f==='from'||f==='to'){const d=jnDec(v);if(d!=='')nv={[f]:d};}
     else if(f==='depth'){const ti=v.findIndex(t=>t==='until'||t==='to'||t==='end');const a=jnDec(ti>=0?v.slice(0,ti):v),b=ti>=0?jnDec(v.slice(ti+1)):'';if(a!==''||b!==''){nv={};if(a!=='')nv.from=a;if(b!=='')nv.to=b;}}
@@ -4204,13 +4295,16 @@ function jnFinish(){const J=jn();J.buf=[];J.st='entry';J.reviewId=null;J.editFie
 function jnGrammar(){const ph=new Set(['done','next','edit','repeat','say again','cancel','scratch that','start again','delete','delete last box','finished','jasper finished',
   'feature','hole','box','out of','box out of','total','from','until','depth','start','end','metres','point','and','double','dash','hundred','thousand','oh','zero',
   VC_ONES.join(' '),VC_TENS.filter(Boolean).join(' '),'a b c d e f g h i j k l m n o p q r s t u v w x y z',Object.keys(VC_NATO).join(' ')]);
+  vcPrefixList().forEach(([L,nw])=>ph.add(nw.join(' ')));ph.add('first second third');
   Object.values(vcPrefixes()).forEach(x=>{ph.add(x);ph.add(`${x} one oh two box three out of eight from twelve point five until fifteen point two done`);});
   ph.add('b m a one diamond drill one oh two box three out of eight from twelve point five until fifteen point two done');
   ph.add('bravo mike alpha one diamond drill one oh two box four out of eight from fifteen point two until eighteen point nine done');
   ph.add('depth ten until twelve hole diamond drill one hundred box one out of four done');ph.add('b m a dash d d one oh two box three done');ph.add('feature b m a hole d d one oh two box three out of eight done');
   ph.add('edit hole diamond drill one oh three done');ph.add('edit depth twelve point five until fifteen point two done');ph.add('edit until fifteen point two done');ph.add('edit from twelve point five done');ph.add('edit out of eight done');ph.add('edit box out of eight done');
-  const p=cur();if(p){const seen=new Set();p.items.forEach(it=>{const F=vcFeat(it),h=vcHoleParts(it.hole);if(!h)return;const k=F+'|'+h.letters+h.raw;if(seen.has(k)||seen.size>400)return;seen.add(k);
-    ph.add(`${F?F.split('').map(c=>/\d/.test(c)?VC_ONES[+c]:c.toLowerCase()).join(' ')+' ':''}${vcPrefixes()[h.letters]||vcLetters(h.letters)} ${vcDigitWords(h.raw)} box`);});}
+  /* every feature and hole CIS knows (all projects), the ways they're said, and each of their words */
+  const seen=new Set();jnAllItems().forEach(it=>{
+    [it.feature,it.hole].forEach(x=>{const t=String(x||'').trim();if(!t||seen.has(t)||seen.size>1500)return;seen.add(t);
+      vcSayVariants(t).slice(0,2).forEach(v=>{ph.add(v);v.split(' ').forEach(y=>y&&ph.add(y));});});});
   return JSON.stringify([...ph,'[unk]']);}
 function jnState(){const J=jn();if(VC.loading)return 'Starting…';if(!VC.on)return 'Not listening';
   if(VC.speaking)return 'Jasper is reading back';
