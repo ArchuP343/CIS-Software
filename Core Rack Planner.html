@@ -2287,8 +2287,13 @@ function gridCols(p){return [{k:'loc',label:'Planned slot',cls:'w-s mono'},{k:'f
   .concat(p.customCols.map(c=>({k:'c:'+c.id,label:c.name,cls:'w-m'})));}
 function gridVal(p,P,it,k){if(k==='loc'){const ps=P.pos[it.id];return ps?ps.rackName+'-'+ps.slot:it.temp?((pallets(p).find(x=>x.id===it.pallet)||{}).text||'pallet'):'';}
   if(k.startsWith('c:'))return String((it.custom||{})[k.slice(2)]??'');return String(it[k]??'');}
+/* boxes in shed order: row, then bay, then slot; boxes without a slot follow in planner order */
+function shedOrder(P){if(P._shedOrd)return P._shedOrd;const rank={};let n=0;P.rowList.forEach(G=>G.racks.forEach(R=>R.cells.forEach(c=>{rank[R.rack.id+'|'+c.slot]=n++;})));
+  const seen=new Set();P.racks.forEach(R=>{if(!seen.has(R.rack.id)&&!P.rowList.some(G=>G.racks.includes(R)))R.cells.forEach(c=>{rank[R.rack.id+'|'+c.slot]=n++;});});
+  const rk=it=>{const ps=P.pos[it.id];const v=ps&&rank[ps.key];return v==null?Infinity:v;};
+  return P._shedOrd=P.sorted.map((it,i)=>[it,rk(it),i]).sort((a,b)=>a[1]-b[1]||a[2]-b[2]).map(x=>x[0]);}
 function coreRows(p,P){
-  const rows=P.sorted.filter(it=>!S.match||S.match.ids.has(it.id));S.gridIds=rows.map(it=>it.id);S.gridP=P;
+  const rows=shedOrder(P).filter(it=>!S.match||S.match.ids.has(it.id));S.gridIds=rows.map(it=>it.id);S.gridP=P;
   const cols=gridCols(p);
   if(!rows.length)return `<tr><td colspan="${1+cols.length}" class="muted" style="padding:14px">No boxes match the search and filters.</td></tr>`;
   const wrap=$('#coreWrap');const viewH=wrap?wrap.clientHeight:640;const top=S.gridScroll||0;
